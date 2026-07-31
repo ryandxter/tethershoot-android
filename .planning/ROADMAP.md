@@ -20,8 +20,23 @@ metadata:
 |-------|------|-------|--------------|--------|
 | 1 | CTG Foundation | Parse Canon database files | CTG-01, CTG-02, CTG-03 | Ready to execute |
 | 2 | Smart Upload Detection | Deduplication & baseline tracking | UPLOAD-01, UPLOAD-02, UPLOAD-03 | 2 plans ready |
-| 3 | Session Resilience | Connection pooling & reconnection | RESILIENCE-01, 02, 03, 04 | Not Started |
+| 3 | Session Resilience | Connection pooling & reconnection | RESILIENCE-01, 02, 03, 04 | 4 plans ready |
 | 4 | Upload Integrity | Two-phase commit & checkpointing | RESILIENCE-05, 06 | Could Have |
+
+### Phase 3 Plans
+
+| Plan | Type | Focus | Status |
+|------|------|-------|--------|
+| 03-01 | Tracer | Core Session Pool Infrastructure | Ready to execute |
+| 03-02 | Standard | Health Monitoring & Keepalive | Ready to execute |
+| 03-03 | Standard | Reconnection Logic | Ready to execute |
+| 03-04 | Standard | USB Disconnect Handling | Ready to execute |
+
+**Implementation Order:**
+1. Plan 03-01: Create connection config, session pool, and integrate with JschSftpClient
+2. Plan 03-02: Add keepalive heartbeat (30s) and dead connection detection
+3. Plan 03-03: Add exponential backoff reconnection with circuit breaker
+4. Plan 03-04: Handle USB cable disconnect/reconnect gracefully
 
 ### Phase 1 Plans
 
