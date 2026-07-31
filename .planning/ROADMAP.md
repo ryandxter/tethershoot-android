@@ -173,7 +173,7 @@ metadata:
 ### Deliverables
 - `data/sftp/TwoPhaseUploadHandler.kt` — Part file upload with verification
 - `data/sftp/UploadCheckpointManager.kt` — Persist/resume upload progress
-- Enhanced `SftpClient` interface — Add `resumeUpload()` method
+- Enhanced `SftpClient` interface — Add `uploadWithTwoPhaseCommit()` method
 
 ### Dependencies
 - Requires: Phase 3 (Session Resilience)
@@ -182,6 +182,17 @@ metadata:
 - [ ] Incomplete uploads cleaned up on retry
 - [ ] Partial uploads resume from checkpoint
 - [ ] Final file only visible after atomic rename
+
+### Phase 4 Plans
+
+| Plan | Type | Focus | Status |
+|------|------|-------|--------|
+| 04-01 | Tracer | Two-phase commit + checkpoint persistence | Ready to execute |
+| 04-02 | Standard | Stale .part file cleanup | Ready to execute |
+
+**Implementation Order:**
+1. Plan 04-01: Create TwoPhaseUploadHandler, UploadCheckpointManager, enhance SftpClient interface, wire into worker
+2. Plan 04-02: Add stale .part file cleanup and retry handling
 
 ---
 
