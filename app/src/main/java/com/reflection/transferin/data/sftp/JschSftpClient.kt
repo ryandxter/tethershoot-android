@@ -2,6 +2,7 @@ package com.reflection.transferin.data.sftp
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
@@ -18,6 +19,9 @@ class JschSftpClient(
 ) : SftpClient {
 
     private var sessionPool: SftpSessionPool? = null
+    private var connectionConfig: SftpConnectionConfig? = null
+    var sessionReconnector: SftpSessionReconnector? = null
+        private set
 
     /**
      * Initializes the session pool with the given configuration.
@@ -26,7 +30,13 @@ class JschSftpClient(
      * @param config The connection configuration for the pool
      */
     fun initializePool(config: SftpConnectionConfig) {
-        sessionPool = SftpSessionPool(config)
+        val monitor = SftpSessionHealthMonitor(context)
+        sessionPool = SftpSessionPool(config).apply {
+            setHealthMonitor(monitor)
+        }
+        monitor.startMonitoring(sessionPool!!)
+        connectionConfig = config
+        sessionReconnector = SftpSessionReconnector(config)
     }
 
     override suspend fun testConnection(
@@ -172,7 +182,7 @@ class JschSftpClient(
         port: Int,
         username: String,
         password: String,
-        block: (ChannelSftp) -> Result<T>
+        block: suspend (ChannelSftp) -> Result<T>
     ): Result<T> = withContext(Dispatchers.IO) {
         var session: Session? = null
         var channel: ChannelSftp? = null
@@ -240,7 +250,17 @@ class JschSftpClient(
         password: String,
         block: suspend (ChannelSftp) -> Result<T>
     ): Result<T> {
-        val pool = sessionPool
+        var pool = sessionPool
+        if (pool == null) {
+            val config = SftpConnectionConfig(
+                host = host,
+                port = port,
+                username = username,
+                password = password
+            )
+            initializePool(config)
+            pool = sessionPool
+        }
 
         return if (pool != null && pool.isPoolReady) {
             withContext(Dispatchers.IO) {
@@ -251,7 +271,27 @@ class JschSftpClient(
                     }
                 } catch (e: Exception) {
                     pool.markUnhealthy(session)
-                    Result.failure(e)
+                    val reconnector = sessionReconnector
+                    if (reconnector != null) {
+                        val reconnectResult = reconnector.reconnectWithBackoff(pool)
+                        if (reconnectResult.isSuccess) {
+                            val newSession = pool.acquireSession()
+                            try {
+                                block(newSession.channel).also {
+                                    newSession.lastUsedAt = System.currentTimeMillis()
+                                }
+                            } catch (retryException: Exception) {
+                                pool.markUnhealthy(newSession)
+                                Result.failure(retryException)
+                            } finally {
+                                pool.releaseSession(newSession)
+                            }
+                        } else {
+                            Result.failure(e)
+                        }
+                    } else {
+                        Result.failure(e)
+                    }
                 } finally {
                     pool.releaseSession(session)
                 }
@@ -285,4 +325,164 @@ class JschSftpClient(
             } ?: -1L
         }.getOrDefault(-1L)
     }
+
+    override suspend fun uploadWithTwoPhaseCommit(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        localUri: Uri,
+        remoteDirectory: String,
+        remoteFileName: String,
+        expectedSize: Long,
+        startOffset: Long,
+        onProgress: ((bytesTransferred: Long, totalBytes: Long) -> Unit)?
+    ): Result<Unit> = withPooledSession(host, port, username, password) { channel ->
+        val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
+        val safeRemoteFileName = sanitizeRemoteFileName(remoteFileName)
+        val partFileName = "$safeRemoteFileName.part"
+        val partPath = buildChildPath(safeRemoteDirectory, partFileName)
+        val finalPath = buildChildPath(safeRemoteDirectory, safeRemoteFileName)
+
+        val inputStream = context.contentResolver.openInputStream(localUri)
+            ?: return@withPooledSession Result.failure(
+                IllegalArgumentException("Gagal membuka file dari URI: $localUri")
+            )
+
+        inputStream.use { stream ->
+            val totalBytes = queryContentLength(localUri)
+
+            if (startOffset > 0L) {
+                var skipped = 0L
+                while (skipped < startOffset) {
+                    val skipResult = stream.skip(startOffset - skipped)
+                    if (skipResult <= 0) break
+                    skipped += skipResult
+                }
+            }
+
+            val progressMonitor = object : SftpProgressMonitor {
+                private var transferredBytes: Long = startOffset
+
+                override fun init(op: Int, src: String?, dest: String?, max: Long) {
+                    onProgress?.invoke(transferredBytes, if (totalBytes > 0L) totalBytes else max.coerceAtLeast(0L))
+                }
+
+                override fun count(count: Long): Boolean {
+                    transferredBytes += count
+                    onProgress?.invoke(
+                        transferredBytes,
+                        if (totalBytes > 0L) totalBytes else 0L
+                    )
+                    return true
+                }
+
+                override fun end() {
+                    onProgress?.invoke(
+                        totalBytes.takeIf { it > 0L } ?: transferredBytes,
+                        totalBytes.takeIf { it > 0L } ?: transferredBytes
+                    )
+                }
+            }
+
+            val mode = if (startOffset > 0L) ChannelSftp.RESUME else ChannelSftp.OVERWRITE
+            channel.put(stream, partPath, progressMonitor, mode)
+        }
+
+        // Verify remote size
+        val attrs = channel.statRemote(partPath)
+        val remoteSize = attrs.size
+        if (remoteSize != expectedSize) {
+            try {
+                channel.rm(partPath)
+            } catch (_: Exception) {}
+            return@withPooledSession Result.failure(
+                SizeMismatchException(remoteSize, expectedSize)
+            )
+        }
+
+        // Atomic rename
+        channel.rename(partPath, finalPath)
+        Result.success(Unit)
+    }
+
+    override suspend fun deletePartFile(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        remoteDirectory: String,
+        remoteFileName: String
+    ): Result<Unit> = withPooledSession(host, port, username, password) { channel ->
+        val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
+        val safeRemoteFileName = sanitizeRemoteFileName(remoteFileName)
+        val partFileName = "$safeRemoteFileName.part"
+        val partPath = buildChildPath(safeRemoteDirectory, partFileName)
+        try {
+            channel.rm(partPath)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun listPartFiles(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        remoteDirectory: String
+    ): Result<List<PartFileInfo>> = withPooledSession(host, port, username, password) { channel ->
+        try {
+            val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
+            @Suppress("UNCHECKED_CAST")
+            val entries = channel.ls(safeRemoteDirectory) as Vector<ChannelSftp.LsEntry>
+
+            val partFiles = entries
+                .asSequence()
+                .filter { entry ->
+                    entry.filename.endsWith(".part") && !entry.attrs.isDir
+                }
+                .map { entry ->
+                    PartFileInfo(
+                        name = entry.filename,
+                        fullPath = buildChildPath(safeRemoteDirectory, entry.filename),
+                        size = entry.attrs.size,
+                        modifiedAt = entry.attrs.mTime * 1000L
+                    )
+                }
+                .toList()
+            Result.success(partFiles)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun checkWritePermission(
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        directoryPath: String
+    ): Result<Boolean> = withPooledSession(host, port, username, password) { channel ->
+        try {
+            val safeDirectory = directoryPath.trim().ifBlank { channel.pwd() }
+            val testFileName = ".write_test_${java.util.UUID.randomUUID()}"
+            val testPath = buildChildPath(safeDirectory, testFileName)
+            
+            val emptyStream = java.io.ByteArrayInputStream(ByteArray(0))
+            channel.put(emptyStream, testPath)
+            try {
+                channel.rm(testPath)
+            } catch (_: Exception) {}
+            Result.success(true)
+        } catch (e: Exception) {
+            Log.w("JschSftpClient", "Write permission check failed on $directoryPath", e)
+            Result.success(false)
+        }
+    }
+}
+
+fun ChannelSftp.statRemote(path: String): com.jcraft.jsch.SftpATTRS {
+    return this.stat(path)
 }
