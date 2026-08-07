@@ -16,7 +16,7 @@ data class SftpConnectionConfig(
     val port: Int = 22,
     val username: String,
     val password: String,
-    val poolSize: Int = 1,
+    val poolSize: Int = 2,
     val sessionTimeoutMs: Int = 10_000,
     val channelTimeoutMs: Int = 10_000
 )

@@ -410,23 +410,20 @@ class SessionViewModel(
             isPhotoWatcherStarted = false
 
             val sessionId = activeSessionId
-            val dbHighestNumber = if (!sessionId.isNullOrBlank()) {
+            val uploadedNames = if (!sessionId.isNullOrBlank()) {
                 runCatching {
-                    val items = transferQueueRepository.getBySession(sessionId)
-                    val regex = Regex("(\\d+)\\.[a-zA-Z0-9]+$")
-                    items.mapNotNull { item ->
-                        val filename = item.targetFileName
-                        val match = regex.find(filename)
-                        match?.groupValues?.get(1)?.toIntOrNull()
-                    }.maxOrNull() ?: 0
-                }.getOrDefault(0)
+                    transferQueueRepository.getBySession(sessionId)
+                        .filter { it.status == "SUCCESS" }
+                        .map { it.targetFileName }
+                        .toSet()
+                }.getOrDefault(emptySet())
             } else {
-                0
+                emptySet()
             }
 
             repeat(PHOTO_WATCHER_INIT_RETRY_COUNT) { attempt ->
                 val initialized = runCatching {
-                    photoWatcher.initialize(dbHighestNumber)
+                    photoWatcher.initialize(uploadedNames)
                 }.getOrElse { throwable ->
                     Log.e(TAG, ">>> Failed to initialize PhotoWatcher on attempt=${attempt + 1}", throwable)
                     false

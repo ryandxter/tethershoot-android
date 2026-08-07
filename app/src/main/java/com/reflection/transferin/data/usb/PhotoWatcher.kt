@@ -86,19 +86,19 @@ class PhotoWatcher(
         Log.d(TAG, "Tree URI set: $uri")
     }
 
-    suspend fun initialize(dbHighestNumber: Int = 0): Boolean {
+    suspend fun initialize(uploadedFilenames: Set<String> = emptySet()): Boolean {
         if (isInitialized) {
             Log.d(TAG, "PhotoWatcher already initialized")
             return true
         }
 
-        Log.d(TAG, ">>> PhotoWatcher initializing with dbHighestNumber=$dbHighestNumber...")
+        Log.d(TAG, ">>> PhotoWatcher initializing with ${uploadedFilenames.size} uploaded filenames...")
 
         repeat(INIT_RETRY_COUNT) { attempt ->
             val storageIds = resolveStorageIds()
             if (storageIds.isNotEmpty()) {
                 Log.d(TAG, "Resolved storageIds=$storageIds on attempt=${attempt + 1}")
-                return initializeWithStorages(storageIds, dbHighestNumber)
+                return initializeWithStorages(storageIds, uploadedFilenames)
             }
 
             Log.w(
@@ -209,10 +209,13 @@ class PhotoWatcher(
 
     private val seenHandles = HashSet<Int>()
 
-    private suspend fun initializeWithStorages(storageIds: List<Int>, dbHighestNumber: Int): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun initializeWithStorages(storageIds: List<Int>, uploadedFilenames: Set<String>): Boolean = withContext(Dispatchers.IO) {
         seenHandles.clear()
         var maxCardNumber = 0
         var latestPhoto: PhotoMeta? = null
+
+        // Parse highest uploaded file number from database set
+        val highestDbNumber = uploadedFilenames.map { extractFileNumber(it) }.maxOrNull() ?: 0
 
         for (storageId in storageIds) {
             val handles = usbHelper.getAllObjectHandles(storageId)
@@ -232,9 +235,9 @@ class PhotoWatcher(
                     maxCardNumber = num
                 }
 
-                // If dbHighestNumber is 0 (new session), we add all existing files to seenHandles
-                // If dbHighestNumber is > 0 (reconnect), we only add files that have already been uploaded
-                if (dbHighestNumber == 0 || num <= dbHighestNumber) {
+                // If uploadedFilenames is empty (new session), we add all existing files to seenHandles
+                // If uploadedFilenames is not empty (reconnect), we only add files that have already been uploaded successfully
+                if (uploadedFilenames.isEmpty() || uploadedFilenames.contains(name)) {
                     seenHandles.add(handle)
                 }
 
@@ -257,11 +260,11 @@ class PhotoWatcher(
         }
 
         val mostLatestImageNumber = latestPhoto?.let { extractFileNumber(it.fileName) } ?: 0
-        baselineFileNumber = maxOf(maxCardNumber, mostLatestImageNumber, dbHighestNumber)
+        baselineFileNumber = maxOf(maxCardNumber, mostLatestImageNumber, highestDbNumber)
 
         Log.d(
             TAG,
-            ">>> PhotoWatcher initialized: maxCardNumber=$maxCardNumber, mostLatestImageNumber=$mostLatestImageNumber, dbHighestNumber=$dbHighestNumber -> baselineFileNumber=$baselineFileNumber, totalSeen=${seenHandles.size}"
+            ">>> PhotoWatcher initialized: maxCardNumber=$maxCardNumber, mostLatestImageNumber=$mostLatestImageNumber, highestDbNumber=$highestDbNumber -> baselineFileNumber=$baselineFileNumber, totalSeen=${seenHandles.size}"
         )
 
         if (latestPhoto != null) {
