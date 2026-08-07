@@ -107,6 +107,7 @@ class UsbDisconnectHandler(
     // Coroutine scope for async handling
     private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var broadcastJob: Job? = null
+    private var attachJob: Job? = null
 
     /**
      * Callback invoked when USB cable is disconnected.
@@ -139,12 +140,19 @@ class UsbDisconnectHandler(
                 UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
                     val device = extractUsbDevice(intent)
                     Log.d(TAG, "USB device attached: ${device?.deviceName}")
-                    device?.let { handleAttach(it) }
+                    device?.let { dev ->
+                        attachJob?.cancel()
+                        attachJob = handlerScope.launch { handleAttach(dev) }
+                    }
                 }
                 UsbManager.ACTION_USB_DEVICE_DETACHED -> {
                     val device = extractUsbDevice(intent)
                     Log.d(TAG, "USB device detached: ${device?.deviceName}")
-                    device?.let { handleDetach(it) }
+                    device?.let { dev ->
+                        attachJob?.cancel()
+                        attachJob = null
+                        handlerScope.launch { handleDetach(dev) }
+                    }
                 }
             }
         }
