@@ -110,6 +110,7 @@ class PhotoWatcher(
     }
 
     fun resetBaseline() {
+        seenHandles.clear()
         baselineTimestamp = 0
         baselineHandle = 0
         baselineFileName = ""
@@ -197,9 +198,16 @@ class PhotoWatcher(
         return result
     }
 
-    private suspend fun initializeWithStorages(storageIds: List<Int>): Boolean {
+    private val seenHandles = HashSet<Int>()
+
+    private suspend fun initializeWithStorages(storageIds: List<Int>): Boolean = withContext(Dispatchers.IO) {
+        seenHandles.clear()
+        for (storageId in storageIds) {
+            val handles = usbHelper.getAllObjectHandles(storageId)
+            seenHandles.addAll(handles)
+        }
         val latestPhoto = findLatestPhotoAcrossStorages(storageIds)
-        return if (latestPhoto != null) {
+        if (latestPhoto != null) {
             baselineTimestamp = latestPhoto.modifiedTime
             baselineHandle = latestPhoto.handle
             baselineFileName = latestPhoto.fileName
@@ -208,7 +216,7 @@ class PhotoWatcher(
 
             Log.d(
                 TAG,
-                ">>> PhotoWatcher initialized: storageId=${latestPhoto.storageId}, latest=${latestPhoto.fileName}, ts=${latestPhoto.modifiedTime}, handle=${latestPhoto.handle}"
+                ">>> PhotoWatcher initialized: storageId=${latestPhoto.storageId}, latest=${latestPhoto.fileName}, ts=${latestPhoto.modifiedTime}, handle=${latestPhoto.handle}, totalSeen=${seenHandles.size}"
             )
 
             _state.value = _state.value.copy(
@@ -240,62 +248,68 @@ class PhotoWatcher(
             return@withContext
         }
 
-        val latestPhoto = findLatestPhotoAcrossStorages(storageIds) ?: return@withContext
-
-        val isNewerTimestamp = latestPhoto.modifiedTime > baselineTimestamp
-        val isSameTimestampButDifferentHandle =
-            latestPhoto.modifiedTime == baselineTimestamp && latestPhoto.handle != baselineHandle
-        val isSameTimestampAndHandleButDifferentName =
-            latestPhoto.modifiedTime == baselineTimestamp &&
-                    latestPhoto.handle == baselineHandle &&
-                    latestPhoto.fileName != baselineFileName
-
-        val isStorageChangedWithValidPhoto =
-            latestPhoto.storageId != baselineStorageId && latestPhoto.modifiedTime >= baselineTimestamp
-
-        val isNewPhoto =
-            isNewerTimestamp ||
-                    isSameTimestampButDifferentHandle ||
-                    isSameTimestampAndHandleButDifferentName ||
-                    isStorageChangedWithValidPhoto
-
-        if (!isNewPhoto) return@withContext
-
-        Log.i(
-            TAG,
-            ">>> NEW PHOTO DETECTED: ${latestPhoto.fileName}, storageId=${latestPhoto.storageId}, ts=${latestPhoto.modifiedTime}, handle=${latestPhoto.handle} " +
-                    "(baselineStorageId=$baselineStorageId, baselineTs=$baselineTimestamp, baselineHandle=$baselineHandle, baselineName=$baselineFileName)"
-        )
-
-        val contentUri = buildContentUri(latestPhoto.handle)
-        val event = NewPhotoEvent(
-            handle = latestPhoto.handle,
-            fileName = latestPhoto.fileName,
-            fileSize = latestPhoto.size,
-            modifiedTime = latestPhoto.modifiedTime,
-            contentUri = contentUri
-        )
-
-        _newPhotos.emit(event)
-
-        baselineTimestamp = latestPhoto.modifiedTime
-        baselineHandle = latestPhoto.handle
-        baselineFileName = latestPhoto.fileName
-        baselineStorageId = latestPhoto.storageId
-
-        _state.value = _state.value.copy(
-            detectedCount = _state.value.detectedCount + 1,
-            lastDetectedAt = System.currentTimeMillis(),
-            lastKnownTimestamp = baselineTimestamp,
-            lastKnownHandle = baselineHandle,
-            statusText = if (contentUri != Uri.EMPTY) {
-                "Foto baru: ${latestPhoto.fileName}"
-            } else {
-                "Foto baru: ${latestPhoto.fileName} (tanpa SAF URI)"
+        val newHandlesToProcess = mutableListOf<Pair<Int, Int>>()
+        for (storageId in storageIds) {
+            val handles = usbHelper.getAllObjectHandles(storageId)
+            for (handle in handles) {
+                if (handle != 0 && !seenHandles.contains(handle)) {
+                    newHandlesToProcess.add(Pair(handle, storageId))
+                }
             }
-        )
+        }
 
-        Log.d(TAG, ">>> Photo emitted: ${latestPhoto.fileName}, storageId=${latestPhoto.storageId}, uri=$contentUri")
+        if (newHandlesToProcess.isEmpty()) return@withContext
+
+        Log.d(TAG, "checkForNewPhoto: found ${newHandlesToProcess.size} new handles not in seen list")
+
+        for ((handle, storageId) in newHandlesToProcess) {
+            seenHandles.add(handle)
+
+            val meta = usbHelper.getObjectMetadata(handle) ?: continue
+            val name = meta.name.orEmpty()
+            if (name.isBlank()) continue
+
+            val upperName = name.uppercase()
+            val ext = name.substringAfterLast('.', "").lowercase()
+
+            if (CTG_PATTERNS.any { upperName.contains(it) }) continue
+            if (ext !in PHOTO_EXTENSIONS) continue
+
+            Log.i(
+                TAG,
+                ">>> NEW PHOTO DETECTED: $name, storageId=$storageId, ts=${meta.modifiedTime ?: 0L}, handle=$handle"
+            )
+
+            val contentUri = buildContentUri(handle)
+            val event = NewPhotoEvent(
+                handle = handle,
+                fileName = name,
+                fileSize = meta.size,
+                modifiedTime = meta.modifiedTime ?: 0L,
+                contentUri = contentUri
+            )
+
+            _newPhotos.emit(event)
+
+            baselineTimestamp = meta.modifiedTime ?: 0L
+            baselineHandle = handle
+            baselineFileName = name
+            baselineStorageId = storageId
+
+            _state.value = _state.value.copy(
+                detectedCount = _state.value.detectedCount + 1,
+                lastDetectedAt = System.currentTimeMillis(),
+                lastKnownTimestamp = baselineTimestamp,
+                lastKnownHandle = baselineHandle,
+                statusText = if (contentUri != Uri.EMPTY) {
+                    "Foto baru: $name"
+                } else {
+                    "Foto baru: $name (tanpa SAF URI)"
+                }
+            )
+
+            Log.d(TAG, ">>> Photo emitted: $name, storageId=$storageId, uri=$contentUri")
+        }
     }
 
     private fun buildContentUri(handle: Int): Uri {

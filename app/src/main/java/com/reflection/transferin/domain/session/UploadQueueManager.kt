@@ -51,7 +51,15 @@ class UploadQueueManager(
                 ?: File(job.localTempPath).name.takeIf { it.isNotBlank() }
                 ?: "unknown_file"
 
-        val fileName = sanitizeFileName(fallbackFileName)
+        var cleanFileName = fallbackFileName
+        val prefixRegex = Regex("^\\d+_(.+)$")
+        val matchResult = prefixRegex.matchEntire(cleanFileName)
+        if (matchResult != null) {
+            cleanFileName = matchResult.groupValues[1]
+        }
+
+        val fileName = sanitizeFileName(cleanFileName)
+        android.util.Log.d("UploadQueueManager", "enqueueMediaJob: job.originalFileName=${job.originalFileName}, metadata.fileName=${metadata.fileName}, fallbackFileName=$fallbackFileName, cleanFileName=$cleanFileName, final fileName=$fileName")
         val mimeType = metadata.mimeType ?: detectMimeType(fileName)
         val fileType = detectFileType(mimeType)
         val fileSizeBytes = metadata.fileSizeBytes.coerceAtLeast(0L)
