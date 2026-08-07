@@ -57,6 +57,13 @@ class PhotoWatcher(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private val numberRegex = Regex("(\\d+)\\.[a-zA-Z0-9]+$")
+
+    private fun extractFileNumber(name: String): Int {
+        val match = numberRegex.find(name)
+        return match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+    }
+
     private val _state = MutableStateFlow(PhotoWatcherState())
     val state: StateFlow<PhotoWatcherState> = _state.asStateFlow()
 
@@ -70,6 +77,7 @@ class PhotoWatcher(
     private var baselineHandle: Int = 0
     private var baselineFileName: String = ""
     private var baselineStorageId: Int = 0
+    private var baselineFileNumber: Int = 0
 
     private var treeUri: Uri? = null
 
@@ -78,19 +86,19 @@ class PhotoWatcher(
         Log.d(TAG, "Tree URI set: $uri")
     }
 
-    suspend fun initialize(): Boolean {
+    suspend fun initialize(dbHighestNumber: Int = 0): Boolean {
         if (isInitialized) {
             Log.d(TAG, "PhotoWatcher already initialized")
             return true
         }
 
-        Log.d(TAG, ">>> PhotoWatcher initializing...")
+        Log.d(TAG, ">>> PhotoWatcher initializing with dbHighestNumber=$dbHighestNumber...")
 
         repeat(INIT_RETRY_COUNT) { attempt ->
             val storageIds = resolveStorageIds()
             if (storageIds.isNotEmpty()) {
                 Log.d(TAG, "Resolved storageIds=$storageIds on attempt=${attempt + 1}")
-                return initializeWithStorages(storageIds)
+                return initializeWithStorages(storageIds, dbHighestNumber)
             }
 
             Log.w(
@@ -115,6 +123,7 @@ class PhotoWatcher(
         baselineHandle = 0
         baselineFileName = ""
         baselineStorageId = 0
+        baselineFileNumber = 0
         isInitialized = false
         _state.value = _state.value.copy(
             detectedCount = 0,
@@ -200,13 +209,61 @@ class PhotoWatcher(
 
     private val seenHandles = HashSet<Int>()
 
-    private suspend fun initializeWithStorages(storageIds: List<Int>): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun initializeWithStorages(storageIds: List<Int>, dbHighestNumber: Int): Boolean = withContext(Dispatchers.IO) {
         seenHandles.clear()
+        var maxCardNumber = 0
+        var latestPhoto: PhotoMeta? = null
+
         for (storageId in storageIds) {
             val handles = usbHelper.getAllObjectHandles(storageId)
-            seenHandles.addAll(handles)
+            for (handle in handles) {
+                val meta = usbHelper.getObjectMetadata(handle) ?: continue
+                val name = meta.name.orEmpty()
+                if (name.isBlank()) continue
+
+                val upperName = name.uppercase()
+                val ext = name.substringAfterLast('.', "").lowercase()
+
+                if (CTG_PATTERNS.any { upperName.contains(it) }) continue
+                if (ext !in PHOTO_EXTENSIONS) continue
+
+                val num = extractFileNumber(name)
+                if (num > maxCardNumber) {
+                    maxCardNumber = num
+                }
+
+                // If dbHighestNumber is 0 (new session), we add all existing files to seenHandles
+                // If dbHighestNumber is > 0 (reconnect), we only add files that have already been uploaded
+                if (dbHighestNumber == 0 || num <= dbHighestNumber) {
+                    seenHandles.add(handle)
+                }
+
+                val modifiedTime = meta.modifiedTime ?: 0L
+                val candidate = PhotoMeta(
+                    storageId = storageId,
+                    handle = handle,
+                    fileName = name,
+                    size = meta.size,
+                    modifiedTime = modifiedTime
+                )
+
+                latestPhoto = when {
+                    latestPhoto == null -> candidate
+                    candidate.modifiedTime > latestPhoto.modifiedTime -> candidate
+                    candidate.modifiedTime == latestPhoto.modifiedTime && candidate.handle > latestPhoto.handle -> candidate
+                    else -> latestPhoto
+                }
+            }
         }
-        val latestPhoto = findLatestPhotoAcrossStorages(storageIds)
+
+        val mostLatestImageNumber = latestPhoto?.let { extractFileNumber(it.fileName) } ?: 0
+        baselineFileNumber = maxOf(maxCardNumber, mostLatestImageNumber, dbHighestNumber)
+
+        Log.d(
+            TAG,
+            ">>> PhotoWatcher initialized: maxCardNumber=$maxCardNumber, mostLatestImageNumber=$mostLatestImageNumber, dbHighestNumber=$dbHighestNumber -> baselineFileNumber=$baselineFileNumber, totalSeen=${seenHandles.size}"
+        )
+
         if (latestPhoto != null) {
             baselineTimestamp = latestPhoto.modifiedTime
             baselineHandle = latestPhoto.handle
@@ -214,31 +271,25 @@ class PhotoWatcher(
             baselineStorageId = latestPhoto.storageId
             isInitialized = true
 
-            Log.d(
-                TAG,
-                ">>> PhotoWatcher initialized: storageId=${latestPhoto.storageId}, latest=${latestPhoto.fileName}, ts=${latestPhoto.modifiedTime}, handle=${latestPhoto.handle}, totalSeen=${seenHandles.size}"
-            )
-
             _state.value = _state.value.copy(
                 lastKnownTimestamp = baselineTimestamp,
                 lastKnownHandle = baselineHandle,
-                statusText = "Baseline: ${latestPhoto.fileName}"
+                statusText = "Baseline: ${latestPhoto.fileName} (num=$baselineFileNumber)"
             )
-            true
         } else {
-            Log.w(TAG, "No photos found on storageIds=$storageIds, watcher initialized with empty baseline")
             baselineTimestamp = 0
             baselineHandle = 0
             baselineFileName = ""
             baselineStorageId = 0
             isInitialized = true
+
             _state.value = _state.value.copy(
                 lastKnownTimestamp = 0,
                 lastKnownHandle = 0,
-                statusText = "Baseline kosong"
+                statusText = "Baseline kosong (num=$baselineFileNumber)"
             )
-            true
         }
+        true
     }
 
     private suspend fun checkForNewPhoto() = withContext(Dispatchers.IO) {
@@ -275,6 +326,13 @@ class PhotoWatcher(
             if (CTG_PATTERNS.any { upperName.contains(it) }) continue
             if (ext !in PHOTO_EXTENSIONS) continue
 
+            // Ensure photo number is valid against baseline (only filter if card wasn't formatted)
+            val num = extractFileNumber(name)
+            if (num < baselineFileNumber && seenHandles.size > 1) {
+                Log.d(TAG, "checkForNewPhoto: file $name has number $num < baseline $baselineFileNumber, skipping")
+                continue
+            }
+
             Log.i(
                 TAG,
                 ">>> NEW PHOTO DETECTED: $name, storageId=$storageId, ts=${meta.modifiedTime ?: 0L}, handle=$handle"
@@ -295,6 +353,9 @@ class PhotoWatcher(
             baselineHandle = handle
             baselineFileName = name
             baselineStorageId = storageId
+            if (num > baselineFileNumber) {
+                baselineFileNumber = num
+            }
 
             _state.value = _state.value.copy(
                 detectedCount = _state.value.detectedCount + 1,

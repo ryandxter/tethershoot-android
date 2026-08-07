@@ -258,9 +258,24 @@ class SessionViewModel(
             photoWatcher.newPhotos.collect { event ->
                 Log.i(TAG, ">>> NEW PHOTO: ${event.fileName}, uri=${event.contentUri}")
 
-                if (event.contentUri == Uri.EMPTY || event.contentUri.toString().isBlank()) {
-                    Log.d(TAG, ">>> PhotoWatcher emitted empty Uri, skipping (tetheredEngine/ShootModeEngine MediaStore query will handle this)")
+                val sessionId = activeSessionId
+                if (sessionId.isNullOrBlank()) {
+                    Log.w(TAG, "No active session id, skip new photo enqueue")
                     return@collect
+                }
+
+                var localFilePath = ""
+                var sourceUriString = event.contentUri.toString()
+
+                if (event.contentUri == Uri.EMPTY || event.contentUri.toString().isBlank()) {
+                    Log.d(TAG, ">>> PhotoWatcher emitted empty Uri, downloading via MTP direct...")
+                    val localFile = downloadMtpFile(event.handle, event.fileName)
+                    if (localFile == null) {
+                        Log.e(TAG, ">>> Failed to download new photo ${event.fileName} via MTP")
+                        return@collect
+                    }
+                    localFilePath = localFile.absolutePath
+                    sourceUriString = Uri.fromFile(localFile).toString()
                 }
 
                 _tetherState.update {
@@ -270,18 +285,12 @@ class SessionViewModel(
                     )
                 }
 
-                val sessionId = activeSessionId
-                if (sessionId.isNullOrBlank()) {
-                    Log.w(TAG, "No active session id, skip new photo enqueue")
-                    return@collect
-                }
-
                 val job = MediaJob(
                     id = UUID.randomUUID().toString(),
                     projectId = sessionId,
-                    localTempPath = "",
+                    localTempPath = localFilePath,
                     originalFileName = event.fileName,
-                    sourceUri = event.contentUri.toString(),
+                    sourceUri = sourceUriString,
                     sourceFingerprint = "${event.handle}|${event.fileName}|${event.fileSize}|${event.modifiedTime}",
                     fileSizeBytes = event.fileSize,
                     lastModifiedEpochMs = event.modifiedTime,
@@ -400,9 +409,24 @@ class SessionViewModel(
 
             isPhotoWatcherStarted = false
 
+            val sessionId = activeSessionId
+            val dbHighestNumber = if (!sessionId.isNullOrBlank()) {
+                runCatching {
+                    val items = transferQueueRepository.getBySession(sessionId)
+                    val regex = Regex("(\\d+)\\.[a-zA-Z0-9]+$")
+                    items.mapNotNull { item ->
+                        val filename = item.targetFileName
+                        val match = regex.find(filename)
+                        match?.groupValues?.get(1)?.toIntOrNull()
+                    }.maxOrNull() ?: 0
+                }.getOrDefault(0)
+            } else {
+                0
+            }
+
             repeat(PHOTO_WATCHER_INIT_RETRY_COUNT) { attempt ->
                 val initialized = runCatching {
-                    photoWatcher.initialize()
+                    photoWatcher.initialize(dbHighestNumber)
                 }.getOrElse { throwable ->
                     Log.e(TAG, ">>> Failed to initialize PhotoWatcher on attempt=${attempt + 1}", throwable)
                     false
