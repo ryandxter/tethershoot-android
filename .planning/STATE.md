@@ -1,37 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1
-milestone_name: Phases
-status: Awaiting next milestone
-stopped_at: Milestone v1 complete
-last_updated: "2026-08-07T08:11:36.890Z"
+milestone: v2
+milestone_name: Camera File Numbering & Traversal Alignment
+status: Awaiting plan
+stopped_at: Phase 6 defining
+last_updated: "2026-08-07T22:25:00.000Z"
 last_activity: 2026-08-07
-last_activity_desc: Milestone v1 completed and archived
+last_activity_desc: Milestone v2 initialized
 progress:
-  total_phases: 5
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
-  percent: 60
-current_phase_name: defining roadmap
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+current_phase_name: Camera File Numbering & Traversal Alignment
 ---
 
 ## Current Position
 
-Phase: Milestone v1 complete
+Phase: Phase 6
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-08-07 — Milestone v1 completed and archived
+Status: Awaiting plan
+Last activity: 2026-08-07 — Milestone v2 initialized
 
 ## Context
 
-**Active Goal:** Resolve technical concerns, debt, and fragility points in connection pooling, camera compatibility, service lifecycles, large file transfers, and migrations.
+**Active Goal:** Correctly align photo-watching and file-syncing boundaries to respect actual camera memory structures (nested DCIM directories) and filename numbering formats.
 
-1. Phase 1: SFTP Pooling & Reconnection Resilience (pending)
-2. Phase 2: USB Debounce & Service Compliance (pending)
-3. Phase 3: Multi-Vendor MTP Fallback (pending)
-4. Phase 4: Resumable Transfers & Server Cleanup (pending)
-5. Phase 5: Room Migration Validation Suite (pending)
+1. Phase 6: Camera File Number Baseline Extraction (pending)
+2. Phase 7: Robust RAW+JPG Co-existence & Verification (pending)
 
 ## Decisions
 
@@ -52,10 +49,10 @@ Last activity: 2026-08-07 — Milestone v1 completed and archived
 
 ## Session
 
-**Last session:** 2026-08-07T08:10:07.402Z
-**Stopped at:** Milestone v1 complete
+**Last session:** 2026-08-07T22:20:00.000Z
+**Stopped at:** Phase 6 defining
 **Resume file:** .planning/STATE.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 6 with `/gsd-discuss-phase 6 --interactive`

@@ -60,16 +60,14 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
-## Current Milestone: v1 Technical Concerns Resolution
+## Current Milestone: v2 Camera File Numbering & Traversal Alignment
 
-**Goal:** Resolve technical concerns, debt, and fragility points in connection pooling, camera compatibility, service lifecycles, large file transfers, and migrations.
+**Goal:** Correctly align photo-watching and file-syncing boundaries to respect actual camera memory structures (nested DCIM directories) and filename numbering formats.
 
 **Target features:**
-- Resolve SFTP Pool Resource Leaks & Network Handovers
-- Resolve USB Camera Compatibility & Vendor Quirks
-- Resolve Foreground Service Lifecycle & USB Detach Race Conditions
-- Optimize Large Media Resumability & Temp File Cleanup
-- Validate Database Migration Robustness
+- Implement starting numbering baseline extraction from existing card files.
+- Enable camera DCIM subfolders recursive traversal.
+- Ensure flawless RAW+JPG concurrent file emission and synchronization.
 
 ---
 
