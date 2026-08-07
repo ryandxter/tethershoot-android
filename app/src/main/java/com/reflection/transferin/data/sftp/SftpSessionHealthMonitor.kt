@@ -1,5 +1,8 @@
 package com.reflection.transferin.data.sftp
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -58,11 +61,23 @@ data class SessionHealth(
  * @property checkIntervalMs Polling interval for health checks in milliseconds (default 10,000)
  */
 class SftpSessionHealthMonitor(
+    private val context: Context,
     private val checkIntervalMs: Long = 10_000
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + Job())
     private var monitoringJob: Job? = null
     private val mutex = Mutex()
+
+    private fun getDynamicCheckInterval(): Long {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return checkIntervalMs
+        val activeNetwork = cm.activeNetwork ?: return checkIntervalMs
+        val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return checkIntervalMs
+        return if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+            10_000L
+        } else {
+            30_000L
+        }
+    }
 
     private val _healthState = MutableStateFlow<Map<String, SessionHealth>>(emptyMap())
     /** Current health state for all monitored sessions */
@@ -84,7 +99,7 @@ class SftpSessionHealthMonitor(
         monitoringJob = scope.launch {
             while (isActive) {
                 checkAllSessions()
-                delay(checkIntervalMs)
+                delay(getDynamicCheckInterval())
             }
         }
     }
@@ -148,8 +163,14 @@ class SftpSessionHealthMonitor(
     private suspend fun checkAllSessions() {
         val pool = sessionPool ?: return
 
-        // Get current sessions from pool - this would need to be added to SftpSessionPool
-        // For now, we track sessions that register themselves
+        val sessions = pool.getActiveSessions()
+        for (session in sessions) {
+            val isHealthy = checkSession(session)
+            if (!isHealthy) {
+                pool.handleSessionFailure(session)
+            }
+        }
+
         val currentHealth = _healthState.value.toMutableMap()
         val now = System.currentTimeMillis()
 
