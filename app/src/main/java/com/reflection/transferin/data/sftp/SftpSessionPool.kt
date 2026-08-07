@@ -264,7 +264,7 @@ class SftpSessionPool(
                 // Most SFTP errors are transient and retryable
                 // Only certain errors like permission denied are not retryable
                 val id = e.id
-                id !in listOf(3L, 4L) // SSH_FX_PERMISSION_DENIED=3, SSH_FX_BAD_MESSAGE=4
+                id !in listOf(3, 4) // SSH_FX_PERMISSION_DENIED=3, SSH_FX_BAD_MESSAGE=4
             }
             else -> false
         }
@@ -301,6 +301,10 @@ class SftpSessionPool(
      */
     fun setHealthMonitor(monitor: SftpSessionHealthMonitor) {
         healthMonitor = monitor
+    }
+
+    fun getActiveSessions(): List<PooledSftpSession> {
+        return pool.toList()
     }
 
     private fun findHealthySession(): PooledSftpSession? {
