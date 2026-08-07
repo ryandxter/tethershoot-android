@@ -14,7 +14,9 @@ import com.reflection.transferin.data.local.dao.NasConnectionDao
 import com.reflection.transferin.data.local.dao.TransferQueueDao
 import com.reflection.transferin.data.local.db.DatabaseProvider
 import com.reflection.transferin.data.local.entity.TransferQueueItemEntity
-import com.reflection.transferin.data.sftp.JschSftpClient
+import com.reflection.transferin.data.sftp.DelegatingSftpClient
+import com.reflection.transferin.data.sftp.UploadCheckpointManager
+import com.reflection.transferin.data.sftp.TwoPhaseUploadHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,6 +34,7 @@ class TransferUploadWorker(
         const val KEY_PROGRESS_PERCENT = "key_progress_percent"
         const val KEY_STATUS = "key_status"
         const val KEY_ERROR_MESSAGE = "key_error_message"
+        const val KEY_SKIP_STALE_CLEANUP = "skip_stale_cleanup"
 
         /**
          * Pause state for USB disconnect handling.
@@ -67,18 +70,15 @@ class TransferUploadWorker(
     private val database = DatabaseProvider.getDatabase(appContext)
     private val queueDao: TransferQueueDao = database.transferQueueDao()
     private val nasDao: NasConnectionDao = database.nasConnectionDao()
-    private val sftpClient = JschSftpClient(appContext)
+    private val sftpClient = DelegatingSftpClient(appContext)
+    private val checkpointManager = UploadCheckpointManager(queueDao)
+    private val twoPhaseHandler = TwoPhaseUploadHandler(sftpClient, checkpointManager, queueDao)
 
     override suspend fun doWork(): Result {
         // Check if uploads are paused due to USB disconnect
         if (isPaused) {
             Log.d(TAG, "Uploads are paused (USB disconnected), deferring with exponential backoff")
             return Result.retry()
-                .setBackoffCriteria(
-                    BackoffPolicy.EXPONENTIAL,
-                    WorkRequest.MIN_BACKOFF_MILLIS,
-                    TimeUnit.MILLISECONDS
-                )
         }
 
         val queueItemId = inputData.getString(KEY_QUEUE_ITEM_ID).orEmpty()
@@ -160,39 +160,35 @@ class TransferUploadWorker(
                 )
             )
 
-            Log.d(
-                TAG,
-                "doWork() upload begin: queueItemId=${queueItem.id}, sourceUri=$localUri, remoteDirectory=$remoteDirectory, remoteFileName=$remoteFileName, resolvedFileSize=$resolvedFileSize"
-            )
+            val skipCleanup = inputData.getBoolean(KEY_SKIP_STALE_CLEANUP, false)
+            if (!skipCleanup) {
+                try {
+                    twoPhaseHandler.staleTmpFileCleanup(
+                        host = nasConnection.host,
+                        port = nasConnection.port,
+                        username = nasConnection.username,
+                        password = nasConnection.password,
+                        remoteDirectory = remoteDirectory
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Stale tmp file cleanup failed, proceeding with upload: ${e.message}", e)
+                }
+            }
 
-            var latestUploadedBytes = 0L
-            var latestProgressPercent = 0
-
-            val uploadResult = sftpClient.uploadFileFromUri(
+            val uploadResult = twoPhaseHandler.upload(
+                queueItem = queueItem,
+                localUri = localUri,
                 host = nasConnection.host,
                 port = nasConnection.port,
                 username = nasConnection.username,
                 password = nasConnection.password,
-                localUri = localUri,
                 remoteDirectory = remoteDirectory,
-                remoteFileName = remoteFileName,
-                onProgress = { bytesTransferred, totalBytes ->
-                    val effectiveTotal = when {
-                        totalBytes > 0L -> totalBytes
-                        resolvedFileSize > 0L -> resolvedFileSize
-                        else -> 0L
-                    }
-
-                    latestUploadedBytes = bytesTransferred.coerceAtLeast(0L)
-                    latestProgressPercent = if (effectiveTotal > 0L) {
-                        ((latestUploadedBytes * 100L) / effectiveTotal)
-                            .toInt()
-                            .coerceIn(0, 100)
-                    } else {
-                        0
-                    }
-                }
+                remoteFileName = remoteFileName
             )
+
+            val currentItem = queueDao.getById(queueItem.id)
+            val latestUploadedBytes = currentItem?.bytesUploaded ?: 0L
+            val latestProgressPercent = currentItem?.progressPercent ?: 0
 
             if (isStopped) {
                 Log.w(TAG, "doWork() stopped after upload attempt: queueItemId=${queueItem.id}")

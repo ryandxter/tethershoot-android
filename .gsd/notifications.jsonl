@@ -1,0 +1,1 @@
+{"id":"5037a09f-90f0-4710-aa53-b2f0ad837928","ts":"2026-07-31T04:32:30.741Z","severity":"warning","message":"Skipped compaction because there was no conversation history to summarize; history preserved.","source":"notify","read":false}

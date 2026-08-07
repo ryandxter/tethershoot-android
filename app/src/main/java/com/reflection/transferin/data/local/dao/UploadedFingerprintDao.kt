@@ -29,7 +29,7 @@ interface UploadedFingerprintDao {
      * Batch check: returns set of fingerprints that already exist.
      */
     @Query("SELECT fingerprint FROM uploaded_fingerprints WHERE fingerprint IN (:fingerprints)")
-    suspend fun filterExisting(fingerprints: List<String>): Set<String>
+    suspend fun filterExisting(fingerprints: List<String>): List<String>
 
     /**
      * Insert a single fingerprint record.
@@ -46,7 +46,7 @@ interface UploadedFingerprintDao {
     /**
      * Get all fingerprints for a session.
      */
-    @Query("SELECT fingerprint FROM uploaded_fingerprints WHERE sessionId = :sessionId")
+    @Query("SELECT fingerprint FROM uploaded_fingerprints WHERE session_id = :sessionId")
     suspend fun getBySession(sessionId: String): List<String>
 
     /**
@@ -58,19 +58,19 @@ interface UploadedFingerprintDao {
     /**
      * Count fingerprints for a session.
      */
-    @Query("SELECT COUNT(*) FROM uploaded_fingerprints WHERE sessionId = :sessionId")
+    @Query("SELECT COUNT(*) FROM uploaded_fingerprints WHERE session_id = :sessionId")
     suspend fun countBySession(sessionId: String): Int
 
     /**
      * Delete all fingerprints for a session.
      */
-    @Query("DELETE FROM uploaded_fingerprints WHERE sessionId = :sessionId")
+    @Query("DELETE FROM uploaded_fingerprints WHERE session_id = :sessionId")
     suspend fun deleteBySession(sessionId: String)
 
     /**
      * Delete fingerprints older than timestamp (for cleanup).
      */
-    @Query("DELETE FROM uploaded_fingerprints WHERE uploadedAt < :beforeTimestamp")
+    @Query("DELETE FROM uploaded_fingerprints WHERE uploaded_at < :beforeTimestamp")
     suspend fun deleteOlderThan(beforeTimestamp: Long)
 
     /**
@@ -82,6 +82,6 @@ interface UploadedFingerprintDao {
     /**
      * Observe fingerprint count for a session.
      */
-    @Query("SELECT COUNT(*) FROM uploaded_fingerprints WHERE sessionId = :sessionId")
+    @Query("SELECT COUNT(*) FROM uploaded_fingerprints WHERE session_id = :sessionId")
     fun observeCountBySession(sessionId: String): Flow<Int>
 }

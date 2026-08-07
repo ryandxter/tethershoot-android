@@ -82,6 +82,7 @@ class CtgWatcher(
     val ctgChanges: SharedFlow<CtgChangeEvent> = _ctgChanges.asSharedFlow()
 
     private var watchJob: Job? = null
+    private var cachedCtgHandle: Int? = null
     private var isInitialized = false
 
     // Baseline values
@@ -291,6 +292,7 @@ class CtgWatcher(
         baselineSnapshot = null
         lastEmittedSnapshot = null
         currentSnapshot = null
+        cachedCtgHandle = null
         _state.value = _state.value.copy(
             changeCount = 0,
             lastChangeAt = null
@@ -375,6 +377,22 @@ class CtgWatcher(
      */
     private suspend fun findCtgFile(storageId: Int): CtgFileMeta? = withContext(Dispatchers.IO) {
         try {
+            cachedCtgHandle?.let { handle ->
+                val meta = usbHelper.getObjectMetadata(handle)
+                if (meta != null) {
+                    val name = meta.name.uppercase()
+                    if (CTG_PATTERNS.any { name.contains(it) }) {
+                        return@withContext CtgFileMeta(
+                            handle = handle,
+                            name = meta.name,
+                            timestamp = meta.modifiedTime ?: 0,
+                            size = meta.size
+                        )
+                    }
+                }
+                cachedCtgHandle = null
+            }
+
             val handles = usbHelper.getAllObjectHandles(storageId)
 
             for (handle in handles) {
@@ -382,6 +400,7 @@ class CtgWatcher(
                 val name = meta.name.uppercase()
 
                 if (CTG_PATTERNS.any { name.contains(it) }) {
+                    cachedCtgHandle = handle
                     return@withContext CtgFileMeta(
                         handle = handle,
                         name = meta.name,

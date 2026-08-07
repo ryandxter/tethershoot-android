@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Contoh Canon 04A9:32E2 (hex) = 1193 / 13026 (decimal) -->
+    <usb-device
+        vendor-id="1193"
+        product-id="13026" />
+
+    <!-- Kalau nanti ada model lain, tinggal tambah:
+    <usb-device vendor-id="XXXX" product-id="YYYY" />
+    -->
+
+</resources>

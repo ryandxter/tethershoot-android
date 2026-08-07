@@ -18,9 +18,9 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "uploaded_fingerprints",
     indices = [
-        Index(value = ["sessionId"]),
-        Index(value = ["uploadedAt"]),
-        Index(value = ["sessionId", "uploadedAt"])
+        Index(value = ["session_id"]),
+        Index(value = ["uploaded_at"]),
+        Index(value = ["session_id", "uploaded_at"])
     ]
 )
 data class UploadedFingerprintEntity(

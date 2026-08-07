@@ -340,8 +340,8 @@ class JschSftpClient(
     ): Result<Unit> = withPooledSession(host, port, username, password) { channel ->
         val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
         val safeRemoteFileName = sanitizeRemoteFileName(remoteFileName)
-        val partFileName = "$safeRemoteFileName.part"
-        val partPath = buildChildPath(safeRemoteDirectory, partFileName)
+        val tmpFileName = "$safeRemoteFileName.tmp"
+        val tmpPath = buildChildPath(safeRemoteDirectory, tmpFileName)
         val finalPath = buildChildPath(safeRemoteDirectory, safeRemoteFileName)
 
         val inputStream = context.contentResolver.openInputStream(localUri)
@@ -386,15 +386,15 @@ class JschSftpClient(
             }
 
             val mode = if (startOffset > 0L) ChannelSftp.RESUME else ChannelSftp.OVERWRITE
-            channel.put(stream, partPath, progressMonitor, mode)
+            channel.put(stream, tmpPath, progressMonitor, mode)
         }
 
         // Verify remote size
-        val attrs = channel.statRemote(partPath)
+        val attrs = channel.statRemote(tmpPath)
         val remoteSize = attrs.size
         if (remoteSize != expectedSize) {
             try {
-                channel.rm(partPath)
+                channel.rm(tmpPath)
             } catch (_: Exception) {}
             return@withPooledSession Result.failure(
                 SizeMismatchException(remoteSize, expectedSize)
@@ -402,11 +402,11 @@ class JschSftpClient(
         }
 
         // Atomic rename
-        channel.rename(partPath, finalPath)
+        channel.rename(tmpPath, finalPath)
         Result.success(Unit)
     }
 
-    override suspend fun deletePartFile(
+    override suspend fun deleteTmpFile(
         host: String,
         port: Int,
         username: String,
@@ -416,35 +416,35 @@ class JschSftpClient(
     ): Result<Unit> = withPooledSession(host, port, username, password) { channel ->
         val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
         val safeRemoteFileName = sanitizeRemoteFileName(remoteFileName)
-        val partFileName = "$safeRemoteFileName.part"
-        val partPath = buildChildPath(safeRemoteDirectory, partFileName)
+        val tmpFileName = "$safeRemoteFileName.tmp"
+        val tmpPath = buildChildPath(safeRemoteDirectory, tmpFileName)
         try {
-            channel.rm(partPath)
+            channel.rm(tmpPath)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun listPartFiles(
+    override suspend fun listTmpFiles(
         host: String,
         port: Int,
         username: String,
         password: String,
         remoteDirectory: String
-    ): Result<List<PartFileInfo>> = withPooledSession(host, port, username, password) { channel ->
+    ): Result<List<TmpFileInfo>> = withPooledSession(host, port, username, password) { channel ->
         try {
             val safeRemoteDirectory = remoteDirectory.trim().ifBlank { channel.pwd() }
             @Suppress("UNCHECKED_CAST")
             val entries = channel.ls(safeRemoteDirectory) as Vector<ChannelSftp.LsEntry>
 
-            val partFiles = entries
+            val tmpFiles = entries
                 .asSequence()
                 .filter { entry ->
-                    entry.filename.endsWith(".part") && !entry.attrs.isDir
+                    entry.filename.endsWith(".tmp") && !entry.attrs.isDir
                 }
                 .map { entry ->
-                    PartFileInfo(
+                    TmpFileInfo(
                         name = entry.filename,
                         fullPath = buildChildPath(safeRemoteDirectory, entry.filename),
                         size = entry.attrs.size,
@@ -452,7 +452,7 @@ class JschSftpClient(
                     )
                 }
                 .toList()
-            Result.success(partFiles)
+            Result.success(tmpFiles)
         } catch (e: Exception) {
             Result.failure(e)
         }

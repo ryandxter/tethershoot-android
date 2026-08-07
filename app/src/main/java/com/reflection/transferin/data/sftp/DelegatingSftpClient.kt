@@ -136,7 +136,7 @@ class DelegatingSftpClient(
         }
     }
 
-    override suspend fun deletePartFile(
+    override suspend fun deleteTmpFile(
         host: String,
         port: Int,
         username: String,
@@ -146,24 +146,24 @@ class DelegatingSftpClient(
     ): Result<Unit> {
         val client = getActiveClient()
         return if (client is WebDavClient) {
-            client.deletePartFileWithProtocol(host, port, username, password, remoteDirectory, remoteFileName, getHttpsOption())
+            client.deleteTmpFileWithProtocol(host, port, username, password, remoteDirectory, remoteFileName, getHttpsOption())
         } else {
-            client.deletePartFile(host, port, username, password, remoteDirectory, remoteFileName)
+            client.deleteTmpFile(host, port, username, password, remoteDirectory, remoteFileName)
         }
     }
 
-    override suspend fun listPartFiles(
+    override suspend fun listTmpFiles(
         host: String,
         port: Int,
         username: String,
         password: String,
         remoteDirectory: String
-    ): Result<List<PartFileInfo>> {
+    ): Result<List<TmpFileInfo>> {
         val client = getActiveClient()
         return if (client is WebDavClient) {
-            client.listPartFilesWithProtocol(host, port, username, password, remoteDirectory, getHttpsOption())
+            client.listTmpFilesWithProtocol(host, port, username, password, remoteDirectory, getHttpsOption())
         } else {
-            client.listPartFiles(host, port, username, password, remoteDirectory)
+            client.listTmpFiles(host, port, username, password, remoteDirectory)
         }
     }
 
