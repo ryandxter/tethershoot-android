@@ -247,7 +247,7 @@ class CtgStateDifferTest {
         handle: Int,
         filename: String,
         size: Long,
-        modifiedTime: Long = System.currentTimeMillis()
+        modifiedTime: Long = 1000L
     ): CtgMediaEntry {
         return CtgMediaEntry(
             handle = handle,
