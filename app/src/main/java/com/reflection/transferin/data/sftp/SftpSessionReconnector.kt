@@ -2,6 +2,7 @@ package com.reflection.transferin.data.sftp
 
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.SftpException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -138,6 +139,15 @@ class SftpSessionReconnector(
     private val maxRetries: Int = 5,
     private val maxBackoffMs: Long = 30_000
 ) {
+    companion object {
+        private val _globalReconnectionState = MutableStateFlow<ReconnectionState?>(null)
+        val globalReconnectionState: StateFlow<ReconnectionState?> = _globalReconnectionState.asStateFlow()
+
+        fun updateGlobalState(state: ReconnectionState?) {
+            _globalReconnectionState.value = state
+        }
+    }
+
     private val circuitBreaker = SftpCircuitBreaker()
 
     // Exponential backoff delays per RESILIENCE-03
@@ -184,6 +194,7 @@ class SftpSessionReconnector(
         if (circuitBreaker.isOpen) {
             if (!circuitBreaker.attemptReset()) {
                 _reconnectionState.emit(ReconnectionState.CircuitOpen)
+                updateGlobalState(ReconnectionState.CircuitOpen)
                 _internalState.value = InternalState(
                     isReconnecting = false,
                     currentAttempt = 0,
@@ -210,11 +221,13 @@ class SftpSessionReconnector(
 
             // Notify UI of retry attempt
             _reconnectionState.emit(ReconnectionState.Attempting(attempt, delayMs))
+            updateGlobalState(ReconnectionState.Attempting(attempt, delayMs))
 
             // Allow callback to cancel (e.g., user disconnected)
             val shouldContinue = onAttempt(attempt, delayMs)
             if (!shouldContinue) {
                 _internalState.value = _internalState.value.copy(isReconnecting = false)
+                updateGlobalState(null)
                 return Result.failure(CancellationException("Reconnection cancelled by user"))
             }
 
@@ -234,6 +247,7 @@ class SftpSessionReconnector(
                     isReconnecting = false,
                     circuitBreakerState = SftpCircuitBreaker.CircuitState.CLOSED
                 )
+                updateGlobalState(null)
                 return result
             }
 
@@ -243,11 +257,12 @@ class SftpSessionReconnector(
         }
 
         _reconnectionState.emit(ReconnectionState.Failed(lastException!!))
+        updateGlobalState(null)
         _internalState.value = _internalState.value.copy(
             isReconnecting = false,
             circuitBreakerState = circuitBreaker.currentState
         )
-        return Result.failure(lastException!!)
+        return Result.failure(lastException)
     }
 
     /**
