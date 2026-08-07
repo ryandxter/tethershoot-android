@@ -114,34 +114,35 @@ class CtgStateDiffer {
      * @return DiffResult describing all changes
      */
     fun diff(baseline: CtgMediaSnapshot, current: CtgMediaSnapshot): DiffResult {
-        val baselineFingerprints = baseline.entries.keys
-        val currentFingerprints = current.entries.keys
+        val baselineByStableKey = baseline.entries.values.associateBy { "${it.handle}|${it.filename}" }
+        val currentByStableKey = current.entries.values.associateBy { "${it.handle}|${it.filename}" }
 
-        // Set difference operations for O(n) complexity
-        val addedFps = currentFingerprints - baselineFingerprints
-        val deletedFps = baselineFingerprints - currentFingerprints
-        val commonFps = baselineFingerprints intersect currentFingerprints
+        val baselineKeys = baselineByStableKey.keys
+        val currentKeys = currentByStableKey.keys
 
-        // Check for modifications in common set
-        val modifiedFps = commonFps.filter { fp ->
-            val baselineEntry = baseline.entries[fp]!!
-            val currentEntry = current.entries[fp]!!
-            isModified(baselineEntry, currentEntry)
-        }.toSet()
+        val addedKeys = currentKeys - baselineKeys
+        val deletedKeys = baselineKeys - currentKeys
+        val commonKeys = baselineKeys intersect currentKeys
 
-        val unchangedCount = commonFps.size - modifiedFps.size
+        val modified = commonKeys.mapNotNull { key ->
+            val baseEntry = baselineByStableKey[key]!!
+            val currEntry = currentByStableKey[key]!!
+            if (isModified(baseEntry, currEntry)) {
+                ModifiedEntry(baseEntry, currEntry)
+            } else {
+                null
+            }
+        }
+
+        val modifiedKeys = modified.map { "${it.current.handle}|${it.current.filename}" }.toSet()
+        val unchangedCount = commonKeys.size - modifiedKeys.size
 
         return DiffResult(
             baselineId = baseline.id,
             currentId = current.id,
-            added = addedFps.map { current.entries[it]!! },
-            modified = modifiedFps.map { fp ->
-                ModifiedEntry(
-                    baseline = baseline.entries[fp]!!,
-                    current = current.entries[fp]!!
-                )
-            },
-            deleted = deletedFps.map { baseline.entries[it]!! },
+            added = addedKeys.map { currentByStableKey[it]!! },
+            modified = modified,
+            deleted = deletedKeys.map { baselineByStableKey[it]!! },
             unchangedCount = unchangedCount,
             computedAt = System.currentTimeMillis()
         )
@@ -158,9 +159,9 @@ class CtgStateDiffer {
         return baseline.size != current.size ||
                baseline.modifiedTime != current.modifiedTime
     }
+}
 
-    private fun formatTime(timestamp: Long): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        return sdf.format(Date(timestamp))
-    }
+private fun formatTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    return sdf.format(Date(timestamp))
 }
