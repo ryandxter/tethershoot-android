@@ -32,4 +32,13 @@
 - Direct local media file editing or metadata manipulation within the app.
 
 ## Traceability Matrix
-*(To be populated by the roadmapper)*
+- **SFTP-01**: Phase 1 (SFTP Pooling & Reconnection Resilience)
+- **SFTP-02**: Phase 1 (SFTP Pooling & Reconnection Resilience)
+- **SFTP-03**: Phase 1 (SFTP Pooling & Reconnection Resilience)
+- **USB-01**: Phase 2 (USB Debounce & Service Compliance)
+- **USB-02**: Phase 3 (Multi-Vendor MTP Fallback)
+- **SVC-01**: Phase 2 (USB Debounce & Service Compliance)
+- **FILE-01**: Phase 4 (Resumable Transfers & Server Cleanup)
+- **FILE-02**: Phase 4 (Resumable Transfers & Server Cleanup)
+- **FILE-03**: Phase 4 (Resumable Transfers & Server Cleanup)
+- **DB-01**: Phase 5 (Room Migration Validation Suite)

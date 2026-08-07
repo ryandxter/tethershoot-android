@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1
 milestone_name: Technical Concerns Resolution
 status: planning
-last_updated: "2026-08-07T07:27:20.078Z"
+last_updated: "2026-08-07T07:28:00Z"
 last_activity: 2026-08-07
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,26 +15,20 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (defining roadmap)
 Plan: —
-Status: Defining requirements
+Status: Planning
 Last activity: 2026-08-07 — Milestone v1 started
 
 ## Context
 
-**Active Goal:** Session resilience with persistent SFTP connections
+**Active Goal:** Resolve technical concerns, debt, and fragility points in connection pooling, camera compatibility, service lifecycles, large file transfers, and migrations.
 
-1. Session pool infrastructure (DONE - 03-01)
-2. Session health monitoring (DONE - 03-02)
-3. WorkManager integration with session recovery (pending - 03-03)
-4. Graceful degradation strategies (pending - 03-04)
-
-**Key Files:**
-
-- `data/sftp/SftpConnectionConfig.kt` — NEW: connection configuration
-- `data/sftp/SftpSessionPool.kt` — Enhanced with keepalive and health monitor integration
-- `data/sftp/SftpSessionHealthMonitor.kt` — NEW: session health monitoring
-- `data/sftp/JschSftpClient.kt` — enhanced with pool integration
+1. Phase 1: SFTP Pooling & Reconnection Resilience (pending)
+2. Phase 2: USB Debounce & Service Compliance (pending)
+3. Phase 3: Multi-Vendor MTP Fallback (pending)
+4. Phase 4: Resumable Transfers & Server Cleanup (pending)
+5. Phase 5: Room Migration Validation Suite (pending)
 
 ## Decisions
 
@@ -52,5 +46,3 @@ Last activity: 2026-08-07 — Milestone v1 started
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
-| Phase 03 P01 | 60 | 3 tasks | 3 files |
-| Phase 03 P02 | 5 | 3 tasks | 2 files |
