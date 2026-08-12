@@ -70,6 +70,17 @@ class SelectFolderViewModel(
         }
     }
 
+    fun resetFoldersState() {
+        _uiState.update {
+            FolderUiState(
+                isLoading = false,
+                currentPath = "",
+                folders = emptyList(),
+                folderSelected = false
+            )
+        }
+    }
+
     fun openFolder(folder: RemoteFolder) {
         loadFolders(folder.fullPath)
     }

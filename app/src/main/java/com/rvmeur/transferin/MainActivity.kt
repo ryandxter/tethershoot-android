@@ -271,9 +271,10 @@ fun TransferInApp(
                     onSignOutClick = {
                         scope.launch {
                             nasRepository.clearConnection()
+                            selectFolderViewModel.resetFoldersState()
                             hasNasConnection = false
                             selectedTargetNasDirPath = "/"
-                            Log.d(TAG_TRANSFER_APP, "Google Drive sign-out complete -> connection cleared")
+                            Log.d(TAG_TRANSFER_APP, "Google Drive sign-out complete -> connection & folders reset")
                         }
                     },
                     currentPath = folderState.currentPath,

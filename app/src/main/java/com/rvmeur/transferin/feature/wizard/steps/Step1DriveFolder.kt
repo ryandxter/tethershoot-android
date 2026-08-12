@@ -207,7 +207,22 @@ fun Step1DriveFolder(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (isLoading) {
+            if (!isAuthenticated) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "perlu login otentikasi google drive terlebih dahulu.".toBrandLowercase(),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = DMSans,
+                            color = AccentBurgundy
+                        )
+                    )
+                }
+            } else if (isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
