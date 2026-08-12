@@ -6,8 +6,10 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -270,6 +272,35 @@ fun TransferInApp(
         }
     }
 
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+            val authCode = account.serverAuthCode
+            Log.d(TAG_TRANSFER_APP, "Native Google Sign-In success! AuthCode: ${authCode?.take(10)}...")
+            if (!authCode.isNullOrBlank()) {
+                scope.launch {
+                    val exchangeResult = googleDriveAuthManager.handleAuthorizationCode(authCode, redirectUri = "")
+                    if (exchangeResult.isSuccess) {
+                        hasNasConnection = true
+                        selectedTargetNasDirPath = "root"
+                        Log.d(TAG_TRANSFER_APP, "Real Google OAuth login complete via Native Play Services!")
+                    } else {
+                        Log.e(TAG_TRANSFER_APP, "Failed to exchange native auth code", exchangeResult.exceptionOrNull())
+                    }
+                }
+            } else {
+                Log.w(TAG_TRANSFER_APP, "Server auth code was null, falling back to browser auth")
+                com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG_TRANSFER_APP, "Native Google Sign-In exception, launching browser fallback", e)
+            com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
@@ -314,7 +345,13 @@ fun TransferInApp(
                 FluidWizardScreen(
                     isAuthenticated = hasNasConnection,
                     onSignInClick = {
-                        com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
+                        try {
+                            val client = com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.getGoogleSignInClient(context)
+                            googleSignInLauncher.launch(client.signInIntent)
+                        } catch (e: Exception) {
+                            Log.e(TAG_TRANSFER_APP, "Failed to launch native Google Sign-In, falling back to browser", e)
+                            com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
+                        }
                     },
                     onSignOutClick = {
                         scope.launch {
