@@ -21,7 +21,7 @@ class GoogleDriveAuthManager(
         private const val TAG = "GoogleDriveAuthManager"
         const val CLIENT_ID = "343575435197-q6tnos0o1cgt8c0ir8alne21gitioj7i.apps.googleusercontent.com"
         const val CLIENT_SECRET = "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"
-        const val REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
+        const val REDIRECT_URI = "https://rvmeur.com/oauth2callback"
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
         fun getAuthorizationUri(): Uri {
