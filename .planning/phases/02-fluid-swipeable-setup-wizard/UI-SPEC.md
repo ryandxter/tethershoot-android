@@ -25,7 +25,7 @@ RvmFooterBar (Clickable Web Intent Footer, 44.dp)
 ### Swiping & Gesture Lock Mechanics
 - **Forward Swipe Lock:** Forward swiping to Step 2/3 is disabled (`userScrollEnabled = false`) until Step 1 validation passes (Google Drive OAuth signed in & target folder selected).
 - **Backward Swiping:** Backward swiping is always enabled (`userScrollEnabled = true`).
-- **Pill Alert Feedback:** Force-swipe attempts trigger a floating warning pill (`"selesaikan otentikasi & pilih folder terlebih dahulu"`, background `#F0EBE0`, text `#7A1A1A`, `RobotoMono` 11.sp).
+- **Pill Alert Feedback:** Force-swipe attempts trigger a floating warning pill (`"selesaikan otentikasi & pilih folder terlebih dahulu"`, background `#F0EBE0`, text `#7A1A1A`, `RobotoMono` 11.sp, `LiveRegionMode.Polite`).
 
 ---
 
@@ -46,8 +46,8 @@ RvmFooterBar (Clickable Web Intent Footer, 44.dp)
   - **Folder Card Style:** `DoppelrandCard` with outer radius `16.dp`, inner radius `12.dp`, outer gap `4.dp`.
   - **Visual Elements:** Folder vector icon, folder name (`DMSans`, `14.sp`, Bold, `TextPrimary`), item count caption (`RobotoMono`, `11.sp`, `TextMutedLight`).
   - **Selected State:** Border stroke `2.dp` in `AccentGreen` (`#2D4636`), background wash `AccentGreenSubtle`.
-  - **Touch Target:** Card height $\ge 68.dp$ (exceeds $44.dp$ minimum).
-  - **TalkBack Semantics:** `contentDescription = "Folder ${folderName}, ${itemCount} items, ${if (isSelected) "selected" else "not selected"}"`.
+  - **Touch Target & Dynamic Height:** Card height $\ge 68.dp$ (`heightIn(min = 68.dp)` with `wrapContentHeight()` for 200% font scaling).
+  - **TalkBack Semantics:** Merged semantics (`mergeDescendants = true`), `role = Role.RadioButton`, `isSelected` state description (`"terpilih"` / `"tidak terpilih"`), `contentDescription = "Folder ${folder.name}, ${folder.itemCount} item"`, `onClickLabel = "pilih folder ${folder.name}"`.
 - **Breadcrumb Navigation & New Folder Action:**
   - Up 1 level button (`"← naik 1 folder"`).
   - Create folder CTA (`"buat folder baru"`) triggering custom RVM `AlertDialog`.
@@ -63,6 +63,7 @@ RvmFooterBar (Clickable Web Intent Footer, 44.dp)
   - Searching / Disconnected: `AccentBurgundy` (`#7A1A1A`).
 - **Camera Model Title:** Auto-detected camera model name in `CormorantGaramond` (`22.sp`, Bold, `TextPrimary`), e.g., `Canon EOS R5` or `FUJIFILM X-T5`.
 - **DCIM Path Scan Preview:** Monospace media preview line (`RobotoMono`, `11.sp`, `TextMutedLight`), e.g., `media path: /DCIM/100FUJI/ (148 photos found)`.
+- **TalkBack Region:** Declares `LiveRegionMode.Polite` for camera connection announcements.
 
 #### Card B: Fallback Manual Import Mode
 - **Container:** `DoppelrandCard`.
@@ -76,8 +77,8 @@ RvmFooterBar (Clickable Web Intent Footer, 44.dp)
 #### Card A: Tethering Rules & Baseline Extraction
 - **Container:** `DoppelrandCard`.
 - **Toggles & Preferences:**
-  - RAW+JPG co-existence handling toggle.
-  - Auto-sync real-time upload toggle.
+  - RAW+JPG co-existence handling toggle (min touch target $48.dp$).
+  - Auto-sync real-time upload toggle (min touch target $48.dp$).
   - File baseline extraction preview (`RobotoMono`, `11.sp`), e.g., `starting baseline: DSCF0018.JPG -> #18`.
 
 #### Card B: Launch Sesi Action
@@ -86,10 +87,27 @@ RvmFooterBar (Clickable Web Intent Footer, 44.dp)
 
 ---
 
-## 3. Accessibility & Quality Checklist (WIZARD-01..04)
+## 3. Accessibility & Quality Verification Checklist (WIZARD-01..04)
 
-- [x] **WIZARD-01 (Pager Container):** Single `HorizontalPager` with 3 steps, forward swipe lock when Step 1 is invalid.
-- [x] **WIZARD-02 (Drive Auth & Folder Grid):** OAuth status badge, 2-column folder card grid layout ($\ge 44.dp$ touch targets), new folder creation dialog.
-- [x] **WIZARD-03 (Camera Tethering Card):** Live pulse aura (`#56642B` / `#7A1A1A`), auto-detected camera model title, DCIM subfolder scan preview.
-- [x] **WIZARD-04 (Preferences & Kinetic CTA):** RAW+JPG toggle, baseline preview, `KineticButton` launch CTA.
-- [x] **Accessibility & Microcopy:** All UI strings forced to lowercase (acronym whitelist `MTP`, `USB`, `RAW`, `JPG`, `OAuth`), WCAG AAA contrast ratio ($\ge 7:1$), TalkBack semantics for folder cards.
+### 3.1 Minimum 44dp Touch Target Contract
+- [x] **Dot Bar Navigation Nodes:** Every step dot node wrapped in a minimum $44.dp \times 44.dp$ interactive touch target container.
+- [x] **OAuth & Primary Buttons:** `KineticButton` elements enforce minimum height of $52.dp$ ($\ge 44.dp$).
+- [x] **2-Column Folder Cards:** Grid folder cards enforce visual and touch height $\ge 68.dp$ with $8.dp$ spacing between adjacent cards.
+- [x] **Breadcrumbs & Dialog Controls:** Up-1-level button, path segments, and dialog action buttons padded to minimum $44.dp \times 44.dp$.
+- [x] **Preference Switches & Steppers:** RAW+JPG and auto-sync toggles wrapped in `Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)`.
+
+### 3.2 2-Column Card Grid Scaling & Dynamic Text Contract
+- [x] **Responsive Grid Layout:** `LazyVerticalGrid(columns = GridCells.Fixed(2))` on portrait mobile screens, adapting to `GridCells.Adaptive(minSize = 160.dp)` on landscape/tablet viewports ($W \ge 600.dp$).
+- [x] **Dynamic Font Scaling (Up to 200% / 2.0x):** Folder card containers use `heightIn(min = 68.dp)` + `wrapContentHeight()` without hardcoded heights to prevent vertical text clipping.
+- [x] **Text Ellipsis & Overflow:** Folder titles (`DMSans` $14.sp$, Bold) configured with `maxLines = 2` and `TextOverflow.Ellipsis`; item count captions (`RobotoMono` $11.sp$) configured with `maxLines = 1`.
+
+### 3.3 RVM Microcopy & Lowercase Rule Contract
+- [x] **All-Lowercase Microcopy:** 100% of visible UI strings (headers, card labels, buttons, dialog messages, status pills) use strictly all-lowercase text.
+- [x] **Acronym Whitelist Enforcement:** Only technical acronyms (`OAuth`, `MTP`, `USB`, `RAW`, `JPG`, `SAF`, `DCIM`, `RVM`) retain standard uppercase casing.
+
+### 3.4 TalkBack Screen Reader & Folder Card Semantics Contract
+- [x] **Merged Card Semantics:** Each folder card uses `Modifier.semantics(mergeDescendants = true)` so TalkBack reads the card as a single focusable item rather than individual child elements.
+- [x] **Selection State & Role:** Folder cards expose `role = Role.RadioButton` (or `Role.Button`) with `selected = isSelected` state and `stateDescription = if (isSelected) "terpilih" else "tidak terpilih"`.
+- [x] **Informative Description Format:** Folder card `contentDescription = "Folder ${folderName}, ${itemCount} item"`.
+- [x] **Custom Action Labels:** Folder cards configure `onClickLabel = "pilih folder ${folderName}"` for natural screen reader prompt *"Ketuk dua kali untuk memilih folder"*.
+- [x] **Live Region Announcements:** Warning feedback pills, folder navigation level changes, and USB/MTP status changes declare `LiveRegionMode.Polite` for real-time TalkBack feedback without focus disruption.
