@@ -1,28 +1,31 @@
-# Requirements - Milestone v2
+# Requirements — Milestone v2 (Fluid Wizard & Agency-Grade UI/UX Overhaul)
 
-**Analysis Date:** 2026-08-07
+**Analysis Date:** 2026-08-12
 
 ## Milestone v2 Active Requirements
 
-### 1. Camera File Numbering Baseline Extraction (NUM)
-- [ ] **NUM-01**: On tethered mode start, the system must scan existing media on the camera memory card and extract the starting baseline number from the filenames (e.g. `DSCF0018.JPG` -> `18`).
-- [ ] **NUM-02**: The system must support extraction for various camera naming patterns and customized prefixes (e.g., `IMG_`, `DSCF_`, `_DSF`, `_IMG`) without resetting to `0001` or getting stuck.
-- [ ] **NUM-03**: The baseline numbering must be persistent or calculated at every session initialization to prevent database reset to 1 when reconnecting tethered mode.
+### 1. Design System & Micro-Interaction Foundations (FOUNDATION)
+- [ ] **FOUND-01**: Implement Double-Bezel (`Doppelrand`) container components in Jetpack Compose, featuring nested outer shell, hairline border (`#E8E0D8`), concentric rounded corners, and inner core surface (`#F6F3EB`).
+- [ ] **FOUND-02**: Implement tactile button physics with scale interpolation (`0.97f` on press) and nested icon trailing pill wrappers (`w-8 h-8 rounded-full`).
+- [ ] **FOUND-03**: Standardize brand typography mapping (lowercase eyebrow tags, Cormorant Garamond display headers, DM Sans body text, Roboto Mono numbers).
 
-### 2. MTP Subfolder Navigation & Traverse Audit (DIR)
-- [ ] **DIR-01**: The system must support traversing camera memory subfolders (e.g. `/DCIM/100FUJI/`, `/DCIM/101CANON/`) to locate files, accounting for cameras placing photos inside nested directories instead of root folders.
-- [ ] **DIR-02**: The system must identify that camera database files (e.g., `.ctg`, `.dat`, `.db` files) reside in non-photo system folders (like `/MISC/` or similar) and avoid scanning them as new photos.
+### 2. Fluid Dynamic Dot Bar Navigation (DOTBAR)
+- [ ] **DOTBAR-01**: Create a custom `FluidDotNavigationBar` Jetpack Compose component with dynamic animated width, morphing pill background, and active/inactive dot sizing linked to `PagerState`.
+- [ ] **DOTBAR-02**: Support dot tap gestures for quick page jumping with smooth spring physics (`Spring.StiffnessLow`).
+- [ ] **DOTBAR-03**: Display step progress badges and validation state indicators (e.g. green checkmark pulse `#2D4636`, error alert `#7A1A1A`).
 
-### 3. RAW+JPG Co-existence & Sync (RAW)
-- [ ] **RAW-01**: The system must support detecting and uploading both RAW and JPG files taken concurrently (with the same numbering baseline) without one blocking the other during real-time sync.
+### 3. Fluid Swipeable Setup Wizard (WIZARD)
+- [ ] **WIZARD-01**: Refactor setup screens into a unified `HorizontalPager` swipeable wizard container with user scroll enable/disable control based on step validation.
+- [ ] **WIZARD-02**: Page 1 (Google Drive Auth & Target Folder): Redesign OAuth login button and folder picker into double-bezel cards with real-time status pills.
+- [ ] **WIZARD-03**: Page 2 (Camera Tethering & Subfolder Detection): Redesign camera USB/MTP detection screen with animated pulse connection status and DCIM folder hierarchy preview.
+- [ ] **WIZARD-04**: Page 3 (Session Preferences): Redesign RAW+JPG rules, auto-sync toggles, and starting file number baseline configuration.
 
-## Out of Scope
-- Direct local media file editing or metadata manipulation within the app.
+### 4. Active Tethering Dashboard Overhaul (DASHBOARD)
+- [ ] **DASHBOARD-01**: Redesign active session screen into an agency-grade live shoot dashboard with glassmorphism header, animated transfer counters, and haptic feedback on new shot capture.
+- [ ] **DASHBOARD-02**: Refactor photo stream gallery grid with smooth image loading transitions, upload status overlay badges, and expandable photo inspector.
 
 ## Traceability Matrix
-- **NUM-01**: Phase 6 (Camera File Number Baseline Extraction)
-- **NUM-02**: Phase 6 (Camera File Number Baseline Extraction)
-- **NUM-03**: Phase 6 (Camera File Number Baseline Extraction)
-- **DIR-01**: Phase 6 (Camera File Number Baseline Extraction)
-- **DIR-02**: Phase 6 (Camera File Number Baseline Extraction)
-- **RAW-01**: Phase 7 (Robust RAW+JPG Co-existence & Verification)
+- **FOUND-01, FOUND-02, FOUND-03**: Phase 1 (Design System & Motion Foundations)
+- **DOTBAR-01, DOTBAR-02, DOTBAR-03**: Phase 1 (Design System & Motion Foundations)
+- **WIZARD-01, WIZARD-02, WIZARD-03, WIZARD-04**: Phase 2 (Fluid Swipeable Setup Wizard)
+- **DASHBOARD-01, DASHBOARD-02**: Phase 3 (Live Shoot Dashboard & Gallery Polish)
