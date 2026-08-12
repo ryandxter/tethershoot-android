@@ -218,6 +218,7 @@ fun TransferInApp(
     var selectedTargetNasDirPath by rememberSaveable { mutableStateOf("/") }
     var selectedSourceTreeUri by rememberSaveable { mutableStateOf("") }
     var activeSessionId by rememberSaveable { mutableStateOf<String?>(null) }
+    var hasNasConnection by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -252,6 +253,7 @@ fun TransferInApp(
 
                 LaunchedEffect(Unit) {
                     val connection = nasRepository.getConnection()
+                    hasNasConnection = (connection != null)
                     if (selectedTargetNasDirPath.isBlank() || selectedTargetNasDirPath == "/") {
                         selectedTargetNasDirPath = connection?.defaultRemoteFolder ?: "/"
                     }
@@ -262,15 +264,16 @@ fun TransferInApp(
                 val scope = androidx.compose.runtime.rememberCoroutineScope()
 
                 FluidWizardScreen(
-                    isAuthenticated = true,
+                    isAuthenticated = hasNasConnection,
                     onSignInClick = {
-                        val oauthUri = android.net.Uri.parse("https://accounts.google.com/o/oauth2/v2/auth")
-                        val intent = Intent(Intent.ACTION_VIEW, oauthUri)
-                        context.startActivity(intent)
+                        navController.navigate(ROUTE_LOGIN_NAS)
                     },
                     onSignOutClick = {
                         scope.launch {
                             nasRepository.clearConnection()
+                            hasNasConnection = false
+                            selectedTargetNasDirPath = "/"
+                            Log.d(TAG_TRANSFER_APP, "Google Drive sign-out complete -> connection cleared")
                         }
                     },
                     currentPath = folderState.currentPath,
@@ -308,7 +311,9 @@ fun TransferInApp(
             composable(ROUTE_LOGIN_NAS) {
                 LoginNasScreen(
                     onLoginSuccess = {
+                        hasNasConnection = true
                         navController.navigate(ROUTE_WIZARD) {
+                            popUpTo(ROUTE_WIZARD) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
