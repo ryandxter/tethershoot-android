@@ -22,7 +22,18 @@ val DMSans = FontFamily(
     Font(R.font.dm_sans_bold, FontWeight.Bold)
 )
 
-// Modern typography system using editorial Serif (Cormorant Garamond) and clean SansSerif (DM Sans)
+val RobotoMono = FontFamily.Monospace
+
+// Microcopy helper enforcing RVM brand lowercase rules (except whitelisted acronyms)
+fun String.toBrandLowercase(): String {
+    val acronyms = setOf("MTP", "USB", "RAW", "JPG", "OAUTH", "SFTP", "NAS", "QRIS", "WA", "IP", "TOS", "FAQ", "AI", "PWA")
+    return this.split(" ").joinToString(" ") { word ->
+        if (acronyms.contains(word.uppercase())) word.uppercase()
+        else word.lowercase()
+    }
+}
+
+// Modern typography system using editorial Serif (Cormorant Garamond), clean SansSerif (DM Sans), and Monospace (Roboto Mono)
 val Typography = Typography(
     // Display styles
     displayLarge = TextStyle(
@@ -126,8 +137,8 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = DMSans,
-        fontWeight = FontWeight.Medium,
+        fontFamily = RobotoMono,
+        fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
