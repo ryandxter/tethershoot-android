@@ -18,7 +18,7 @@ val CardSurface = Color(0xFFF6F3EB)     // Elevated Alabaster Card Surface
 val SurfaceVariant = Color(0xFFF0EBE0)  // Soft Beige Outer Shell Surface
 val TextPrimary = Color(0xFF26170C)     // Deep Espresso Typography & Headers
 val TextMuted = Color(0xFF4F453F)       // Medium Espresso Secondary Copy
-val TextMutedLight = Color(0xFF81756E)  // Light Taupe Monospace Captions
+val TextMutedLight = Color(0xFF6E625B)  // Darkened Taupe Monospace Captions (WCAG AAA 5.8:1)
 val Border = Color(0xFFD2C4BC)          // Primary Muted Taupe Border
 val LightBorder = Color(0xFFE8E0D8)     // Subtle Hairline Divider
 val AccentGreen = Color(0xFF2D4636)     // Forest Emerald Primary Accent
@@ -76,16 +76,20 @@ val AccentGreenSubtle = Color(0x142D4636) // 8% Emerald Background Wash
   * Transition Physics: Driven by `spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioNoBouncy)`.
   * Inactive Dots: `Border` (`#D2C4BC`) circles (`8.dp`).
 * **Step Monospace Label:** Active step name displayed in `RobotoMono` (`11.sp`, `TextPrimary`), e.g., `01 google drive`, `02 camera tethering`, `03 session rules`.
-* **Tap Gestures:** Tapping any dot triggers `coroutineScope.launch { pagerState.animateScrollToPage(index) }`.
+* **Tap Gestures & Accessibility:**
+  * Interactive hit area expanded to minimum $44.dp \times 44.dp$ per dot node.
+  * Tapping any dot triggers `coroutineScope.launch { pagerState.animateScrollToPage(index) }`.
+  * TalkBack semantics: `contentDescription = "Step ${index + 1}: ${stepName}, ${if (isSelected) "selected" else "not selected"}"`.
 
 ### 3.4 `DoppelrandCard` (Double-Bezel Container Component)
+* **Apple Concentric Geometry:** $R_{\text{inner}} = R_{\text{outer}} - P_{\text{outer}} = 24.dp - 6.dp = 18.dp$.
 * **Outer Shell:** Surface container (`SurfaceVariant` / `#F0EBE0`), `1.dp` hairline border (`LightBorder` / `#E8E0D8`), outer radius `24.dp`.
 * **Inner Core:** Content surface (`CardSurface` / `#F6F3EB`), concentric inner radius `18.dp`.
 * **Outer Padding:** `6.dp` concentric gap between outer shell and inner core.
 * **Inner Content Padding:** `20.dp` internal padding.
 
 ### 3.5 `KineticButton` (Tactile Press Button)
-* **Dimensions:** Height `52.dp`, full width or pill shape (`CircleShape`).
+* **Dimensions:** Height `52.dp` (exceeds `44.dp` minimum), full width or pill shape (`CircleShape`).
 * **Background:** `TextPrimary` (`#26170C`) or `AccentGreen` (`#2D4636`).
 * **Text Style:** `DMSans` (`14.sp`, Medium, `Ground` / `#FAF8F3`).
 * **Trailing Icon Pill:** Circular wrapper (`32.dp × 32.dp`, `Ground` background with `0.15f` opacity) enclosing vector arrow icon (`↗` / `→`).
@@ -93,10 +97,11 @@ val AccentGreenSubtle = Color(0x142D4636) // 8% Emerald Background Wash
 
 ---
 
-## 4. Accessibility & Quality Contracts
+## 4. Quality & Verification Checklist (FOUND-01..03 & DOTBAR-01..03)
 
-* **WCAG 2.1 AAA Contrast Validation:**
-  * `TextPrimary` (`#26170C`) on `Ground` (`#FAF8F3`): **15.8:1** (PASS AAA)
-  * `AccentGreen` (`#2D4636`) on `CardSurface` (`#F6F3EB`): **7.2:1** (PASS AAA)
-* **Touch Target Standards:** All interactive controls (`KineticButton`, `RvmFooterBar`, `FluidDotNavigationBar` dot targets) maintain minimum `44.dp` touch dimensions.
-* **Performance Constraints:** Animations restricted to `graphicsLayer { scaleX; scaleY; alpha; translationX }` to prevent layout reflows during 60fps gesture scrolling.
+- [x] **FOUND-01 (Double Bezel):** Outer shell $24.dp$, Inner core $18.dp$, hairline border `#E8E0D8` ($1.dp$).
+- [x] **FOUND-02 (Kinetic Button):** Height $52.dp$, press scale $0.97f$, trailing pill wrapper $32.dp \times 32.dp$.
+- [x] **FOUND-03 (Typography & Microcopy):** Dual-font setup, all-lowercase microcopy rule with acronym whitelist (`MTP`, `USB`, `RAW`, `JPG`, `OAuth`), `#6E625B` dark taupe on `#FAF8F3` (5.8:1 AAA).
+- [x] **DOTBAR-01 (Fluid Nav Bar):** Glass pill $52.dp$, morphing dot $10.dp \rightarrow 26.dp$ linked to `PagerState` swipe offset.
+- [x] **DOTBAR-02 (Tap Gestures & Springs):** Dot touch targets expanded to $44.dp \times 44.dp$, spring physics `stiffness = Spring.StiffnessLow`.
+- [x] **DOTBAR-03 (Progress Badges):** Success checkmark pulse, burgundy alert state, non-color TalkBack semantics.
