@@ -48,7 +48,8 @@ fun LoginNasScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val application = LocalContext.current.applicationContext as Application
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
 
     val viewModel: LoginNasViewModel = viewModel(
         factory = LoginNasViewModelFactory(application)
@@ -132,9 +133,9 @@ fun LoginNasScreen(
                         }
                     } else {
                         KineticButton(
-                            text = "masuk akun google drive",
+                            text = "masuk akun google drive (oauth)",
                             onClick = {
-                                viewModel.loginWithDynamicOAuth(onLoginSuccess)
+                                com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
                             },
                             containerColor = AccentGreen,
                             contentColor = CardSurface

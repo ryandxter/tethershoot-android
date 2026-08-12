@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,6 +85,7 @@ private const val TAG_SESSION_ROUTE = "SessionActiveRoute"
 class MainActivity : ComponentActivity() {
 
     private lateinit var usbHelper: UsbHelper
+    private var onOAuthCodeListener: ((String) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,21 +100,41 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TransferInTheme {
-                TransferInApp(usbHelper = usbHelper)
+                TransferInApp(
+                    usbHelper = usbHelper,
+                    setOnOAuthCodeListener = { listener ->
+                        onOAuthCodeListener = listener
+                    }
+                )
             }
         }
+
+        handleOAuthIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        Log.d(TAG_TRANSFER_APP, "MainActivity.onNewIntent() called")
+        Log.d(TAG_TRANSFER_APP, "MainActivity.onNewIntent() called with data: ${intent.data}")
+        handleOAuthIntent(intent)
+    }
+
+    private fun handleOAuthIntent(intent: Intent?) {
+        val data: Uri? = intent?.data
+        if (data != null && (data.scheme == "com.rvmeur.transferin" || data.scheme == "https")) {
+            val code = data.getQueryParameter("code")
+            if (!code.isNullOrBlank()) {
+                Log.d(TAG_TRANSFER_APP, "Extracted OAuth authorization code from deep link intent!")
+                onOAuthCodeListener?.invoke(code)
+            }
+        }
     }
 }
 
 @Composable
 fun TransferInApp(
-    usbHelper: UsbHelper? = null
+    usbHelper: UsbHelper? = null,
+    setOnOAuthCodeListener: (((String) -> Unit) -> Unit)? = null
 ) {
     val isInPreview = LocalInspectionMode.current
     val context = LocalContext.current
@@ -220,6 +243,28 @@ fun TransferInApp(
     var activeSessionId by rememberSaveable { mutableStateOf<String?>(null) }
     var hasNasConnection by rememberSaveable { mutableStateOf(false) }
 
+    val googleDriveAuthManager = remember(application, nasRepository) {
+        com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager(application, nasRepository)
+    }
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(setOnOAuthCodeListener) {
+        setOnOAuthCodeListener?.invoke { code ->
+            scope.launch {
+                Log.d(TAG_TRANSFER_APP, "Handling Google OAuth code in coroutine...")
+                val result = googleDriveAuthManager.handleAuthorizationCode(code)
+                if (result.isSuccess) {
+                    hasNasConnection = true
+                    selectedTargetNasDirPath = "root"
+                    Log.d(TAG_TRANSFER_APP, "Real Google OAuth login complete! Refresh token saved.")
+                } else {
+                    Log.e(TAG_TRANSFER_APP, "Failed to exchange OAuth code", result.exceptionOrNull())
+                }
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
@@ -261,28 +306,10 @@ fun TransferInApp(
                     connectCameraViewModel.refreshUsbState()
                 }
 
-                val scope = androidx.compose.runtime.rememberCoroutineScope()
-
                 FluidWizardScreen(
                     isAuthenticated = hasNasConnection,
                     onSignInClick = {
-                        scope.launch {
-                            val connection = com.rvmeur.transferin.domain.repository.NasConnection(
-                                name = "Google Drive (OAuth)",
-                                host = "drive.google.com",
-                                port = 443,
-                                username = "oauth_authenticated_user",
-                                password = "oauth_token_verified",
-                                defaultRemoteFolder = "/root",
-                                protocol = "GOOGLE_DRIVE",
-                                useHttps = true,
-                                startingFolder = "RVM_Photos"
-                            )
-                            nasRepository.saveConnection(connection)
-                            hasNasConnection = true
-                            selectedTargetNasDirPath = "/root"
-                            Log.d(TAG_TRANSFER_APP, "Dynamic OAuth sign-in completed directly")
-                        }
+                        com.rvmeur.transferin.data.sftp.GoogleDriveAuthManager.launchAuthorizationBrowser(context)
                     },
                     onSignOutClick = {
                         scope.launch {
