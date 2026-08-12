@@ -89,6 +89,9 @@ dependencies {
     implementation("com.github.mwiede:jsch:0.2.26")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // Google Play Services Auth for Native Google Sign-In & OAuth
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+
     // Image loading for gallery
     implementation("io.coil-kt:coil-compose:2.6.0")
 

@@ -4,6 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.Scope
 import com.rvmeur.transferin.domain.repository.NasConnection
 import com.rvmeur.transferin.domain.repository.NasConnectionRepository
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +37,15 @@ class GoogleDriveAuthManager(
         const val CLIENT_SECRET = ""
         const val REDIRECT_URI = ANDROID_REDIRECT_URI
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
+
+        fun getGoogleSignInClient(context: Context): GoogleSignInClient {
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestScopes(Scope(SCOPE))
+                .requestServerAuthCode(WEB_CLIENT_ID)
+                .requestEmail()
+                .build()
+            return GoogleSignIn.getClient(context, gso)
+        }
 
         fun getAuthorizationUri(): Uri {
             return Uri.parse("https://accounts.google.com/o/oauth2/v2/auth").buildUpon()
