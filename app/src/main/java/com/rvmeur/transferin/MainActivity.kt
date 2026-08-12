@@ -2,9 +2,9 @@ package com.rvmeur.transferin
 
 import android.app.Application
 import android.content.Intent
-import android.util.Log
-import android.os.Bundle
 import android.os.Build
+import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,7 +32,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
 import com.rvmeur.transferin.data.local.db.DatabaseProvider
 import com.rvmeur.transferin.data.repository.NasConnectionRepositoryImpl
 import com.rvmeur.transferin.data.sftp.DelegatingSftpClient
@@ -46,6 +45,7 @@ import com.rvmeur.transferin.domain.model.ConnectionMode
 import com.rvmeur.transferin.domain.session.ImportCameraEngine
 import com.rvmeur.transferin.domain.session.SourceWatcher
 import com.rvmeur.transferin.feature.auth.LoginNasScreen
+import com.rvmeur.transferin.feature.auth.LoginNasViewModel
 import com.rvmeur.transferin.feature.connectcamera.ConnectCameraScreen
 import com.rvmeur.transferin.feature.connectcamera.ConnectCameraViewModel
 import com.rvmeur.transferin.feature.connectcamera.ConnectCameraViewModelFactory
@@ -63,8 +63,11 @@ import com.rvmeur.transferin.feature.sessionactive.SessionActiveScreen
 import com.rvmeur.transferin.feature.sessionactive.SessionViewModel
 import com.rvmeur.transferin.feature.sessionactive.SessionViewModelFactory
 import com.rvmeur.transferin.feature.sessionsummary.SessionSummaryScreen
+import com.rvmeur.transferin.feature.wizard.FluidWizardScreen
 import com.rvmeur.transferin.ui.theme.TransferInTheme
+import kotlinx.coroutines.launch
 
+private const val ROUTE_WIZARD = "wizard"
 private const val ROUTE_LOGIN_NAS = "loginNas"
 private const val ROUTE_SELECT_FOLDER = "selectFolder"
 private const val ROUTE_CONNECT_CAMERA = "connectCamera"
@@ -221,17 +224,82 @@ fun TransferInApp(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = ROUTE_LOGIN_NAS,
+            startDestination = ROUTE_WIZARD,
             modifier = Modifier.padding(innerPadding)
         ) {
+            // Fluid Swipeable Setup Wizard (Primary Route)
+            composable(ROUTE_WIZARD) {
+                val selectFolderViewModel: SelectFolderViewModel = viewModel(
+                    factory = SelectFolderViewModelFactory(
+                        nasConnectionRepository = nasRepository,
+                        sftpClient = DelegatingSftpClient(application),
+                        sessionDao = database.sessionDao(),
+                        usbSourceOrchestrator = usbSourceOrchestrator
+                    )
+                )
+
+                val connectCameraViewModel: ConnectCameraViewModel = viewModel(
+                    factory = ConnectCameraViewModelFactory(
+                        context = application,
+                        usbHelper = resolvedUsbHelper,
+                        sessionDao = database.sessionDao(),
+                        cameraMediaDao = database.cameraMediaDao()
+                    )
+                )
+
+                val folderState by selectFolderViewModel.uiState.collectAsState()
+                val connectCameraState by connectCameraViewModel.uiState.collectAsState()
+
+                LaunchedEffect(Unit) {
+                    val connection = nasRepository.getConnection()
+                    if (selectedTargetNasDirPath.isBlank() || selectedTargetNasDirPath == "/") {
+                        selectedTargetNasDirPath = connection?.defaultRemoteFolder ?: "/"
+                    }
+                    connectCameraViewModel.selectTetheredMode()
+                    connectCameraViewModel.refreshUsbState()
+                }
+
+                FluidWizardScreen(
+                    isAuthenticated = true,
+                    onSignInClick = {
+                        navController.navigate(ROUTE_LOGIN_NAS)
+                    },
+                    currentPath = folderState.currentPath,
+                    folders = folderState.folders,
+                    selectedFolder = folderState.folders.firstOrNull { it.fullPath == folderState.currentPath },
+                    onFolderSelect = { folder ->
+                        selectFolderViewModel.openFolder(folder)
+                        selectedTargetNasDirPath = folder.fullPath
+                    },
+                    onNavigateUp = { selectFolderViewModel.goUp() },
+                    onCreateFolder = { name -> selectFolderViewModel.createFolder(name) },
+                    isLoadingFolder = folderState.isLoading,
+                    isCameraConnected = connectCameraState.isLikelyCameraConnected || connectCameraState.hasPermittedUsbDevice,
+                    cameraModelName = connectCameraState.cameraSession.deviceLabel ?: connectCameraState.primaryDevice?.productName ?: "kamera USB",
+                    dcimPath = "/DCIM/100FUJI/",
+                    photoCount = connectCameraState.mediaCount,
+                    onSelectSourceFolder = {
+                        navController.navigate(ROUTE_SELECT_SOURCE_FOLDER)
+                    },
+                    onLaunchSession = {
+                        sessionViewModel.setSourceSelectionMode(connectCameraState.sourceSelectionMode)
+                        sessionViewModel.startNewSession(
+                            customerName = null,
+                            nasFolderPath = if (selectedTargetNasDirPath.isNotBlank()) selectedTargetNasDirPath else "/",
+                            connectionMode = ConnectionMode.TETHERED,
+                            sourceTreeUri = selectedSourceTreeUri
+                        )
+                        navController.navigate(ROUTE_SESSION_ACTIVE) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+
             composable(ROUTE_LOGIN_NAS) {
                 LoginNasScreen(
                     onLoginSuccess = {
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            "Login NAS success -> navigate to select folder"
-                        )
-                        navController.navigate(ROUTE_SELECT_FOLDER) {
+                        navController.navigate(ROUTE_WIZARD) {
                             launchSingleTop = true
                         }
                     }
@@ -253,12 +321,8 @@ fun TransferInApp(
                 LaunchedEffect(state.folderSelected, state.currentPath) {
                     if (state.folderSelected) {
                         selectedTargetNasDirPath = state.currentPath
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            "Target NAS folder selected: $selectedTargetNasDirPath"
-                        )
                         selectFolderViewModel.consumeFolderSelected()
-                        navController.navigate(ROUTE_CONNECT_CAMERA) {
+                        navController.navigate(ROUTE_WIZARD) {
                             launchSingleTop = true
                         }
                     }
@@ -286,76 +350,28 @@ fun TransferInApp(
 
                 val connectCameraState by connectCameraViewModel.uiState.collectAsState()
 
-                LaunchedEffect(Unit) {
-                    val connection = nasRepository.getConnection()
-
-                    if (selectedTargetNasDirPath.isBlank() || selectedTargetNasDirPath == "/") {
-                        selectedTargetNasDirPath = connection?.defaultRemoteFolder ?: "/"
-                    }
-
-                    Log.d(
-                        TAG_TRANSFER_APP,
-                        "ConnectCameraScreen loaded, targetNasDirPath=$selectedTargetNasDirPath, sourceTreeUri=$selectedSourceTreeUri"
-                    )
-
-                    connectCameraViewModel.selectTetheredMode()
-                    connectCameraViewModel.refreshUsbState()
-                }
-
                 ConnectCameraScreen(
                     selectedNasFolder = selectedTargetNasDirPath,
                     selectedSourceFolder = selectedSourceTreeUri,
                     viewModel = connectCameraViewModel,
                     onSelectSourceFolder = {
-                        Log.d(TAG_TRANSFER_APP, "Navigate to source folder picker")
                         navController.navigate(ROUTE_SELECT_SOURCE_FOLDER) {
                             launchSingleTop = true
                         }
                     },
                     onStartSession = {
-                        val canStartSession =
-                            selectedTargetNasDirPath.isNotBlank() &&
-                                    selectedTargetNasDirPath != "/" &&
-                                    selectedSourceTreeUri.isNotBlank() &&
-                                    connectCameraState.cameraSession.isOpen
-
-                        if (!canStartSession) {
-                            Log.d(
-                                TAG_TRANSFER_APP,
-                                "Start import session blocked: targetNasDirPath=$selectedTargetNasDirPath, sourceTreeUri=$selectedSourceTreeUri, sessionOpen=${connectCameraState.cameraSession.isOpen}"
-                            )
-                            return@ConnectCameraScreen
-                        }
-
                         sessionViewModel.setSourceSelectionMode(connectCameraState.sourceSelectionMode)
-
                         sessionViewModel.startNewSession(
                             customerName = null,
                             nasFolderPath = selectedTargetNasDirPath,
                             connectionMode = ConnectionMode.IMPORT_FALLBACK,
                             sourceTreeUri = selectedSourceTreeUri
                         )
-
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            "Start import session -> navigate to session active, targetNasDirPath=$selectedTargetNasDirPath, sourceTreeUri=$selectedSourceTreeUri"
-                        )
-
                         navController.navigate(ROUTE_SESSION_ACTIVE) {
                             launchSingleTop = true
                         }
                     },
                     onStartShootMode = { selectedUri ->
-                        Log.d(TAG_TRANSFER_APP, "Starting TETHERED mode, URI: $selectedUri")
-
-                        if (selectedTargetNasDirPath.isBlank() || selectedTargetNasDirPath == "/") {
-                            Log.w(
-                                TAG_TRANSFER_APP,
-                                "Cannot start tethered mode: invalid target NAS folder=$selectedTargetNasDirPath"
-                            )
-                            return@ConnectCameraScreen
-                        }
-
                         if (selectedUri != null) {
                             try {
                                 val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
@@ -365,29 +381,14 @@ fun TransferInApp(
                                 Log.w(TAG_TRANSFER_APP, "Could not get persistable permission")
                             }
                             selectedSourceTreeUri = selectedUri.toString()
-                        } else {
-                            selectedSourceTreeUri = ""
                         }
-
                         sessionViewModel.setSourceSelectionMode(connectCameraState.sourceSelectionMode)
-
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            ">>> Creating session with TETHERED mode, sourceTreeUri=$selectedSourceTreeUri"
-                        )
-
                         sessionViewModel.startNewSession(
                             customerName = null,
                             nasFolderPath = selectedTargetNasDirPath,
                             connectionMode = ConnectionMode.TETHERED,
                             sourceTreeUri = selectedSourceTreeUri
                         )
-
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            ">>> TETHERED session created, navigating to ROUTE_SESSION_ACTIVE"
-                        )
-
                         navController.navigate(ROUTE_SESSION_ACTIVE) {
                             launchSingleTop = true
                         }
@@ -401,10 +402,6 @@ fun TransferInApp(
                     currentSourceTreeUri = selectedSourceTreeUri,
                     onSourceFolderSelected = { uri ->
                         selectedSourceTreeUri = uri
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            "Source folder selected: $selectedSourceTreeUri"
-                        )
                         navController.popBackStack()
                     },
                     onBack = { navController.popBackStack() }
@@ -445,41 +442,17 @@ fun TransferInApp(
                     importCameraEngine.setSourceSelectionMode(
                         sessionViewModel.currentSourceSelectionMode.value
                     )
-
-                    Log.d(
-                        TAG_SESSION_ROUTE,
-                        "Connecting engine with sessionId=${session.id}, connectionMode=${session.connectionMode}, sourceFolderPath=${session.sourceFolderPath}"
-                    )
-
-                    when (session.connectionMode) {
-                        ConnectionMode.TETHERED -> {
-                            Log.d(TAG_SESSION_ROUTE, "TETHERED mode - engine will auto-connect")
-                        }
-                        ConnectionMode.IMPORT_FALLBACK -> {
-                            Log.d(TAG_SESSION_ROUTE, "IMPORT_FALLBACK mode - engine will auto-connect")
-                        }
-                    }
                 }
 
                 LaunchedEffect(Unit) {
-                    Log.d(TAG_SESSION_ROUTE, "incomingMedia collectors started")
-
                     launch {
                         sessionViewModel.tetheredEngineInstance.incomingMedia.collect { job ->
-                            Log.d(
-                                TAG_SESSION_ROUTE,
-                                "TETHERED incomingMedia: ${job.originalFileName}"
-                            )
                             sessionViewModel.handleIncomingMedia(job)
                         }
                     }
 
                     launch {
                         importCameraEngine.incomingMedia.collect { job ->
-                            Log.d(
-                                TAG_SESSION_ROUTE,
-                                "IMPORT incomingMedia: ${job.originalFileName}"
-                            )
                             sessionViewModel.handleIncomingMedia(job)
                         }
                     }
@@ -492,30 +465,21 @@ fun TransferInApp(
                     successCount = stats.success,
                     failedCount = stats.failed,
                     onStartImport = {
-                        Log.d(TAG_SESSION_ROUTE, "onStartImport clicked")
                         importCameraEngine.openMtpSessionIfNeeded()
                         importCameraEngine.startLiveSession()
                         sessionViewModel.refreshStats()
-                        Log.d(TAG_SESSION_ROUTE, "Live import session start requested")
                     },
                     onStartLiveHybrid = {
-                        Log.d(TAG_SESSION_ROUTE, "onStartLiveHybrid clicked")
                         importCameraEngine.openMtpSessionIfNeeded()
                         importCameraEngine.startLiveSessionHybrid()
                         sessionViewModel.refreshStats()
-                        Log.d(TAG_SESSION_ROUTE, "Hybrid live session start requested")
                     },
-                    onStartShootMode = {
-                        Log.d(TAG_SESSION_ROUTE, "TETHERED mode already active")
-                    },
+                    onStartShootMode = {},
                     onStopShootMode = {
-                        Log.d(TAG_SESSION_ROUTE, "onStopShootMode clicked")
                         sessionViewModel.closeCameraSession()
                         sessionViewModel.refreshStats()
-                        Log.d(TAG_SESSION_ROUTE, "Tether mode stopped")
                     },
                     onFinish = {
-                        Log.d(TAG_SESSION_ROUTE, "onFinish clicked")
                         if (isTetheredActive) {
                             sessionViewModel.closeCameraSession()
                         }
@@ -525,13 +489,11 @@ fun TransferInApp(
                         }
                     },
                     onOpenGallery = {
-                        Log.d(TAG_SESSION_ROUTE, "onOpenGallery clicked")
                         navController.navigate(ROUTE_GALLERY) {
                             launchSingleTop = true
                         }
                     },
                     onBack = {
-                        Log.d(TAG_SESSION_ROUTE, "onBack clicked")
                         if (isTetheredActive) {
                             sessionViewModel.closeCameraSession()
                         }
@@ -559,7 +521,6 @@ fun TransferInApp(
                 UploadedGalleryScreen(
                     viewModel = galleryViewModel,
                     onNavigateBack = {
-                        Log.d(TAG_TRANSFER_APP, "Gallery back clicked")
                         navController.popBackStack()
                     }
                 )
@@ -584,11 +545,8 @@ fun TransferInApp(
                     baselineCount = state.baselineCount,
                     newCount = state.newCount,
                     uploadedCount = state.uploadedCount,
-                    onItemClick = { item ->
-                        Log.d(TAG_TRANSFER_APP, "Camera gallery item clicked: ${item.fileName}")
-                    },
+                    onItemClick = {},
                     onBack = {
-                        Log.d(TAG_TRANSFER_APP, "Camera gallery back clicked")
                         navController.popBackStack()
                     }
                 )
@@ -599,8 +557,6 @@ fun TransferInApp(
                 val stats by sessionViewModel.stats.collectAsState()
 
                 val totalFiles = stats.success + stats.failed
-                val startTimeText: String? = null
-                val endTimeText: String? = null
 
                 SessionSummaryScreen(
                     customerName = summary.customerName,
@@ -608,22 +564,17 @@ fun TransferInApp(
                     totalFiles = totalFiles,
                     totalSuccess = summary.successCount,
                     totalFailed = summary.failedCount,
-                    startTimeText = startTimeText,
-                    endTimeText = endTimeText,
+                    startTimeText = null,
+                    endTimeText = null,
                     onDone = {
-                        Log.d(
-                            TAG_TRANSFER_APP,
-                            "Session summary done -> reset sourceTreeUri"
-                        )
                         selectedSourceTreeUri = ""
                         activeSessionId = null
-                        navController.navigate(ROUTE_SELECT_FOLDER) {
-                            popUpTo(ROUTE_SELECT_FOLDER) { inclusive = false }
+                        navController.navigate(ROUTE_WIZARD) {
+                            popUpTo(ROUTE_WIZARD) { inclusive = false }
                             launchSingleTop = true
                         }
                     },
                     onBack = {
-                        Log.d(TAG_TRANSFER_APP, "Session summary back clicked")
                         navController.popBackStack()
                     }
                 )
