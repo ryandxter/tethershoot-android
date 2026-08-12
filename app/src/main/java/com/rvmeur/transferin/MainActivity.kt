@@ -85,7 +85,7 @@ private const val TAG_SESSION_ROUTE = "SessionActiveRoute"
 class MainActivity : ComponentActivity() {
 
     private lateinit var usbHelper: UsbHelper
-    private var onOAuthCodeListener: ((String) -> Unit)? = null
+    private var onOAuthCodeListener: ((code: String, redirectUri: String) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,8 +124,13 @@ class MainActivity : ComponentActivity() {
         if (data != null && (data.scheme == "com.rvmeur.transferin" || data.scheme == "https")) {
             val code = data.getQueryParameter("code")
             if (!code.isNullOrBlank()) {
-                Log.d(TAG_TRANSFER_APP, "Extracted OAuth authorization code from deep link intent!")
-                onOAuthCodeListener?.invoke(code)
+                val redirectUri = if (data.scheme == "com.rvmeur.transferin") {
+                    "com.rvmeur.transferin:/oauth2redirect"
+                } else {
+                    "https://rvmeur.com/oauth2callback"
+                }
+                Log.d(TAG_TRANSFER_APP, "Extracted OAuth code from deep link intent (redirectUri=$redirectUri)")
+                onOAuthCodeListener?.invoke(code, redirectUri)
             }
         }
     }
@@ -134,7 +139,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TransferInApp(
     usbHelper: UsbHelper? = null,
-    setOnOAuthCodeListener: (((String) -> Unit) -> Unit)? = null
+    setOnOAuthCodeListener: ((((code: String, redirectUri: String) -> Unit)) -> Unit)? = null
 ) {
     val isInPreview = LocalInspectionMode.current
     val context = LocalContext.current
@@ -250,10 +255,10 @@ fun TransferInApp(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(setOnOAuthCodeListener) {
-        setOnOAuthCodeListener?.invoke { code ->
+        setOnOAuthCodeListener?.invoke { code, redirectUri ->
             scope.launch {
-                Log.d(TAG_TRANSFER_APP, "Handling Google OAuth code in coroutine...")
-                val result = googleDriveAuthManager.handleAuthorizationCode(code)
+                Log.d(TAG_TRANSFER_APP, "Handling Google OAuth code in coroutine with redirectUri=$redirectUri...")
+                val result = googleDriveAuthManager.handleAuthorizationCode(code, redirectUri)
                 if (result.isSuccess) {
                     hasNasConnection = true
                     selectedTargetNasDirPath = "root"

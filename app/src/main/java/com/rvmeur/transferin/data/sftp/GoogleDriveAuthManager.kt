@@ -45,15 +45,15 @@ class GoogleDriveAuthManager(
 
     private val httpClient = OkHttpClient()
 
-    suspend fun handleAuthorizationCode(code: String): Result<NasConnection> = withContext(Dispatchers.IO) {
+    suspend fun handleAuthorizationCode(code: String, redirectUri: String = REDIRECT_URI): Result<NasConnection> = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Exchanging OAuth authorization code for real Google tokens...")
+            Log.d(TAG, "Exchanging OAuth authorization code using redirectUri=$redirectUri...")
             val formBody = FormBody.Builder()
                 .add("client_id", CLIENT_ID)
                 .add("client_secret", CLIENT_SECRET)
                 .add("code", code)
                 .add("grant_type", "authorization_code")
-                .add("redirect_uri", REDIRECT_URI)
+                .add("redirect_uri", redirectUri)
                 .build()
 
             val request = Request.Builder()
