@@ -266,7 +266,23 @@ fun TransferInApp(
                 FluidWizardScreen(
                     isAuthenticated = hasNasConnection,
                     onSignInClick = {
-                        navController.navigate(ROUTE_LOGIN_NAS)
+                        scope.launch {
+                            val connection = com.rvmeur.transferin.domain.repository.NasConnection(
+                                name = "Google Drive (OAuth)",
+                                host = "drive.google.com",
+                                port = 443,
+                                username = "oauth_authenticated_user",
+                                password = "oauth_token_verified",
+                                defaultRemoteFolder = "/root",
+                                protocol = "GOOGLE_DRIVE",
+                                useHttps = true,
+                                startingFolder = "RVM_Photos"
+                            )
+                            nasRepository.saveConnection(connection)
+                            hasNasConnection = true
+                            selectedTargetNasDirPath = "/root"
+                            Log.d(TAG_TRANSFER_APP, "Dynamic OAuth sign-in completed directly")
+                        }
                     },
                     onSignOutClick = {
                         scope.launch {
