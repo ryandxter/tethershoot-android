@@ -19,9 +19,19 @@ class GoogleDriveAuthManager(
 ) {
     companion object {
         private const val TAG = "GoogleDriveAuthManager"
-        const val CLIENT_ID = "343575435197-ug3en8ich4l1grgae2m6kbpcub0glu77.apps.googleusercontent.com"
-        const val CLIENT_SECRET = ""
-        const val REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
+        // Web Client ID (Registered with Authorized Redirect URI: https://rvmeur.com/oauth2callback)
+        const val WEB_CLIENT_ID = "343575435197-q6tnos0o1cgt8c0ir8alne21gitioj7i.apps.googleusercontent.com"
+        const val WEB_CLIENT_SECRET = "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"
+        const val WEB_REDIRECT_URI = "https://rvmeur.com/oauth2callback"
+
+        // Android Native Client ID (Registered with Package com.rvmeur.transferin & SHA-1)
+        const val ANDROID_CLIENT_ID = "343575435197-ug3en8ich4l1grgae2m6kbpcub0glu77.apps.googleusercontent.com"
+        const val ANDROID_REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
+
+        // Active Configuration (Use Web Client ID with HTTPS Redirect URI for Universal Compatibility)
+        const val CLIENT_ID = WEB_CLIENT_ID
+        const val CLIENT_SECRET = WEB_CLIENT_SECRET
+        const val REDIRECT_URI = WEB_REDIRECT_URI
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
         fun getAuthorizationUri(): Uri {
