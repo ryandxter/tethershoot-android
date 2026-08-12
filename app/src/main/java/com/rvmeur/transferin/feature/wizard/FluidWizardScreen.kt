@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 fun FluidWizardScreen(
     isAuthenticated: Boolean,
     onSignInClick: () -> Unit,
+    onSignOutClick: () -> Unit,
     currentPath: String,
     folders: List<RemoteFolder>,
     selectedFolder: RemoteFolder?,
@@ -146,6 +147,7 @@ fun FluidWizardScreen(
                         0 -> Step1DriveFolder(
                             isAuthenticated = isAuthenticated,
                             onSignInClick = onSignInClick,
+                            onSignOutClick = onSignOutClick,
                             currentPath = currentPath,
                             folders = folders,
                             selectedFolder = selectedFolder,

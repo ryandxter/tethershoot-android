@@ -259,10 +259,19 @@ fun TransferInApp(
                     connectCameraViewModel.refreshUsbState()
                 }
 
+                val scope = androidx.compose.runtime.rememberCoroutineScope()
+
                 FluidWizardScreen(
                     isAuthenticated = true,
                     onSignInClick = {
-                        navController.navigate(ROUTE_LOGIN_NAS)
+                        val oauthUri = android.net.Uri.parse("https://accounts.google.com/o/oauth2/v2/auth")
+                        val intent = Intent(Intent.ACTION_VIEW, oauthUri)
+                        context.startActivity(intent)
+                    },
+                    onSignOutClick = {
+                        scope.launch {
+                            nasRepository.clearConnection()
+                        }
                     },
                     currentPath = folderState.currentPath,
                     folders = folderState.folders,

@@ -19,4 +19,6 @@ interface NasConnectionRepository {
     suspend fun saveConnection(connection: NasConnection)
 
     suspend fun updateDefaultRemoteFolder(folder: String)
+
+    suspend fun clearConnection()
 }

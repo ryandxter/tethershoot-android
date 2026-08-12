@@ -21,6 +21,10 @@ class NasConnectionRepositoryImpl(
         dao.updateDefaultRemoteFolder(folder.trim())
     }
 
+    override suspend fun clearConnection() {
+        dao.deleteConnection()
+    }
+
     private fun NasConnectionEntity.toDomain(): NasConnection {
         return NasConnection(
             name = name,

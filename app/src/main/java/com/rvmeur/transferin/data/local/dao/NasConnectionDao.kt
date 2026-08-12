@@ -17,4 +17,7 @@ interface NasConnectionDao {
 
     @Query("UPDATE nas_connection SET defaultRemoteFolder = :folder WHERE id = 1")
     suspend fun updateDefaultRemoteFolder(folder: String)
+
+    @Query("DELETE FROM nas_connection WHERE id = 1")
+    suspend fun deleteConnection()
 }

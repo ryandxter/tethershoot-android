@@ -20,8 +20,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.AlertDialog
@@ -69,6 +69,7 @@ import com.rvmeur.transferin.ui.theme.toBrandLowercase
 fun Step1DriveFolder(
     isAuthenticated: Boolean,
     onSignInClick: () -> Unit,
+    onSignOutClick: () -> Unit,
     currentPath: String,
     folders: List<RemoteFolder>,
     selectedFolder: RemoteFolder?,
@@ -79,6 +80,7 @@ fun Step1DriveFolder(
     modifier: Modifier = Modifier
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showSignOutDialog by remember { mutableStateOf(false) }
     var newFolderName by remember { mutableStateOf("") }
 
     Column(
@@ -121,13 +123,21 @@ fun Step1DriveFolder(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             if (!isAuthenticated) {
-                Spacer(modifier = Modifier.height(16.dp))
                 KineticButton(
-                    text = "masuk akun google drive",
+                    text = "masuk akun google drive (oauth)",
                     onClick = onSignInClick,
                     containerColor = TextPrimary,
                     contentColor = MaterialTheme.colorScheme.background
+                )
+            } else {
+                KineticButton(
+                    text = "keluar / ganti akun google drive",
+                    onClick = { showSignOutDialog = true },
+                    containerColor = AccentBurgundy,
+                    contentColor = CardSurface
                 )
             }
         }
@@ -300,6 +310,41 @@ fun Step1DriveFolder(
                 }
             }
         }
+    }
+
+    // Sign Out Confirmation AlertDialog
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = {
+                Text(
+                    text = "keluar akun google drive".toBrandLowercase(),
+                    style = MaterialTheme.typography.titleLarge.copy(fontFamily = CormorantGaramond)
+                )
+            },
+            text = {
+                Text(
+                    text = "apakah anda yakin ingin menghapus sesi otentikasi lokal? anda harus melakukan login ulang untuk mengakses google drive.".toBrandLowercase(),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = DMSans, color = TextMuted)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSignOutDialog = false
+                        onSignOutClick()
+                    }
+                ) {
+                    Text("keluar".toBrandLowercase(), color = AccentBurgundy)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text("batal".toBrandLowercase(), color = TextMuted)
+                }
+            },
+            containerColor = CardSurface
+        )
     }
 
     // New Folder AlertDialog
