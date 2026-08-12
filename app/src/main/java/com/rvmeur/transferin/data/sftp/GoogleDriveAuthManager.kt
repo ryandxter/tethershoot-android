@@ -19,9 +19,9 @@ class GoogleDriveAuthManager(
 ) {
     companion object {
         private const val TAG = "GoogleDriveAuthManager"
-        const val CLIENT_ID = "343575435197-q6tnos0o1cgt8c0ir8alne21gitioj7i.apps.googleusercontent.com"
-        const val CLIENT_SECRET = "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"
-        const val REDIRECT_URI = "https://rvmeur.com/oauth2callback"
+        const val CLIENT_ID = "343575435197-ug3en8ich4l1grgae2m6kbpcub0glu77.apps.googleusercontent.com"
+        const val CLIENT_SECRET = ""
+        const val REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
         fun getAuthorizationUri(): Uri {
@@ -48,13 +48,17 @@ class GoogleDriveAuthManager(
     suspend fun handleAuthorizationCode(code: String, redirectUri: String = REDIRECT_URI): Result<NasConnection> = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Exchanging OAuth authorization code using redirectUri=$redirectUri...")
-            val formBody = FormBody.Builder()
+            val formBuilder = FormBody.Builder()
                 .add("client_id", CLIENT_ID)
-                .add("client_secret", CLIENT_SECRET)
                 .add("code", code)
                 .add("grant_type", "authorization_code")
                 .add("redirect_uri", redirectUri)
-                .build()
+
+            if (CLIENT_SECRET.isNotBlank()) {
+                formBuilder.add("client_secret", CLIENT_SECRET)
+            }
+
+            val formBody = formBuilder.build()
 
             val request = Request.Builder()
                 .url("https://oauth2.googleapis.com/token")
