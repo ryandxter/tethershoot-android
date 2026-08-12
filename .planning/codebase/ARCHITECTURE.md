@@ -23,7 +23,7 @@ graph TD
 
 ## Layers
 
-### 1. Data Layer (`com.reflection.transferin.data`)
+### 1. Data Layer (`com.rvmeur.transferin.data`)
 Handles local persistence, remote networks, and low-level USB client protocols.
 
 - **Local Database (Room):** `db/TransferInDatabase.kt`, `db/DatabaseProvider.kt`, entities (e.g., `SessionEntity.kt`, `TransferQueueItemEntity.kt`), and DAOs (e.g., `SessionDao.kt`).
@@ -31,7 +31,7 @@ Handles local persistence, remote networks, and low-level USB client protocols.
 - **USB Host Connection:** `usb/` handles low-level USB MTP/PTP camera connectivity, permission management, and camera discovery engine.
 - **Repository Implementations:** `repository/` implements domain interfaces (e.g. `CameraMediaRepositoryImpl.kt`, `TransferQueueRepositoryImpl.kt`), decoupling domain logic from libraries.
 
-### 2. Domain Layer (`com.reflection.transferin.domain`)
+### 2. Domain Layer (`com.rvmeur.transferin.domain`)
 Contains the core business rules, models, and interfaces. This layer is pure Kotlin and independent of Android framework details where possible.
 
 - **Models:** Domain objects representing application states (`CameraMedia.kt`, `TransferQueueItem.kt`, `ProjectSession.kt`).
@@ -43,13 +43,13 @@ Contains the core business rules, models, and interfaces. This layer is pure Kot
   - `SmartUploadFilter.kt` / `NewShotDetector.kt` - Detects new photos to trigger automatic uploads.
 - **Session Interfaces:** `session/` defines abstract connection/upload orchestrators (`CameraEngine.kt`, `UploadQueueManager.kt`, `TransferSessionManager.kt`).
 
-### 3. Session Runtime Layer (`com.reflection.transferin.session`)
+### 3. Session Runtime Layer (`com.rvmeur.transferin.session`)
 Orchestrates background tasks, active uploads, and synchronization lifecycles.
 
 - **Active Session Orchestrator:** `runtime/SessionOrchestrator.kt` and `SessionDispatcher.kt` dispatch active media capture events to the transfer engine.
 - **WorkManager Task Runner:** `worker/TransferUploadWorker.kt` schedules queue processing in the background under Android battery and network policies.
 
-### 4. Presentation Layer (`com.reflection.transferin.feature` & `com.reflection.transferin.ui`)
+### 4. Presentation Layer (`com.rvmeur.transferin.feature` & `com.rvmeur.transferin.ui`)
 Implements the user interface using Jetpack Compose and ViewModels.
 
 - **Features:** Clean boundary per feature (e.g., `connectcamera/`, `sessionactive/`, `sessionsummary/`).
@@ -57,7 +57,7 @@ Implements the user interface using Jetpack Compose and ViewModels.
   - `*Screen.kt` - Compose UI layout.
   - `*ViewModel.kt` - ViewModel exposing UI state (`StateFlow`) and receiving user events.
   - `*UiState.kt` / `*State.kt` - Read-only state container.
-- **Service layer:** `com.reflection.transferin.service.UsbTetherService.kt` is a foreground service that prevents the OS from killing the app during active background uploads.
+- **Service layer:** `com.rvmeur.transferin.service.UsbTetherService.kt` is a foreground service that prevents the OS from killing the app during active background uploads.
 
 ---
 

@@ -119,7 +119,7 @@ val normalized = filename.trim().lowercase()  // Handles Unicode correctly in Ko
 
 ```kotlin
 // data/local/entity/UploadedFingerprint.kt
-package com.reflection.transferin.data.local.entity
+package com.rvmeur.transferin.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -180,13 +180,13 @@ data class UploadedFingerprintEntity(
 
 ```kotlin
 // data/local/dao/UploadedFingerprintDao.kt
-package com.reflection.transferin.data.local.dao
+package com.rvmeur.transferin.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.reflection.transferin.data.local.entity.UploadedFingerprintEntity
+import com.rvmeur.transferin.data.local.entity.UploadedFingerprintEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -297,7 +297,7 @@ interface UploadedFingerprintDao {
 
 ```kotlin
 // data/local/db/Migration_8_9.kt
-package com.reflection.transferin.data.local.db
+package com.rvmeur.transferin.data.local.db
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -394,10 +394,10 @@ fun provideDatabase(context: Context): TransferInDatabase {
 
 ```kotlin
 // domain/repository/UploadedFingerprintRepository.kt
-package com.reflection.transferin.domain.repository
+package com.rvmeur.transferin.domain.repository
 
-import com.reflection.transferin.data.local.dao.UploadedFingerprintDao
-import com.reflection.transferin.data.local.entity.UploadedFingerprintEntity
+import com.rvmeur.transferin.data.local.dao.UploadedFingerprintDao
+import com.rvmeur.transferin.data.local.entity.UploadedFingerprintEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -475,7 +475,7 @@ class UploadedFingerprintRepository(
 
 ```kotlin
 // domain/shoot/SmartUploadFilter.kt
-package com.reflection.transferin.domain.shoot
+package com.rvmeur.transferin.domain.shoot
 
 /**
  * Filters upload queue items against uploaded fingerprints.
@@ -585,9 +585,9 @@ class SmartUploadFilter(
 
 ```kotlin
 // domain/shoot/NewShotDetector.kt
-package com.reflection.transferin.domain.shoot
+package com.rvmeur.transferin.domain.shoot
 
-import com.reflection.transferin.domain.model.CameraMedia
+import com.rvmeur.transferin.domain.model.CameraMedia
 
 /**
  * Detects new shots by comparing current CTG state against baseline snapshot.

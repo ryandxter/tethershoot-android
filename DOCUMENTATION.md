@@ -8,7 +8,7 @@
 ## 2. Struktur Paket (Package Structure) Terperinci
 Berikut adalah hierarki direktori dan tanggung jawab masing-masing folder:
 
-**com.reflection.transferin**
+**com.rvmeur.transferin**
 *   **data**
     *   **local**
         *   **db**: Konfigurasi Room Database (`DatabaseProvider`, `TransferInDatabase`)

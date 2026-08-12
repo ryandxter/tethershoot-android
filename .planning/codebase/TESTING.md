@@ -34,7 +34,7 @@ Run all local unit tests:
 
 Run specific unit test (e.g., `ExampleUnitTest`):
 ```bash
-./gradlew :app:testDebugUnitTest --tests "com.reflection.transferin.ExampleUnitTest"
+./gradlew :app:testDebugUnitTest --tests "com.rvmeur.transferin.ExampleUnitTest"
 ```
 
 Run instrumented tests (requires connected emulator/device):

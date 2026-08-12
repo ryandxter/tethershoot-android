@@ -9,11 +9,11 @@ ksp {
 }
 
 android {
-    namespace = "com.reflection.transferin"
+    namespace = "com.rvmeur.transferin"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.reflection.transferin"
+        applicationId = "com.rvmeur.transferin"
         minSdk = 31
         targetSdk = 37
 

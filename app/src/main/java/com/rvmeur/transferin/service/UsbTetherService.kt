@@ -1,0 +1,224 @@
+package com.rvmeur.transferin.service
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.hardware.usb.UsbConstants
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
+import android.os.Build
+import android.os.IBinder
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.rvmeur.transferin.data.usb.UsbHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class UsbTetherService : Service() {
+
+    companion object {
+        private const val TAG = "UsbTetherService"
+        const val ACTION_START_USB_TETHER = "com.rvmeur.transferin.action.START_USB_TETHER"
+
+        private const val CHANNEL_ID = "usb_tether_channel"
+        private const val CHANNEL_NAME = "USB Tether Service"
+        private const val NOTIFICATION_ID = 1001
+
+        @Suppress("SpellCheckingInspection")
+        private val CAMERA_KEYWORDS = listOf(
+            "camera",
+            "canon",
+            "nikon",
+            "sony",
+            "fujifilm",
+            "lumix",
+            "panasonic",
+            "olympus",
+            "leica",
+            "gopro",
+            "dji",
+            "eos"
+        )
+    }
+
+    private lateinit var usbHelper: UsbHelper
+    private val serviceJob: Job = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
+    private var openSessionJob: Job? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        usbHelper = UsbHelper(applicationContext)
+        createNotificationChannel()
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    buildNotification("USB camera service is starting"),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                )
+            } else {
+                startForeground(
+                    NOTIFICATION_ID,
+                    buildNotification("USB camera service is starting")
+                )
+            }
+            Log.d(TAG, "UsbTetherService created")
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to enter foreground mode", t)
+            stopSelf()
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action != ACTION_START_USB_TETHER) {
+            Log.w(TAG, "Ignoring unsupported action=${intent?.action}")
+            stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
+
+        val device = extractUsbDevice(intent)
+        if (device == null) {
+            Log.w(TAG, "No USB device found in start intent")
+            stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
+
+        Log.d(
+            TAG,
+            "UsbTetherService start device=${device.deviceName} vendorId=${device.vendorId} productId=${device.productId}"
+        )
+
+        if (!isLikelyCamera(device)) {
+            Log.d(TAG, "Device is not camera-like, stopping service: ${device.deviceName}")
+            stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
+
+        openSessionJob?.cancel()
+        openSessionJob = serviceScope.launch {
+            updateNotification("Opening camera session...")
+
+            val opened = withContext(Dispatchers.IO) {
+                runCatching {
+                    usbHelper.refreshUsbState()
+                    usbHelper.openCameraSession(device.deviceName)
+                }.onFailure { throwable ->
+                    Log.e(TAG, "Failed to open camera session", throwable)
+                }.getOrDefault(false)
+            }
+
+            if (!opened) {
+                Log.w(TAG, "Camera session open failed for ${device.deviceName}")
+                updateNotification("Failed to open camera session")
+                stopSelfResult(startId)
+                return@launch
+            }
+
+            Log.d(TAG, "Camera session opened from service for ${device.deviceName}")
+            updateNotification("USB camera connected")
+        }
+
+        return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        openSessionJob?.cancel()
+
+        serviceScope.launch(Dispatchers.IO) {
+            runCatching {
+                usbHelper.closeCameraSession()
+            }.onFailure { throwable ->
+                Log.w(TAG, "Failed to close camera session on destroy", throwable)
+            }
+        }
+
+        serviceScope.cancel()
+        Log.d(TAG, "UsbTetherService destroyed")
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun extractUsbDevice(intent: Intent): UsbDevice? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+        }
+    }
+
+    private fun isLikelyCamera(device: UsbDevice): Boolean {
+        if (device.deviceClass == UsbConstants.USB_CLASS_STILL_IMAGE ||
+            device.deviceClass == UsbConstants.USB_CLASS_VIDEO
+        ) {
+            return true
+        }
+
+        repeat(device.interfaceCount) { index ->
+            val usbInterface = device.getInterface(index)
+            if (usbInterface.interfaceClass == UsbConstants.USB_CLASS_STILL_IMAGE ||
+                usbInterface.interfaceClass == UsbConstants.USB_CLASS_VIDEO
+            ) {
+                return true
+            }
+        }
+
+        val combinedName = buildString {
+            append(device.manufacturerName.orEmpty())
+            append(" ")
+            append(device.productName.orEmpty())
+        }.lowercase()
+
+        return CAMERA_KEYWORDS.any { keyword -> combinedName.contains(keyword) }
+    }
+
+    private fun createNotificationChannel() {
+        val manager = getSystemService(NotificationManager::class.java)
+        val existing = manager.getNotificationChannel(CHANNEL_ID)
+        if (existing != null) return
+
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Foreground service for USB camera tethering"
+            setShowBadge(false)
+        }
+
+        manager.createNotificationChannel(channel)
+    }
+
+    private fun buildNotification(contentText: String): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("TransferIn")
+            .setContentText(contentText)
+            .setSmallIcon(android.R.drawable.ic_menu_upload)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .build()
+    }
+
+    private fun updateNotification(contentText: String) {
+        val manager = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
+            androidx.core.content.PermissionChecker.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != 
+            androidx.core.content.PermissionChecker.PERMISSION_GRANTED) {
+            Log.w(TAG, "Missing POST_NOTIFICATIONS permission")
+            return
+        }
+        manager.notify(NOTIFICATION_ID, buildNotification(contentText))
+    }
+}

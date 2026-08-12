@@ -1,25 +1,20 @@
 # Roadmap
 
-## Milestone v1 Phases (Completed)
-- [x] Phase 1: SFTP Pooling & Reconnection Resilience
-- [x] Phase 2: USB Debounce & Service Compliance
-- [x] Phase 3: Multi-Vendor MTP Fallback
-- [x] Phase 4: Resumable Transfers & Server Cleanup
-- [x] Phase 5: Room Migration Validation Suite
+## Previous Milestones (Archived)
 
-## Milestone v2 Phases
+### Milestone v1.0: Rebranding & Google Drive Migration (Shipped: 2026-08-12)
+- [x] Phase 1: Rebranding & Package Rename
+- [x] Phase 2: UI Style Refactoring (rvmeur.com Design)
+- [x] Phase 3: Google Drive Integration & NAS Replacement
+- Archive: [v1.0-rebranding-ROADMAP.md](file:///Users/chiio/VSCode/TransferInFuji/.planning/milestones/v1.0-rebranding-ROADMAP.md)
 
-### Phase 6: Camera File Number Baseline Extraction
-- **Goal:** Robustly extract the file number baseline from the camera's folder/file layout on session start.
-- **Requirements:** `NUM-01`, `NUM-02`, `NUM-03`, `DIR-01`, `DIR-02`
-- **Success Criteria:**
-  1. `PhotoWatcher` scans all MTP objects, filters out system folders (e.g. `/MISC/` or databases), and parses the highest file number (e.g. `DSCF0018` -> `18`) at launch.
-  2. Baseline number does not reset to `0001` when reconnecting tethered mode.
-  3. Traverses subfolders nested under `/DCIM/` to locate all media files.
+### Milestone v2: Camera File Numbering & Traversal Alignment (Shipped: 2026-08-07)
+- [x] Phase 6: Camera File Number Baseline Extraction
+- [x] Phase 7: Robust RAW+JPG Co-existence & Verification
+- [x] Phase 8: Canon and Fuji Connection Polish
 
-### Phase 7: Robust RAW+JPG Co-existence & Verification
-- **Goal:** Ensure RAW+JPG taken concurrently sync without race conditions or file skips.
-- **Requirements:** `RAW-01`
-- **Success Criteria:**
-  1. Taking RAW+JPG simultaneously enqueues both files based on the matched number baseline and distinct extensions.
-  2. Automated tests verify `PhotoWatcher` does not drop raw or jpeg files during concurrent emission.
+---
+
+## Next Milestone
+
+Run `/gsd-new-milestone` to initialize requirements and roadmap for the next development cycle.

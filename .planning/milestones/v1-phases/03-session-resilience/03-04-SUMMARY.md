@@ -22,7 +22,7 @@ Handle USB cable disconnects/reconnects during shoot mode. When cable disconnect
 - Created `UsbDeviceInfo` data class for device tracking
 
 ### Task 2: Create UsbDisconnectHandler with broadcast receiver
-- Created `UsbDisconnectHandler` class in `com.reflection.transferin.service` package
+- Created `UsbDisconnectHandler` class in `com.rvmeur.transferin.service` package
 - Implemented USB broadcast receiver for `ACTION_USB_DEVICE_ATTACHED` and `ACTION_USB_DEVICE_DETACHED`
 - Exposed connection state via `StateFlow<ConnectionState>`
 - Added callbacks: `onDisconnect`, `onReconnect`, `onSftpSessionMarkedUnhealthy`

@@ -1,31 +1,16 @@
 # Milestones
 
-## v1 v1 (Shipped: 2026-08-07)
+## v1.0 — Rebranding & Google Drive Migration (Shipped: 2026-08-12)
 
-**Phases completed:** 5 phases, 3 plans, 0 tasks
+**Phases completed:** 3 phases (Phase 1, Phase 2, Phase 3)
 
 **Key accomplishments:**
-
-- 2026-08-07
-- 2026-08-07
-- 2026-08-07
-- 2026-08-07
-- 2026-08-07
+- Renamed full Android codebase package namespace to `com.rvmeur.transferin` and eliminated legacy namespace references.
+- Modernized UI design tokens to `#FAF8F3` cream background, `#26170C` dark primary text, `#2D4636` accent green, and Cormorant Garamond / DM Sans typography.
+- Replaced legacy SFTP/WebDAV connection engine with direct Google Drive REST API OAuth2 client, supporting multipart uploads and folder resolution.
 
 ---
 
-## v1.0 — Shoot Mode Optimization (Current)
+## v2 — Camera File Numbering & Traversal Alignment (Shipped: 2026-08-07)
 
-**Goal:** Optimize the shoot mode experience with better integrity checking, smarter caching, and resilient connectivity
-
-**Target features:**
-
-1. Parse Canon .CTG database files for upload integrity checking
-2. Detect new shots only and upload from those (smart caching)
-3. Survive camera cable disconnects with seamless reconnection
-
-**Status:** Planning
-
----
-
-*No previous milestones — project started 2026-07-31*
+**Phases completed:** 3 phases (Phase 6, Phase 7, Phase 8)

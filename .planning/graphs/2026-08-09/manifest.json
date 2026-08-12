@@ -1,0 +1,717 @@
+{
+  ".bg-shell/manifest.json": {
+    "mtime": 1785472350.2438686,
+    "ast_hash": "d751713988987e9331980363e24189ce",
+    "semantic_hash": "d751713988987e9331980363e24189ce"
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1785128712.0,
+    "ast_hash": "7439aac01d91bbbc39fab23ff852e494",
+    "semantic_hash": "7439aac01d91bbbc39fab23ff852e494"
+  },
+  ".gsd/runtime/write-gate-state.json": {
+    "mtime": 1785472199.6795392,
+    "ast_hash": "8bce213f5d2553907b3e971800ed19f5",
+    "semantic_hash": "8bce213f5d2553907b3e971800ed19f5"
+  },
+  "app/build.gradle.kts": {
+    "mtime": 1784620028.0,
+    "ast_hash": "e6d3478ce2bfae24d1bb0d6d0c5d8fd2",
+    "semantic_hash": "e6d3478ce2bfae24d1bb0d6d0c5d8fd2"
+  },
+  "app/src/androidTest/java/com/reflection/transferin/ExampleInstrumentedTest.kt": {
+    "mtime": 1783154560.0,
+    "ast_hash": "7bba7abb1ace4d276f7efe525d4d3b82",
+    "semantic_hash": "7bba7abb1ace4d276f7efe525d4d3b82"
+  },
+  "app/src/main/java/com/reflection/transferin/MainActivity.kt": {
+    "mtime": 1785320336.0,
+    "ast_hash": "e5769b2b9a0feddac3414d1ade9ad66d",
+    "semantic_hash": "e5769b2b9a0feddac3414d1ade9ad66d"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/dao/CameraMediaDao.kt": {
+    "mtime": 1785229864.0,
+    "ast_hash": "cded99ee2682d36ca7c495793b194cf9",
+    "semantic_hash": "cded99ee2682d36ca7c495793b194cf9"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/dao/NasConnectionDao.kt": {
+    "mtime": 1783332350.0,
+    "ast_hash": "23cd1f5048bfaed6d64fd5d04f21b96e",
+    "semantic_hash": "23cd1f5048bfaed6d64fd5d04f21b96e"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/dao/SessionDao.kt": {
+    "mtime": 1785241146.0,
+    "ast_hash": "c704121a5e6ea070c207b016e47a660a",
+    "semantic_hash": "c704121a5e6ea070c207b016e47a660a"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/dao/TransferQueueDao.kt": {
+    "mtime": 1784180514.0,
+    "ast_hash": "772a7e2fed52645bf0842f38d96502fb",
+    "semantic_hash": "772a7e2fed52645bf0842f38d96502fb"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/db/DatabaseProvider.kt": {
+    "mtime": 1783498120.0,
+    "ast_hash": "1b9e926ef1e36c1337b8c5336ee80088",
+    "semantic_hash": "1b9e926ef1e36c1337b8c5336ee80088"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/db/TransferInDatabase.kt": {
+    "mtime": 1785378188.0,
+    "ast_hash": "a02a22fdcac6f01672f6bfe5050fcca6",
+    "semantic_hash": "a02a22fdcac6f01672f6bfe5050fcca6"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/entity/CameraMediaItemEntity.kt": {
+    "mtime": 1785378090.0,
+    "ast_hash": "a70a78a502e689061d353c01a0d8a692",
+    "semantic_hash": "a70a78a502e689061d353c01a0d8a692"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/entity/NasConnectionEntity.kt": {
+    "mtime": 1783332096.0,
+    "ast_hash": "7782cfe4afcada4c9b3fc9d42fb85b97",
+    "semantic_hash": "7782cfe4afcada4c9b3fc9d42fb85b97"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/entity/SessionEntity.kt": {
+    "mtime": 1783584112.0,
+    "ast_hash": "b7eedbf9dc55f8d4a45f934a692010c1",
+    "semantic_hash": "b7eedbf9dc55f8d4a45f934a692010c1"
+  },
+  "app/src/main/java/com/reflection/transferin/data/local/entity/TransferQueueItemEntity.kt": {
+    "mtime": 1784180592.0,
+    "ast_hash": "d3c02cd15704298e4eccd07494edd983",
+    "semantic_hash": "d3c02cd15704298e4eccd07494edd983"
+  },
+  "app/src/main/java/com/reflection/transferin/data/repository/CameraMediaRepositoryImpl.kt": {
+    "mtime": 1785229872.0,
+    "ast_hash": "1803b849b17e0c7e79b1bcfad3174eeb",
+    "semantic_hash": "1803b849b17e0c7e79b1bcfad3174eeb"
+  },
+  "app/src/main/java/com/reflection/transferin/data/repository/NasConnectionRepositoryImpl.kt": {
+    "mtime": 1783404692.0,
+    "ast_hash": "7e49878a12bf789c18703977362565b8",
+    "semantic_hash": "7e49878a12bf789c18703977362565b8"
+  },
+  "app/src/main/java/com/reflection/transferin/data/repository/SessionRepositoryImpl.kt": {
+    "mtime": 1785241186.0,
+    "ast_hash": "78ca992d8a99af1ddc00dd84dcfc68d5",
+    "semantic_hash": "78ca992d8a99af1ddc00dd84dcfc68d5"
+  },
+  "app/src/main/java/com/reflection/transferin/data/repository/TransferQueueRepositoryImpl.kt": {
+    "mtime": 1784027594.0,
+    "ast_hash": "b4c877e4be66cca84d38c7e6386a48d5",
+    "semantic_hash": "b4c877e4be66cca84d38c7e6386a48d5"
+  },
+  "app/src/main/java/com/reflection/transferin/data/sftp/JschSftpClient.kt": {
+    "mtime": 1784016174.0,
+    "ast_hash": "70bac702e91156d812268bde6e96905e",
+    "semantic_hash": "70bac702e91156d812268bde6e96905e"
+  },
+  "app/src/main/java/com/reflection/transferin/data/sftp/SftpClient.kt": {
+    "mtime": 1784015894.0,
+    "ast_hash": "6d977b031e2adde4247f927d9f1ad3b5",
+    "semantic_hash": "6d977b031e2adde4247f927d9f1ad3b5"
+  },
+  "app/src/main/java/com/reflection/transferin/data/storage/AutoStorageDetector.kt": {
+    "mtime": 1785126414.0,
+    "ast_hash": "aee42fb2bfe4b09fb27f62c19d069970",
+    "semantic_hash": "aee42fb2bfe4b09fb27f62c19d069970"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CameraDiscoveryEngine.kt": {
+    "mtime": 1785229520.0,
+    "ast_hash": "47825b06ac3a994d74398a3c57ca5bb7",
+    "semantic_hash": "47825b06ac3a994d74398a3c57ca5bb7"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CameraInitContext.kt": {
+    "mtime": 1783929884.0,
+    "ast_hash": "862e6f908b5de8165551ff71f2eacba5",
+    "semantic_hash": "862e6f908b5de8165551ff71f2eacba5"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CameraInitResult.kt": {
+    "mtime": 1783929876.0,
+    "ast_hash": "6a5b5f96e22716884a341ec2eb12b569",
+    "semantic_hash": "6a5b5f96e22716884a341ec2eb12b569"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CameraSessionInitializer.kt": {
+    "mtime": 1783929898.0,
+    "ast_hash": "de195a73d0d6ceda8be7795c92c57a8e",
+    "semantic_hash": "de195a73d0d6ceda8be7795c92c57a8e"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CameraUnlockOrchestrator.kt": {
+    "mtime": 1785381478.0,
+    "ast_hash": "6ebf6bff52ad5c232be61dff6aa563e1",
+    "semantic_hash": "6ebf6bff52ad5c232be61dff6aa563e1"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/CtgWatcher.kt": {
+    "mtime": 1785305016.0,
+    "ast_hash": "8dd54bc1c9b4601650f11f66e1230c88",
+    "semantic_hash": "8dd54bc1c9b4601650f11f66e1230c88"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/DefaultCameraSessionInitializer.kt": {
+    "mtime": 1785387230.0,
+    "ast_hash": "cd308f5ae4eb58cdcd02ed4ff9e5ed65",
+    "semantic_hash": "cd308f5ae4eb58cdcd02ed4ff9e5ed65"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/DocumentFileScanner.kt": {
+    "mtime": 1785145204.0,
+    "ast_hash": "e5a3349c7796edf732fbf46f6e66507d",
+    "semantic_hash": "e5a3349c7796edf732fbf46f6e66507d"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/FileStabilityChecker.kt": {
+    "mtime": 1784637444.0,
+    "ast_hash": "94579bb83713a57ae97812eab4bf4e3f",
+    "semantic_hash": "94579bb83713a57ae97812eab4bf4e3f"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/MtpContentObserver.kt": {
+    "mtime": 1784639398.0,
+    "ast_hash": "c612e9bec7a05b8c48425fcef5ab5bd8",
+    "semantic_hash": "c612e9bec7a05b8c48425fcef5ab5bd8"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/PhotoWatcher.kt": {
+    "mtime": 1785384616.0,
+    "ast_hash": "76883d2414b78336dc69ecbeb19c8ac1",
+    "semantic_hash": "76883d2414b78336dc69ecbeb19c8ac1"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/UsbHelper.kt": {
+    "mtime": 1785397820.0,
+    "ast_hash": "226904ae150b58665bf7e877d2490022",
+    "semantic_hash": "226904ae150b58665bf7e877d2490022"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/UsbPermissionManager.kt": {
+    "mtime": 1785316468.0,
+    "ast_hash": "e232e288a0e07ec4936bd150423d719c",
+    "semantic_hash": "e232e288a0e07ec4936bd150423d719c"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/UsbSourceOrchestrator.kt": {
+    "mtime": 1785147982.0,
+    "ast_hash": "44d365bf104d8607e482a978e851eb48",
+    "semantic_hash": "44d365bf104d8607e482a978e851eb48"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/CameraVendorInitializer.kt": {
+    "mtime": 1783930018.0,
+    "ast_hash": "9aed8ad0d30c3ee6304ab78c5c04827c",
+    "semantic_hash": "9aed8ad0d30c3ee6304ab78c5c04827c"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/CannonCameraInitializer.kt": {
+    "mtime": 1785386938.0,
+    "ast_hash": "1a20a76a860efb16d3d509a2a586cdae",
+    "semantic_hash": "1a20a76a860efb16d3d509a2a586cdae"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/CannonPtpEnumerator.kt": {
+    "mtime": 1785395878.0,
+    "ast_hash": "e7f2759687b0720cf33dbcd6f0d83c23",
+    "semantic_hash": "e7f2759687b0720cf33dbcd6f0d83c23"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/CannonPtpSession.kt": {
+    "mtime": 1785386906.0,
+    "ast_hash": "a38bbf8840ec8e1a571faf180e793725",
+    "semantic_hash": "a38bbf8840ec8e1a571faf180e793725"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/CannonPtpTransport.kt": {
+    "mtime": 1785386914.0,
+    "ast_hash": "f2e5104a4e2b28274365270484a0ee50",
+    "semantic_hash": "f2e5104a4e2b28274365270484a0ee50"
+  },
+  "app/src/main/java/com/reflection/transferin/data/usb/vendor/GenericCameraInitializer.kt": {
+    "mtime": 1785317318.0,
+    "ast_hash": "0f8a6e5df4dcc12cba7317d1be73bd82",
+    "semantic_hash": "0f8a6e5df4dcc12cba7317d1be73bd82"
+  },
+  "app/src/main/java/com/reflection/transferin/data/worker/TransferUploadWorkScheduler.kt": {
+    "mtime": 1784027450.0,
+    "ast_hash": "b7c6b65d40a3e45856b0db48c348bf0d",
+    "semantic_hash": "b7c6b65d40a3e45856b0db48c348bf0d"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/CameraMedia.kt": {
+    "mtime": 1783937840.0,
+    "ast_hash": "4d29684bad96e8e019a9e95b5275b901",
+    "semantic_hash": "4d29684bad96e8e019a9e95b5275b901"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/CameraRuntimeState.kt": {
+    "mtime": 1785305198.0,
+    "ast_hash": "e1cf535c9b43169852512f0897fe2bdf",
+    "semantic_hash": "e1cf535c9b43169852512f0897fe2bdf"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/ConnectionMode.kt": {
+    "mtime": 1785233730.0,
+    "ast_hash": "57199c2057cb8b9b34bffa428f1bf4e3",
+    "semantic_hash": "57199c2057cb8b9b34bffa428f1bf4e3"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/FileType.kt": {
+    "mtime": 1783410914.0,
+    "ast_hash": "bda7990789fc1c59d32984f60194434e",
+    "semantic_hash": "bda7990789fc1c59d32984f60194434e"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/MediaJob.kt": {
+    "mtime": 1784180316.0,
+    "ast_hash": "9f60344a29302048331121115b04041d",
+    "semantic_hash": "9f60344a29302048331121115b04041d"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/ProjectSession.kt": {
+    "mtime": 1785233630.0,
+    "ast_hash": "f50ecdebf24add3d2a801410c7aac19a",
+    "semantic_hash": "f50ecdebf24add3d2a801410c7aac19a"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/SessionState.kt": {
+    "mtime": 1783410800.0,
+    "ast_hash": "4c506c359fdab93edcb1b6416e9cdbb6",
+    "semantic_hash": "4c506c359fdab93edcb1b6416e9cdbb6"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/SourceSelectionMode.kt": {
+    "mtime": 1784621608.0,
+    "ast_hash": "234ee59180fff98efd6b2c89fd80fc4f",
+    "semantic_hash": "234ee59180fff98efd6b2c89fd80fc4f"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/TransferItemStatus.kt": {
+    "mtime": 1783410964.0,
+    "ast_hash": "da8eb2dee8b4b71d998b40f0b73a4f1f",
+    "semantic_hash": "da8eb2dee8b4b71d998b40f0b73a4f1f"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/TransferQueueItem.kt": {
+    "mtime": 1783411028.0,
+    "ast_hash": "30258e718299271efcc4022745978369",
+    "semantic_hash": "30258e718299271efcc4022745978369"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/model/WatcherStatus.kt": {
+    "mtime": 1783410868.0,
+    "ast_hash": "2ba1f22921ff52b49d929fafc2fc088d",
+    "semantic_hash": "2ba1f22921ff52b49d929fafc2fc088d"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/repository/CameraMediaRepository.kt": {
+    "mtime": 1785229334.0,
+    "ast_hash": "0d4012b513180c043346ced81f6b973e",
+    "semantic_hash": "0d4012b513180c043346ced81f6b973e"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/repository/NasConnectionRepository.kt": {
+    "mtime": 1783404692.0,
+    "ast_hash": "9533015250644a0c4c0bc66d09904d4e",
+    "semantic_hash": "9533015250644a0c4c0bc66d09904d4e"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/repository/SessionRepository.kt": {
+    "mtime": 1785241134.0,
+    "ast_hash": "041dd977eedadd4b5b19f77c04f03d3c",
+    "semantic_hash": "041dd977eedadd4b5b19f77c04f03d3c"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/repository/SessionRepositoryAdapter.kt": {
+    "mtime": 1785241158.0,
+    "ast_hash": "bf6e5fc8d95fbc11576e34acaec7f6b8",
+    "semantic_hash": "bf6e5fc8d95fbc11576e34acaec7f6b8"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/repository/TransferQueueRepository.kt": {
+    "mtime": 1783404080.0,
+    "ast_hash": "2e4ddae705619ff3cdf7d756bb66ac25",
+    "semantic_hash": "2e4ddae705619ff3cdf7d756bb66ac25"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/CameraConnectionCoordinator.kt": {
+    "mtime": 1783585516.0,
+    "ast_hash": "745af7346c77d248c31d9b86fd0d98d5",
+    "semantic_hash": "745af7346c77d248c31d9b86fd0d98d5"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/CameraEngine.kt": {
+    "mtime": 1785233332.0,
+    "ast_hash": "beffc4a9b8ddbdef6280b869a2b15aa4",
+    "semantic_hash": "beffc4a9b8ddbdef6280b869a2b15aa4"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/FileClassifier.kt": {
+    "mtime": 1783404160.0,
+    "ast_hash": "0a0499f2908fbe9f69b1316a0c4f6f37",
+    "semantic_hash": "0a0499f2908fbe9f69b1316a0c4f6f37"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/ImportCameraEngine.kt": {
+    "mtime": 1785242452.0,
+    "ast_hash": "0ade33ab3a567f712dab89efcc476a20",
+    "semantic_hash": "0ade33ab3a567f712dab89efcc476a20"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/ProjectSessionManager.kt": {
+    "mtime": 1785241108.0,
+    "ast_hash": "55c5cb953f0da8adb35753996cafe47b",
+    "semantic_hash": "55c5cb953f0da8adb35753996cafe47b"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/ProjectSessionManagerImpl.kt": {
+    "mtime": 1785320490.0,
+    "ast_hash": "699c18d0a7fa5df614b0794c9282c8f9",
+    "semantic_hash": "699c18d0a7fa5df614b0794c9282c8f9"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/RemoteFolder.kt": {
+    "mtime": 1783410576.0,
+    "ast_hash": "b5349ce7c52d49de494b03e2497cf6aa",
+    "semantic_hash": "b5349ce7c52d49de494b03e2497cf6aa"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/SourceWatcher.kt": {
+    "mtime": 1784341236.0,
+    "ast_hash": "eb302cbd95f61b5bd08cb594574c5c68",
+    "semantic_hash": "eb302cbd95f61b5bd08cb594574c5c68"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/TransferSessionManager.kt": {
+    "mtime": 1783411138.0,
+    "ast_hash": "5e7a0cded8ee51d18fe8e5b981a59df9",
+    "semantic_hash": "5e7a0cded8ee51d18fe8e5b981a59df9"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/session/UploadQueueManager.kt": {
+    "mtime": 1784273272.0,
+    "ast_hash": "d0ffb71db200a336e3d58cb14c8700d1",
+    "semantic_hash": "d0ffb71db200a336e3d58cb14c8700d1"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/shoot/ShootModeEngine.kt": {
+    "mtime": 1785242574.0,
+    "ast_hash": "6e40c2a9a2c62868a745fee4a4ff60e1",
+    "semantic_hash": "6e40c2a9a2c62868a745fee4a4ff60e1"
+  },
+  "app/src/main/java/com/reflection/transferin/domain/usecase/ListCameraMediaUseCase.kt": {
+    "mtime": 1783936318.0,
+    "ast_hash": "134a25af96595a57f0b70ee9a2b1ffb2",
+    "semantic_hash": "134a25af96595a57f0b70ee9a2b1ffb2"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/auth/LoginNasScreen.kt": {
+    "mtime": 1783405088.0,
+    "ast_hash": "cb79d85fb9a72afc3905954efb0fb593",
+    "semantic_hash": "cb79d85fb9a72afc3905954efb0fb593"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/auth/LoginNasViewModel.kt": {
+    "mtime": 1783405088.0,
+    "ast_hash": "8d2de321d4977204e5c80cef2238583e",
+    "semantic_hash": "8d2de321d4977204e5c80cef2238583e"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/auth/LoginNasViewModelFactory.kt": {
+    "mtime": 1784019992.0,
+    "ast_hash": "8cc830015090014d772334c5cc2ed87c",
+    "semantic_hash": "8cc830015090014d772334c5cc2ed87c"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/connectcamera/ConnectCameraScreen.kt": {
+    "mtime": 1785383914.0,
+    "ast_hash": "9a407530f73436f1d7dbb578d3936e4b",
+    "semantic_hash": "9a407530f73436f1d7dbb578d3936e4b"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/connectcamera/ConnectCameraViewModel.kt": {
+    "mtime": 1785320164.0,
+    "ast_hash": "c7dc4b5d7f512035f0db8accf37140c4",
+    "semantic_hash": "c7dc4b5d7f512035f0db8accf37140c4"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/connectcamera/ConnectCameraViewModelFactory.kt": {
+    "mtime": 1785231170.0,
+    "ast_hash": "551b893ee026fd7d43af89102318d529",
+    "semantic_hash": "551b893ee026fd7d43af89102318d529"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/folder/FolderUiState.kt": {
+    "mtime": 1784016864.0,
+    "ast_hash": "5c6d967ed7abc08ed4d0db50f038606f",
+    "semantic_hash": "5c6d967ed7abc08ed4d0db50f038606f"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/folder/SelectFolderScreen.kt": {
+    "mtime": 1784023292.0,
+    "ast_hash": "12e85f41e6b2beb88eaf8fd1108208a8",
+    "semantic_hash": "12e85f41e6b2beb88eaf8fd1108208a8"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/folder/SelectFolderViewModel.kt": {
+    "mtime": 1784182564.0,
+    "ast_hash": "f8cdf70e5b9eaec166fcba7412e9d3cc",
+    "semantic_hash": "f8cdf70e5b9eaec166fcba7412e9d3cc"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/folder/SelectFolderViewModelFactory.kt": {
+    "mtime": 1784547242.0,
+    "ast_hash": "8dfb7050d98543e63ef2a238dbb10931",
+    "semantic_hash": "8dfb7050d98543e63ef2a238dbb10931"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/folder/SelectSourceFolderScreen.kt": {
+    "mtime": 1784018184.0,
+    "ast_hash": "5531879926c79c8c38890560c1c1f65a",
+    "semantic_hash": "5531879926c79c8c38890560c1c1f65a"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/CameraGalleryScreen.kt": {
+    "mtime": 1785239884.0,
+    "ast_hash": "60215eba93880cfddecff5913a5cbdf8",
+    "semantic_hash": "60215eba93880cfddecff5913a5cbdf8"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/CameraGalleryViewModel.kt": {
+    "mtime": 1785378274.0,
+    "ast_hash": "212646ae0cfe3b95c27c215d34ea2611",
+    "semantic_hash": "212646ae0cfe3b95c27c215d34ea2611"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/CameraGalleryViewModelFactory.kt": {
+    "mtime": 1785229638.0,
+    "ast_hash": "d7807b27ba728fe54160f84d2801ab12",
+    "semantic_hash": "d7807b27ba728fe54160f84d2801ab12"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/GalleryUiState.kt": {
+    "mtime": 1784620610.0,
+    "ast_hash": "f08db13d884c5e90b668c5b7484b4cd8",
+    "semantic_hash": "f08db13d884c5e90b668c5b7484b4cd8"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/GalleryViewModel.kt": {
+    "mtime": 1784620544.0,
+    "ast_hash": "ecaecffc601cd5feae13128cb0941efb",
+    "semantic_hash": "ecaecffc601cd5feae13128cb0941efb"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/GalleryViewModelFactory.kt": {
+    "mtime": 1784619704.0,
+    "ast_hash": "214ffc55d6165b7f97390bb4ad60a127",
+    "semantic_hash": "214ffc55d6165b7f97390bb4ad60a127"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/gallery/UploadedGalleryScreen.kt": {
+    "mtime": 1784620826.0,
+    "ast_hash": "c986d70da4342372dbd8811b4fd07acf",
+    "semantic_hash": "c986d70da4342372dbd8811b4fd07acf"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionActiveScreen.kt": {
+    "mtime": 1785384124.0,
+    "ast_hash": "6611cf2dba0fda7792566769dad2e352",
+    "semantic_hash": "6611cf2dba0fda7792566769dad2e352"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionUiState.kt": {
+    "mtime": 1785316190.0,
+    "ast_hash": "b15dc5fd2644eb9fb34aaaf879ec91ab",
+    "semantic_hash": "b15dc5fd2644eb9fb34aaaf879ec91ab"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModel.kt": {
+    "mtime": 1785383564.0,
+    "ast_hash": "07c71c928fc7edb403dd9366db1831bc",
+    "semantic_hash": "07c71c928fc7edb403dd9366db1831bc"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModelFactory.kt": {
+    "mtime": 1785128322.0,
+    "ast_hash": "59f0f0c0e41deec8e6d52e27ff4bb9f7",
+    "semantic_hash": "59f0f0c0e41deec8e6d52e27ff4bb9f7"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionsummary/SessionSummaryScreen.kt": {
+    "mtime": 1784528098.0,
+    "ast_hash": "0d29bcdb6b3e36af9aa374f468b94ab8",
+    "semantic_hash": "0d29bcdb6b3e36af9aa374f468b94ab8"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionsummary/SessionSummaryViewModel.kt": {
+    "mtime": 1783405072.0,
+    "ast_hash": "83452b40f975871a519ca5036a0a443c",
+    "semantic_hash": "83452b40f975871a519ca5036a0a443c"
+  },
+  "app/src/main/java/com/reflection/transferin/feature/sessionsummary/SummaryState.kt": {
+    "mtime": 1783409464.0,
+    "ast_hash": "83def1a6792ee84cc53f20894481e79a",
+    "semantic_hash": "83def1a6792ee84cc53f20894481e79a"
+  },
+  "app/src/main/java/com/reflection/transferin/service/UsbTetherService.kt": {
+    "mtime": 1785231502.0,
+    "ast_hash": "8a4909fbd2d22e24199f137add6cd265",
+    "semantic_hash": "8a4909fbd2d22e24199f137add6cd265"
+  },
+  "app/src/main/java/com/reflection/transferin/session/model/SessionRuntimeState.kt": {
+    "mtime": 1783494930.0,
+    "ast_hash": "cedc8fcda6251dab421882a5a95185b2",
+    "semantic_hash": "cedc8fcda6251dab421882a5a95185b2"
+  },
+  "app/src/main/java/com/reflection/transferin/session/runtime/SessionDispatcher.kt": {
+    "mtime": 1783404642.0,
+    "ast_hash": "585a4fe08e39eed6df36f4ac02b3eb6a",
+    "semantic_hash": "585a4fe08e39eed6df36f4ac02b3eb6a"
+  },
+  "app/src/main/java/com/reflection/transferin/session/runtime/SessionOrchestrator.kt": {
+    "mtime": 1783404632.0,
+    "ast_hash": "3403dc6f496854e52c4f241bb7fc5249",
+    "semantic_hash": "3403dc6f496854e52c4f241bb7fc5249"
+  },
+  "app/src/main/java/com/reflection/transferin/session/runtime/TransferSessionManagerImpl.kt": {
+    "mtime": 1783496184.0,
+    "ast_hash": "0437ad5c9b2416e4c7b07b7522b69319",
+    "semantic_hash": "0437ad5c9b2416e4c7b07b7522b69319"
+  },
+  "app/src/main/java/com/reflection/transferin/session/worker/TransferUploadWorker.kt": {
+    "mtime": 1784341328.0,
+    "ast_hash": "383867e25045721bfccece44c26172e6",
+    "semantic_hash": "383867e25045721bfccece44c26172e6"
+  },
+  "app/src/main/java/com/reflection/transferin/ui/theme/Color.kt": {
+    "mtime": 1784619498.0,
+    "ast_hash": "420c5b80452b8284a2c176cc2e2e9be9",
+    "semantic_hash": "420c5b80452b8284a2c176cc2e2e9be9"
+  },
+  "app/src/main/java/com/reflection/transferin/ui/theme/Theme.kt": {
+    "mtime": 1784619540.0,
+    "ast_hash": "053d708c2a72ec9f50285aa74264965c",
+    "semantic_hash": "053d708c2a72ec9f50285aa74264965c"
+  },
+  "app/src/main/java/com/reflection/transferin/ui/theme/Type.kt": {
+    "mtime": 1784619526.0,
+    "ast_hash": "5cbbe3aefc5b4675fd1dd5de6bfe695a",
+    "semantic_hash": "5cbbe3aefc5b4675fd1dd5de6bfe695a"
+  },
+  "app/src/test/java/com/reflection/transferin/ExampleUnitTest.kt": {
+    "mtime": 1783154560.0,
+    "ast_hash": "fcd74badc331f6ca3340f10051248042",
+    "semantic_hash": "fcd74badc331f6ca3340f10051248042"
+  },
+  "build.gradle.kts": {
+    "mtime": 1783316922.0,
+    "ast_hash": "667f82909fb5c9bf8aa617fe23a5be55",
+    "semantic_hash": "667f82909fb5c9bf8aa617fe23a5be55"
+  },
+  "gradlew": {
+    "mtime": 1783154558.0,
+    "ast_hash": "266606e78242737ef3da02a80ea0564d",
+    "semantic_hash": "266606e78242737ef3da02a80ea0564d"
+  },
+  "settings.gradle.kts": {
+    "mtime": 1783154560.0,
+    "ast_hash": "4e53413f1a8e1fbffdb94d5f34fac85b",
+    "semantic_hash": "4e53413f1a8e1fbffdb94d5f34fac85b"
+  },
+  ".planning/MILESTONES.md": {
+    "mtime": 1785471451.8899453,
+    "ast_hash": "ea5d32627bd0951a1e554f737131b622",
+    "semantic_hash": "ea5d32627bd0951a1e554f737131b622"
+  },
+  ".planning/PROJECT.md": {
+    "mtime": 1785471438.6480799,
+    "ast_hash": "aa45c5527a32caa4edcff9c33a214511",
+    "semantic_hash": "aa45c5527a32caa4edcff9c33a214511"
+  },
+  ".planning/REQUIREMENTS.md": {
+    "mtime": 1785473890.5205653,
+    "ast_hash": "e770a44887e4d4cfc2954d1f402235b1",
+    "semantic_hash": "e770a44887e4d4cfc2954d1f402235b1"
+  },
+  ".planning/ROADMAP.md": {
+    "mtime": 1785476131.909086,
+    "ast_hash": "ec27311c7efaae8e63a1c671c72009b1",
+    "semantic_hash": "ec27311c7efaae8e63a1c671c72009b1"
+  },
+  ".planning/STATE.md": {
+    "mtime": 1785476270.7792034,
+    "ast_hash": "59a174777ff751c47fd007a40a4415d2",
+    "semantic_hash": "59a174777ff751c47fd007a40a4415d2"
+  },
+  ".planning/codebase/ARCHITECTURE.md": {
+    "mtime": 1785470368.2978199,
+    "ast_hash": "eb4a7ff7f75f4671b1f328d0dd40f28d",
+    "semantic_hash": "eb4a7ff7f75f4671b1f328d0dd40f28d"
+  },
+  ".planning/codebase/CONCERNS.md": {
+    "mtime": 1785470430.0381246,
+    "ast_hash": "ecb558bc0239d7061437ba749dadc2af",
+    "semantic_hash": "ecb558bc0239d7061437ba749dadc2af"
+  },
+  ".planning/codebase/CONVENTIONS.md": {
+    "mtime": 1785470374.798992,
+    "ast_hash": "bea9901e85ce811f790917556baff936",
+    "semantic_hash": "bea9901e85ce811f790917556baff936"
+  },
+  ".planning/codebase/INTEGRATIONS.md": {
+    "mtime": 1785470366.7402303,
+    "ast_hash": "39ccd8d56a1d43d7f9bcd92830a2f0e8",
+    "semantic_hash": "39ccd8d56a1d43d7f9bcd92830a2f0e8"
+  },
+  ".planning/codebase/STACK.md": {
+    "mtime": 1785470342.6452413,
+    "ast_hash": "87409dc38e63fc3afb2dbf07329482d6",
+    "semantic_hash": "87409dc38e63fc3afb2dbf07329482d6"
+  },
+  ".planning/codebase/STRUCTURE.md": {
+    "mtime": 1785470395.4697795,
+    "ast_hash": "d5c4fb95132bd92c53b57bcce2437a55",
+    "semantic_hash": "d5c4fb95132bd92c53b57bcce2437a55"
+  },
+  ".planning/codebase/TESTING.md": {
+    "mtime": 1785470419.0805418,
+    "ast_hash": "e735572725abdb230a85801a32978edd",
+    "semantic_hash": "e735572725abdb230a85801a32978edd"
+  },
+  ".planning/onboarding/SUMMARY.md": {
+    "mtime": 1785472346.8204513,
+    "ast_hash": "cf6d84e4f02990a3345e3113b0ce8a12",
+    "semantic_hash": "cf6d84e4f02990a3345e3113b0ce8a12"
+  },
+  ".planning/phases/01-CTG-Foundation/01-01-PLAN.md": {
+    "mtime": 1785472854.4781556,
+    "ast_hash": "7816fc6bcb35cfcbb5b53cd12aa62b26",
+    "semantic_hash": "7816fc6bcb35cfcbb5b53cd12aa62b26"
+  },
+  ".planning/phases/01-CTG-Foundation/01-02-PLAN.md": {
+    "mtime": 1785472908.1174517,
+    "ast_hash": "6ab66fa9c4b79bd681afc49251b8f831",
+    "semantic_hash": "6ab66fa9c4b79bd681afc49251b8f831"
+  },
+  ".planning/phases/01-CTG-Foundation/01-RESEARCH.md": {
+    "mtime": 1785472745.647873,
+    "ast_hash": "3eb5b9307d6d13a9a25c54aa2c0aed7d",
+    "semantic_hash": "3eb5b9307d6d13a9a25c54aa2c0aed7d"
+  },
+  ".planning/phases/02-smart-upload-detection/02-01-PLAN.md": {
+    "mtime": 1785474173.5221527,
+    "ast_hash": "9b8eda01290c69ce74e35c23782b3d10",
+    "semantic_hash": "9b8eda01290c69ce74e35c23782b3d10"
+  },
+  ".planning/phases/02-smart-upload-detection/02-02-PLAN.md": {
+    "mtime": 1785474238.893552,
+    "ast_hash": "e95231f346118b51293dea0f7223eb66",
+    "semantic_hash": "e95231f346118b51293dea0f7223eb66"
+  },
+  ".planning/phases/02-smart-upload-detection/02-RESEARCH.md": {
+    "mtime": 1785473387.3775654,
+    "ast_hash": "828b85428aad26c102c97fa556e58041",
+    "semantic_hash": "828b85428aad26c102c97fa556e58041"
+  },
+  ".planning/phases/03-session-resilience/03-01-PLAN.md": {
+    "mtime": 1785475128.552696,
+    "ast_hash": "3b094781964c2df964acf83dc093e4e9",
+    "semantic_hash": "3b094781964c2df964acf83dc093e4e9"
+  },
+  ".planning/phases/03-session-resilience/03-02-PLAN.md": {
+    "mtime": 1785475418.4910276,
+    "ast_hash": "8278b681486ad291929a37f7666c4b90",
+    "semantic_hash": "8278b681486ad291929a37f7666c4b90"
+  },
+  ".planning/phases/03-session-resilience/03-03-PLAN.md": {
+    "mtime": 1785475200.8889582,
+    "ast_hash": "8c220c4ac90eb9cb17bb7f5c47855bb2",
+    "semantic_hash": "8c220c4ac90eb9cb17bb7f5c47855bb2"
+  },
+  ".planning/phases/03-session-resilience/03-04-PLAN.md": {
+    "mtime": 1785475432.269736,
+    "ast_hash": "6f1b8eac4313a334c1854904f3237baa",
+    "semantic_hash": "6f1b8eac4313a334c1854904f3237baa"
+  },
+  ".planning/phases/03-session-resilience/03-RESEARCH.md": {
+    "mtime": 1785474857.8947065,
+    "ast_hash": "367f9b2f052e84cfb1c4501d8cd1dba0",
+    "semantic_hash": "367f9b2f052e84cfb1c4501d8cd1dba0"
+  },
+  ".planning/phases/04-upload-integrity/04-01-PLAN.md": {
+    "mtime": 1785476069.8282442,
+    "ast_hash": "0f69ac35d8579fd7351b52170d13aa8e",
+    "semantic_hash": "0f69ac35d8579fd7351b52170d13aa8e"
+  },
+  ".planning/phases/04-upload-integrity/04-02-PLAN.md": {
+    "mtime": 1785476119.928269,
+    "ast_hash": "5d997e820f82dec1cab4cfdc1820b618",
+    "semantic_hash": "5d997e820f82dec1cab4cfdc1820b618"
+  },
+  ".planning/phases/04-upload-integrity/RESEARCH.md": {
+    "mtime": 1785475807.8216116,
+    "ast_hash": "f9b27f062b623b6e8a5aa87c8b12382d",
+    "semantic_hash": "f9b27f062b623b6e8a5aa87c8b12382d"
+  },
+  ".planning/research/ARCHITECTURE.md": {
+    "mtime": 1785471639.093534,
+    "ast_hash": "e5bdf114cf8b1bfde27de900eeb6538c",
+    "semantic_hash": "e5bdf114cf8b1bfde27de900eeb6538c"
+  },
+  ".planning/research/FEATURES.md": {
+    "mtime": 1785471790.311828,
+    "ast_hash": "0083048fa3cd39f6c01ba94be3469615",
+    "semantic_hash": "0083048fa3cd39f6c01ba94be3469615"
+  },
+  ".planning/research/PITFALLS.md": {
+    "mtime": 1785471727.717453,
+    "ast_hash": "a538a8bde51d225d4326f638def227df",
+    "semantic_hash": "a538a8bde51d225d4326f638def227df"
+  },
+  ".planning/research/STACK.md": {
+    "mtime": 1785471857.1197524,
+    "ast_hash": "b984d1ed49d9dc284fee215d10b76558",
+    "semantic_hash": "b984d1ed49d9dc284fee215d10b76558"
+  },
+  ".planning/research/SUMMARY.md": {
+    "mtime": 1785472011.0670433,
+    "ast_hash": "29c7ac2848d07d89a8ed98bae0e60128",
+    "semantic_hash": "29c7ac2848d07d89a8ed98bae0e60128"
+  },
+  "DOCUMENTATION.md": {
+    "mtime": 1784180844.0,
+    "ast_hash": "2b6c852e83dcc79ded70931fb7c5a592",
+    "semantic_hash": "2b6c852e83dcc79ded70931fb7c5a592"
+  }
+}
