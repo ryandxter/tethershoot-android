@@ -28,10 +28,10 @@ class GoogleDriveAuthManager(
         const val ANDROID_CLIENT_ID = "343575435197-ug3en8ich4l1grgae2m6kbpcub0glu77.apps.googleusercontent.com"
         const val ANDROID_REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
 
-        // Active Configuration (Use Web Client ID with HTTPS Redirect URI for Google OAuth Web Browser Flow)
-        const val CLIENT_ID = WEB_CLIENT_ID
-        const val CLIENT_SECRET = WEB_CLIENT_SECRET
-        const val REDIRECT_URI = WEB_REDIRECT_URI
+        // Active Configuration (Isolated Android Native Client ID for TransferInFuji)
+        const val CLIENT_ID = ANDROID_CLIENT_ID
+        const val CLIENT_SECRET = ""
+        const val REDIRECT_URI = ANDROID_REDIRECT_URI
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
         fun getAuthorizationUri(): Uri {

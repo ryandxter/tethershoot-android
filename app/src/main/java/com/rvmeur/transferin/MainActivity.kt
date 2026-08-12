@@ -121,15 +121,11 @@ class MainActivity : ComponentActivity() {
 
     private fun handleOAuthIntent(intent: Intent?) {
         val data: Uri? = intent?.data
-        if (data != null && (data.scheme == "com.rvmeur.transferin" || data.scheme == "https")) {
+        if (data != null && data.scheme == "com.rvmeur.transferin") {
             val code = data.getQueryParameter("code")
             if (!code.isNullOrBlank()) {
-                val redirectUri = if (data.scheme == "com.rvmeur.transferin") {
-                    "com.rvmeur.transferin:/oauth2redirect"
-                } else {
-                    "https://rvmeur.com/oauth2callback"
-                }
-                Log.d(TAG_TRANSFER_APP, "Extracted OAuth code from deep link intent (redirectUri=$redirectUri)")
+                val redirectUri = "com.rvmeur.transferin:/oauth2redirect"
+                Log.d(TAG_TRANSFER_APP, "Extracted OAuth code from native deep link intent (redirectUri=$redirectUri)")
                 onOAuthCodeListener?.invoke(code, redirectUri)
             }
         }

@@ -41,7 +41,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-            <!-- Dynamic Google OAuth2 Deep Link Redirect -->
+            <!-- Dynamic Google OAuth2 Deep Link Redirect for Android Native Client -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -49,25 +49,6 @@
                 <data
                     android:host="oauth2redirect"
                     android:scheme="com.rvmeur.transferin" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="rvmeur.com"
-                    android:pathPrefix="/oauth2callback"
-                    android:scheme="https" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="rvmeur.com"
-                    android:scheme="https" />
             </intent-filter>
 
             <meta-data
