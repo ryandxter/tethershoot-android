@@ -20,3 +20,14 @@ logcat*
 **/kspCaches/
 .gradle/
 .kotlin/
+
+# Credentials & Secrets
+client_secret*.json
+**/client_secret*.json
+google-services.json
+**/google-services.json
+*.keystore
+*.jks
+*.pem
+*.p12
+
