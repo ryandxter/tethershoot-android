@@ -332,9 +332,12 @@ fun TransferInApp(
                 val folderState by selectFolderViewModel.uiState.collectAsState()
                 val connectCameraState by connectCameraViewModel.uiState.collectAsState()
 
-                LaunchedEffect(Unit) {
+                LaunchedEffect(hasNasConnection) {
                     val connection = nasRepository.getConnection()
                     hasNasConnection = (connection != null)
+                    if (hasNasConnection) {
+                        selectFolderViewModel.loadInitialFolder()
+                    }
                     if (selectedTargetNasDirPath.isBlank() || selectedTargetNasDirPath == "/") {
                         selectedTargetNasDirPath = connection?.defaultRemoteFolder ?: "/"
                     }
