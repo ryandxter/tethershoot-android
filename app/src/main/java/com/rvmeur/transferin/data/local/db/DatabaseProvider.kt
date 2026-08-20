@@ -17,7 +17,8 @@ object DatabaseProvider {
             )
                 .addMigrations(
                     Migration_8_9.MIGRATION_8_9,
-                    Migration_9_10.MIGRATION_9_10
+                    Migration_9_10.MIGRATION_9_10,
+                    Migration_10_11.MIGRATION_10_11
                 )
                 .fallbackToDestructiveMigration()
                 .build()

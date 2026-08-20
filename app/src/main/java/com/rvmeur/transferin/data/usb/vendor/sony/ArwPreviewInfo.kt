@@ -5,5 +5,6 @@ data class ArwPreviewInfo(
     val previewLength: Int,
     val width: Int = 0,
     val height: Int = 0,
+    val orientation: Int = 1,
     val isJpegValid: Boolean = true
 )

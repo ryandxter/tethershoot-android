@@ -28,6 +28,7 @@ class SafeUsbTransportManager(
     private val _activeIoCount = AtomicInteger(0)
     private val _isTerminated = AtomicBoolean(false)
     val ioMutex = Mutex()
+    val priorityMutex = UsbPriorityMutex()
 
     val activeIoCount: Int get() = _activeIoCount.get()
     val isTerminated: Boolean get() = _isTerminated.get()
@@ -152,6 +153,32 @@ class SafeUsbTransportManager(
     }
 
     /**
+     * Executes [action] protected by the two-tier priority mutex.
+     */
+    suspend fun <T> withPriorityLock(
+        priority: UsbTransferPriority = UsbTransferPriority.TIER_2_STREAMING,
+        action: suspend () -> T
+    ): T {
+        return priorityMutex.withLock(priority) {
+            action()
+        }
+    }
+
+    /**
+     * Executes [action] with Tier 1 (High) priority for embedded preview extraction.
+     */
+    suspend fun <T> withTier1PreviewLock(action: suspend () -> T): T {
+        return withPriorityLock(UsbTransferPriority.TIER_1_PREVIEW, action)
+    }
+
+    /**
+     * Executes [action] with Tier 2 (Standard) priority for streaming/transit data transfers.
+     */
+    suspend fun <T> withTier2StreamingLock(action: suspend () -> T): T {
+        return withPriorityLock(UsbTransferPriority.TIER_2_STREAMING, action)
+    }
+
+    /**
      * Initiates non-cancellable drainage of all active USB IO transfers.
      * Subsequent transfers will immediately fail with [UsbTransportClosedException].
      *
@@ -160,6 +187,7 @@ class SafeUsbTransportManager(
      */
     suspend fun beginDrainAndClose(timeoutMs: Long = 1000L): Boolean {
         _isTerminated.set(true)
+        priorityMutex.close()
         val startTime = System.currentTimeMillis()
         while (_activeIoCount.get() > 0) {
             if (System.currentTimeMillis() - startTime >= timeoutMs) {

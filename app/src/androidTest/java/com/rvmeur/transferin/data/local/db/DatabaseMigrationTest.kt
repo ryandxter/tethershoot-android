@@ -53,4 +53,65 @@ class DatabaseMigrationTest {
         assert(cursor.getString(cursor.getColumnIndexOrThrow("session_id")) == "session-1")
         cursor.close()
     }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate9To10() {
+        var db = helper.createDatabase(TEST_DB, 9)
+        db.close()
+
+        db = helper.runMigrationsAndValidate(TEST_DB, 10, true, Migration_9_10.MIGRATION_9_10)
+
+        // Verify that camera_sync_items exists and can be inserted into
+        db.execSQL(
+            "INSERT INTO camera_sync_items (id, sessionId, vendorId, cameraSerialNumber, storageId, objectHandle, filename, fileSizeBytes, captureTimestampMs, compoundFingerprint, status, bytesUploaded, retryCount, createdAtEpochMs, updatedAtEpochMs) " +
+                    "VALUES ('item-1', 'session-1', 1227, 'CAM001', 1, 100, 'DSC0001.RAF', 50000, 1000, 'fp-1', 'DETECTED', 0, 0, 1000, 1000)"
+        )
+
+        val cursor = db.query("SELECT * FROM camera_sync_items WHERE id = 'item-1'")
+        assert(cursor.moveToFirst())
+        assert(cursor.getString(cursor.getColumnIndexOrThrow("filename")) == "DSC0001.RAF")
+        cursor.close()
+    }
+
+    @Test
+    @Throws(IOException::class)
+    fun migrate10To11() {
+        var db = helper.createDatabase(TEST_DB, 10)
+
+        // Insert records into version 10 schema
+        db.execSQL(
+            "INSERT INTO camera_sync_items (id, sessionId, vendorId, cameraSerialNumber, storageId, objectHandle, filename, fileSizeBytes, captureTimestampMs, compoundFingerprint, status, bytesUploaded, retryCount, createdAtEpochMs, updatedAtEpochMs) " +
+                    "VALUES ('item-10', 'session-1', 1227, 'CAM001', 1, 100, 'DSC0001.RAF', 50000, 1000, 'fp-10', 'DETECTED', 0, 0, 1000, 1000)"
+        )
+        db.execSQL(
+            "INSERT INTO camera_media_items (id, deviceId, storageId, objectHandle, fileName, fileExtension, format, sizeBytes, modifiedAt, captureGroup, status, retryCount, discoveredAt) " +
+                    "VALUES (1, 'dev-1', 1, 100, 'DSC0001.JPG', 'jpg', 12289, 5000, 1000, 'group-1', 'DISCOVERED', 0, 1000)"
+        )
+        db.close()
+
+        // Run Migration 10 -> 11
+        db = helper.runMigrationsAndValidate(TEST_DB, 11, true, Migration_10_11.MIGRATION_10_11)
+
+        // Verify camera_sync_items columns and default values
+        val syncCursor = db.query("SELECT * FROM camera_sync_items WHERE id = 'item-10'")
+        assert(syncCursor.moveToFirst())
+        assert(syncCursor.getString(syncCursor.getColumnIndexOrThrow("cullingVerdict")) == "OPTIMAL")
+        assert(syncCursor.getDouble(syncCursor.getColumnIndexOrThrow("meanLuminance")) == 128.0)
+        assert(syncCursor.getDouble(syncCursor.getColumnIndexOrThrow("entropyScore")) == 5.0)
+        assert(syncCursor.getInt(syncCursor.getColumnIndexOrThrow("isCulled")) == 0)
+        assert(syncCursor.getInt(syncCursor.getColumnIndexOrThrow("isManualUploadOverride")) == 0)
+        assert(syncCursor.isNull(syncCursor.getColumnIndexOrThrow("thumbnailPath")))
+        syncCursor.close()
+
+        // Verify camera_media_items columns and default values
+        val mediaCursor = db.query("SELECT * FROM camera_media_items WHERE id = 1")
+        assert(mediaCursor.moveToFirst())
+        assert(mediaCursor.getString(mediaCursor.getColumnIndexOrThrow("cullingVerdict")) == "OPTIMAL")
+        assert(mediaCursor.getDouble(mediaCursor.getColumnIndexOrThrow("meanLuminance")) == 128.0)
+        assert(mediaCursor.getDouble(mediaCursor.getColumnIndexOrThrow("entropyScore")) == 5.0)
+        assert(mediaCursor.getInt(mediaCursor.getColumnIndexOrThrow("isCulled")) == 0)
+        assert(mediaCursor.getInt(mediaCursor.getColumnIndexOrThrow("isManualUploadOverride")) == 0)
+        mediaCursor.close()
+    }
 }

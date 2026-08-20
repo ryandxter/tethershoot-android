@@ -28,7 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -47,21 +47,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.rvmeur.transferin.domain.model.UploadStatus
+import com.rvmeur.transferin.feature.gallery.components.CullingStatusBadge
+import com.rvmeur.transferin.feature.gallery.components.ExposureInspectionModal
 import com.rvmeur.transferin.ui.components.DoppelrandCard
-import com.rvmeur.transferin.ui.components.KineticButton
 import com.rvmeur.transferin.ui.components.RvmFooterBar
 import com.rvmeur.transferin.ui.components.RvmHeaderBar
+import com.rvmeur.transferin.ui.image.ThumbnailImageLoaderProvider
+import com.rvmeur.transferin.ui.image.thumbnailCompoundKey
 import com.rvmeur.transferin.ui.theme.AccentBurgundy
 import com.rvmeur.transferin.ui.theme.AccentGreen
 import com.rvmeur.transferin.ui.theme.CardSurface
@@ -85,6 +88,7 @@ fun UploadedGalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedModalItem by remember { mutableStateOf<GalleryItem?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -154,20 +158,19 @@ fun UploadedGalleryScreen(
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
             ) {
-                // Filter Chips Row
+                // Responsive Filter Chips Row with Live Item Counts
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    val filterModes = listOf(
-                        FilterMode.ALL to "semua",
-                        FilterMode.PHOTOS to "foto",
-                        FilterMode.VIDEOS to "video",
-                        FilterMode.UPLOADED to "berhasil",
-                        FilterMode.FAILED to "gagal"
+                    val filterChips = listOf(
+                        FilterMode.ALL to "semua (${uiState.cullingMetrics.totalCount})",
+                        FilterMode.OPTIMAL to "optimal (${uiState.cullingMetrics.optimalCount})",
+                        FilterMode.CULLED to "terpangkas (${uiState.cullingMetrics.culledCount})",
+                        FilterMode.SKIPPED to "dilewati (${uiState.cullingMetrics.skippedCount})"
                     )
 
-                    items(filterModes) { (mode, label) ->
+                    items(filterChips) { (mode, label) ->
                         val isSelected = uiState.filterMode == mode
                         Box(
                             modifier = Modifier
@@ -208,7 +211,7 @@ fun UploadedGalleryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "belum ada berkas terunggah dalam sesi ini.".toBrandLowercase(),
+                                text = "belum ada berkas dalam kategori ini.".toBrandLowercase(),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontFamily = DMSans,
                                     color = TextMuted
@@ -233,7 +236,7 @@ fun UploadedGalleryScreen(
                                         .aspectRatio(1f)
                                         .semantics {
                                             role = Role.Button
-                                            contentDescription = "Gambar ${item.fileName}, ketuk untuk pratinjau"
+                                            contentDescription = "Foto ${item.fileName}, status eksposur ${item.cullingVerdict}, ketuk untuk inspeksi"
                                         }
                                         .clickable { selectedModalItem = item },
                                     outerShape = RoundedCornerShape(12.dp),
@@ -245,42 +248,55 @@ fun UploadedGalleryScreen(
                                     contentPadding = PaddingValues(2.dp)
                                 ) {
                                     Box(modifier = Modifier.fillMaxSize()) {
+                                        val context = LocalContext.current
+                                        val imageFile = item.thumbnailPath?.let { File(it) }?.takeIf { it.exists() && it.length() > 0 } ?: File(item.filePath)
                                         AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(File(item.filePath))
+                                            model = ImageRequest.Builder(context)
+                                                .data(imageFile)
+                                                .thumbnailCompoundKey(fingerprint = item.id)
                                                 .crossfade(true)
                                                 .build(),
+                                            imageLoader = ThumbnailImageLoaderProvider.getImageLoader(context),
                                             contentDescription = item.fileName,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()
                                         )
 
-                                        // Monospace format badge (RAW/JPG) top-left
-                                        val ext = item.fileName.substringAfterLast('.', "JPG").uppercase()
-                                        Box(
+                                        // Monospace Culling Status Pill Badge top-left
+                                        CullingStatusBadge(
+                                            cullingVerdict = item.cullingVerdict,
+                                            isCulled = item.isCulled,
+                                            isManualUploadOverride = item.isManualUploadOverride,
                                             modifier = Modifier
                                                 .align(Alignment.TopStart)
                                                 .padding(4.dp)
-                                                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = ext,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontFamily = RobotoMono,
-                                                    fontSize = 9.sp,
-                                                    color = Color.White
-                                                )
-                                            )
-                                        }
+                                        )
 
-                                        // Status icon top-right
+                                        // Status icon or Quick "Paksa Unggah" CTA top-right
                                         Box(
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
                                                 .padding(4.dp)
                                         ) {
-                                            if (item.status == UploadStatus.SUCCESS) {
+                                            if (item.isCulled && !item.isManualUploadOverride) {
+                                                // 1-Tap Kinetic Quick Force Upload Trigger
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(AccentGreen, CircleShape)
+                                                        .clickable {
+                                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                            viewModel.forceUpload(item.id)
+                                                        }
+                                                        .padding(4.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.CloudUpload,
+                                                        contentDescription = "Paksa Unggah Foto ${item.fileName}",
+                                                        tint = Ground,
+                                                        modifier = Modifier.size(14.dp)
+                                                    )
+                                                }
+                                            } else if (item.status == UploadStatus.SUCCESS) {
                                                 Icon(
                                                     imageVector = Icons.Default.CheckCircle,
                                                     contentDescription = "Berhasil",
@@ -312,85 +328,22 @@ fun UploadedGalleryScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 selectedModalItem?.let { modalItem ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xEE12100E))
-                            .semantics { isTraversalGroup = true }
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            // Top Bar Header
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = modalItem.fileName.toBrandLowercase(),
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = RobotoMono,
-                                            fontSize = 14.sp,
-                                            color = Ground
-                                        ),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = "status: ${modalItem.status.name} • ${modalItem.fileSizeFormatted}".toBrandLowercase(),
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontFamily = RobotoMono,
-                                            fontSize = 11.sp,
-                                            color = TextMutedLight
-                                        )
-                                    )
-                                }
-
-                                IconButton(onClick = { selectedModalItem = null }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Tutup pratinjau foto",
-                                        tint = Ground
-                                    )
-                                }
-                            }
-
-                            // Center Image Viewport
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(File(modalItem.filePath))
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = modalItem.fileName,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-
-                            // Bottom Action Bar
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp)
-                            ) {
-                                KineticButton(
-                                    text = "tutup pratinjau",
-                                    onClick = { selectedModalItem = null },
-                                    containerColor = AccentGreen,
-                                    contentColor = CardSurface
-                                )
-                            }
+                    ExposureInspectionModal(
+                        fileName = modalItem.fileName,
+                        filePath = modalItem.thumbnailPath ?: modalItem.filePath,
+                        statusText = modalItem.status.name,
+                        fileSizeText = modalItem.fileSizeFormatted,
+                        cullingVerdict = modalItem.cullingVerdict,
+                        meanLuminance = modalItem.meanLuminance,
+                        entropyScore = modalItem.entropyScore,
+                        isCulled = modalItem.isCulled,
+                        isManualUploadOverride = modalItem.isManualUploadOverride,
+                        onDismiss = { selectedModalItem = null },
+                        onForceUpload = {
+                            viewModel.forceUpload(modalItem.id)
+                            selectedModalItem = null
                         }
-                    }
+                    )
                 }
             }
         }

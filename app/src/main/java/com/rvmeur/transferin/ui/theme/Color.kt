@@ -34,6 +34,13 @@ val WarningOrangeSoft= Color(0xFFFFF3E0)
 val ErrorRedSoft     = Color(0xFFE53935)
 val ErrorRedSoftBg   = Color(0xFFFFEBEE)
 
+// Culling & Modal Tokens
+val BadgeWarmAmber      = Color(0xFFB8860B)   // Flash misfire / underexposure alert
+val BadgeDeepBurgundy   = Color(0xFF8B0000)   // Blown highlight / overexposure alert
+val AccentAmber         = BadgeWarmAmber
+val ModalDarkBackground = Color(0xEE12100E)   // Inspection modal dark canvas
+val ModalScrim          = ModalDarkBackground
+
 // Overlays
 val OverlayDark      = Color(0x99000000)
 val OverlayLight     = Color(0x4DFFFFFF)

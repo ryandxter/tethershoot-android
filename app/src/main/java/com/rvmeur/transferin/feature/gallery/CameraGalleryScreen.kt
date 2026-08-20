@@ -27,10 +27,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.rvmeur.transferin.data.local.entity.CameraMediaItemEntity
 import com.rvmeur.transferin.data.local.entity.MediaStatus
+import com.rvmeur.transferin.ui.image.ThumbnailImageLoaderProvider
+import com.rvmeur.transferin.ui.image.thumbnailCompoundKey
 import com.rvmeur.transferin.ui.theme.*
+import java.io.File
 
 /**
  * Camera Gallery Screen - Shoot Mode Style
@@ -288,12 +293,39 @@ private fun GalleryItem(
         Box(modifier = Modifier.fillMaxSize()) {
             // Thumbnail or placeholder
             if (item.thumbPath != null) {
-                AsyncImage(
-                    model = item.thumbPath,
-                    contentDescription = item.fileName,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                val context = LocalContext.current
+                val thumbFile = File(item.thumbPath).takeIf { it.exists() && it.length() > 0 }
+                if (thumbFile != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(thumbFile)
+                            .thumbnailCompoundKey(
+                                fingerprint = item.fileName,
+                                deviceId = item.deviceId,
+                                objectHandle = item.objectHandle
+                            )
+                            .crossfade(true)
+                            .build(),
+                        imageLoader = ThumbnailImageLoaderProvider.getImageLoader(context),
+                        contentDescription = item.fileName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(SurfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = null,
+                            tint = TextTertiary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
             } else {
                 // Placeholder
                 Box(
@@ -317,20 +349,33 @@ private fun GalleryItem(
                     .fillMaxSize()
                     .padding(4.dp)
             ) {
-                // Type badge (JPG/RAW)
-                if (item.isRaw) {
-                    Surface(
-                        modifier = Modifier.align(Alignment.TopStart),
-                        shape = RoundedCornerShape(4.dp),
-                        color = AccentGoldDark.copy(alpha = 0.9f)
-                    ) {
-                        Text(
-                            text = "RAW",
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 8.sp
+                // Culling & Type badges
+                Row(
+                    modifier = Modifier.align(Alignment.TopStart),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (item.isRaw) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = AccentGoldDark.copy(alpha = 0.9f)
+                        ) {
+                            Text(
+                                text = "RAW",
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 8.sp
+                            )
+                        }
+                    }
+
+                    if (item.isCulled || item.cullingVerdict != "OPTIMAL") {
+                        com.rvmeur.transferin.feature.gallery.components.CullingStatusBadge(
+                            cullingVerdict = item.cullingVerdict,
+                            isCulled = item.isCulled,
+                            isManualUploadOverride = item.isManualUploadOverride
                         )
                     }
                 }

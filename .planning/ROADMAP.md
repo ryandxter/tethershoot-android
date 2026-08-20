@@ -150,22 +150,22 @@ graph TD
 
 | Requirement ID | Requirement Description | Mapped Phase | Status |
 | :--- | :--- | :--- | :--- |
-| **CULL-01** | Zero-allocation 256-bin luminance histogram computation in $<1.8\text{ms}$ with fixed-point math | Phase 10 | Planned |
-| **CULL-02** | Automatic classification of flash misfires (`UNDEREXPOSED_CRITICAL`) via shadow density & entropy | Phase 10 | Planned |
-| **CULL-03** | Automatic classification of highlight blowouts (`OVEREXPOSED_BLOWN`) via highlight saturation & mean luma | Phase 10 | Planned |
-| **CULL-04** | MakerNote / Picture Profile parsing for dynamic clipping offsets on high-contrast B&W film simulations | Phase 10 | Planned |
-| **THUMB-01** | Sub-50ms embedded JPEG preview extraction across `.RAF`, `.CR3`, `.ARW`, and `.NEF` without RAW transfers | Phase 11 | Planned |
-| **THUMB-02** | Atomic private storage persistence (`/files/thumbnails/`) with 500MB bounded LRU cache | Phase 11 | Planned |
-| **THUMB-03** | USB endpoint mutex serialization via `SafeUsbTransportManager.ioMutex` with Tier 1 priority | Phase 11 | Planned |
-| **THUMB-04** | Reliable Coil Compose thumbnail loading with deterministic cache keys and EXIF orientation normalization | Phase 11 | Planned |
-| **CULL-05** | Configurable session culling rules (`AUTO_SKIP_UPLOAD`, `WARN_ONLY`, `DISABLED`) gating Tier 2 transfers | Phase 12 | Planned |
-| **UI-01** | Quiet luxury status badges on `DoppelrandCard` containers (amber `#B8860B`, burgundy `#8B0000`) | Phase 12 | Planned |
-| **UI-02** | 1-tap kinetic "Paksa Unggah" (Force Upload Anyway) override action and swipe gesture | Phase 12 | Planned |
-| **UI-03** | Full-screen dark modal viewer (`Color(0xEE12100E)`) with live 256-bin luminance histogram curve & EXIF HUD | Phase 12 | Planned |
-| **UI-04** | Responsive gallery filter chips (`semua`, `optimal`, `terpangkas`, `dilewati`) with live counts | Phase 12 | Planned |
-| **QUAL-01** | Android Microbenchmark test suite validating $<1.8\text{ms}$ runtime, 0 B heap allocation & accuracy | Phase 10 | Planned |
-| **QUAL-02** | Mandatory Code Review (`/gsd-code-review`) achieving Grade A+ ($\ge 95\%$) with safe concurrency | Phase 13 | Planned |
-| **QUAL-03** | Mandatory UI Contract (`/gsd-ui-phase`) and UI Review (`/gsd-ui-review`) achieving Grade A+ quiet luxury | Phase 13 | Planned |
+| **CULL-01** | Zero-allocation 256-bin luminance histogram computation in $<1.8\text{ms}$ with fixed-point math | Phase 10 | **Completed** |
+| **CULL-02** | Automatic classification of flash misfires (`UNDEREXPOSED_CRITICAL`) via shadow density & entropy | Phase 10 | **Completed** |
+| **CULL-03** | Automatic classification of highlight blowouts (`OVEREXPOSED_BLOWN`) via highlight saturation & mean luma | Phase 10 | **Completed** |
+| **CULL-04** | MakerNote / Picture Profile parsing for dynamic clipping offsets on high-contrast B&W film simulations | Phase 10 | **Completed** |
+| **THUMB-01** | Sub-50ms embedded JPEG preview extraction across `.RAF`, `.CR3`, `.ARW`, and `.NEF` without RAW transfers | Phase 11 | **Completed** |
+| **THUMB-02** | Atomic private storage persistence (`/files/thumbnails/`) with 500MB bounded LRU cache | Phase 11 | **Completed** |
+| **THUMB-03** | USB endpoint mutex serialization via `SafeUsbTransportManager.ioMutex` with Tier 1 priority | Phase 11 | **Completed** |
+| **THUMB-04** | Reliable Coil Compose thumbnail loading with deterministic cache keys and EXIF orientation normalization | Phase 11 | **Completed** |
+| **CULL-05** | Configurable session culling rules (`AUTO_SKIP_UPLOAD`, `WARN_ONLY`, `DISABLED`) gating Tier 2 transfers | Phase 12 | **Completed** |
+| **UI-01** | Quiet luxury status badges on `DoppelrandCard` containers (amber `#B8860B`, burgundy `#8B0000`) | Phase 12 | **Completed** |
+| **UI-02** | 1-tap kinetic "Paksa Unggah" (Force Upload Anyway) override action and swipe gesture | Phase 12 | **Completed** |
+| **UI-03** | Full-screen dark modal viewer (`Color(0xEE12100E)`) with live 256-bin luminance histogram curve & EXIF HUD | Phase 12 | **Completed** |
+| **UI-04** | Responsive gallery filter chips (`semua`, `optimal`, `terpangkas`, `dilewati`) with live counts | Phase 12 | **Completed** |
+| **QUAL-01** | Android Microbenchmark test suite validating $<1.8\text{ms}$ runtime, 0 B heap allocation & accuracy | Phase 10 | **Completed** |
+| **QUAL-02** | Mandatory Code Review (`/gsd-code-review`) achieving Grade A+ ($\ge 95\%$) with safe concurrency | Phase 13 | **Completed** |
+| **QUAL-03** | Mandatory UI Contract (`/gsd-ui-phase`) and UI Review (`/gsd-ui-review`) achieving Grade A+ quiet luxury | Phase 13 | **Completed** |
 
 ---
 

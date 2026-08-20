@@ -90,6 +90,34 @@ interface CameraSyncDao {
         now: Long = System.currentTimeMillis()
     ): Int
 
+    @Query("UPDATE camera_sync_items SET status = 'CULLED_SKIPPED', cullingVerdict = :verdict, meanLuminance = :meanLum, entropyScore = :entropy, isCulled = 1, thumbnailPath = :thumbPath, updatedAtEpochMs = :now WHERE id = :id")
+    suspend fun markCulledSkipped(
+        id: String,
+        verdict: String,
+        meanLum: Double,
+        entropy: Double,
+        thumbPath: String?,
+        now: Long = System.currentTimeMillis()
+    ): Int
+
+    @Query("UPDATE camera_sync_items SET status = 'FORCE_UPLOAD_PENDING', isCulled = 0, isManualUploadOverride = 1, updatedAtEpochMs = :now WHERE id = :id")
+    suspend fun markForceUploadOverride(
+        id: String,
+        now: Long = System.currentTimeMillis()
+    ): Int
+
+    @Query("SELECT * FROM camera_sync_items WHERE sessionId = :sessionId AND isCulled = 1 ORDER BY createdAtEpochMs DESC")
+    fun observeCulledForSession(sessionId: String): Flow<List<CameraSyncItemEntity>>
+
+    @Query("SELECT * FROM camera_sync_items WHERE sessionId = :sessionId AND status = 'CULLED_SKIPPED' ORDER BY createdAtEpochMs DESC")
+    fun observeSkippedForSession(sessionId: String): Flow<List<CameraSyncItemEntity>>
+
+    @Query("SELECT * FROM camera_sync_items WHERE sessionId = :sessionId AND isCulled = 0 ORDER BY createdAtEpochMs DESC")
+    fun observeOptimalForSession(sessionId: String): Flow<List<CameraSyncItemEntity>>
+
+    @Query("SELECT COUNT(*) FROM camera_sync_items WHERE sessionId = :sessionId AND isCulled = 1")
+    fun observeCulledCount(sessionId: String): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM camera_sync_items WHERE status = :status")
     fun observeCountByStatus(status: CameraSyncStatus): Flow<Int>
 

@@ -24,9 +24,13 @@ class CameraSyncDuplicateDetector(
                 CameraSyncStatus.PURGED_LOCAL -> {
                     DuplicateVerdict.AlreadyConfirmed(remoteFileId = existingItem.remoteFileId)
                 }
+                CameraSyncStatus.CULLED_SKIPPED -> {
+                    DuplicateVerdict.AlreadyConfirmed(remoteFileId = null)
+                }
                 CameraSyncStatus.DETECTED,
                 CameraSyncStatus.BUFFERED_LOCAL,
-                CameraSyncStatus.STREAMING_CLOUD -> {
+                CameraSyncStatus.STREAMING_CLOUD,
+                CameraSyncStatus.FORCE_UPLOAD_PENDING -> {
                     DuplicateVerdict.InProgress(status = existingItem.status)
                 }
                 CameraSyncStatus.FAILED -> {

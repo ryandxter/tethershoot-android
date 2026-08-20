@@ -8,6 +8,8 @@ import android.hardware.usb.UsbInterface
 import android.util.Log
 import com.rvmeur.transferin.data.usb.core.DirectByteBufferPool
 import com.rvmeur.transferin.data.usb.core.SafeUsbTransportManager
+import com.rvmeur.transferin.data.usb.model.EmbeddedPreviewResult
+import com.rvmeur.transferin.data.usb.model.ExifOrientationHelper
 import com.rvmeur.transferin.data.usb.vendor.CameraTetherAdapter
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
@@ -249,6 +251,22 @@ class NikonPtpAdapter(
             Log.e(TAG, "Failed to extract Nikon preview for handle $handle", t)
             null
         }
+    }
+
+    /**
+     * Extracts unified [EmbeddedPreviewResult] representation for a Nikon object handle.
+     */
+    suspend fun extractUnifiedPreview(handle: Int): EmbeddedPreviewResult? = withContext(Dispatchers.IO) {
+        val startNs = System.nanoTime()
+        val data = extractPreview(handle) ?: return@withContext null
+        val elapsedMs = (System.nanoTime() - startNs) / 1_000_000L
+        val orientation = ExifOrientationHelper.extractOrientation(data)
+        EmbeddedPreviewResult(
+            jpegBytes = data,
+            orientation = orientation,
+            format = "NEF",
+            parseTimeMs = elapsedMs
+        )
     }
 
     override suspend fun closeSession() = withContext(Dispatchers.IO + NonCancellable) {

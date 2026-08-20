@@ -1,5 +1,7 @@
 package com.rvmeur.transferin.data.usb.vendor.fuji
 
+import com.rvmeur.transferin.data.usb.model.EmbeddedPreviewResult
+import com.rvmeur.transferin.data.usb.model.ExifOrientationHelper
 import com.rvmeur.transferin.domain.camera.FujiFilmSimulation
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -30,6 +32,7 @@ data class RafPreviewResult(
     val cameraModel: String,
     val width: Int = 0,
     val height: Int = 0,
+    val orientation: Int = 1,
     val captureTimestamp: Long = System.currentTimeMillis()
 ) {
     override fun equals(other: Any?): Boolean {
@@ -41,6 +44,7 @@ data class RafPreviewResult(
                 cameraModel == other.cameraModel &&
                 width == other.width &&
                 height == other.height &&
+                orientation == other.orientation &&
                 captureTimestamp == other.captureTimestamp
     }
 
@@ -50,6 +54,7 @@ data class RafPreviewResult(
         result = 31 * result + cameraModel.hashCode()
         result = 31 * result + width
         result = 31 * result + height
+        result = 31 * result + orientation
         result = 31 * result + captureTimestamp.hashCode()
         return result
     }
@@ -162,20 +167,47 @@ object RafPreviewExtractor {
     }
 
     /**
-     * Extracts full preview result with dimensions and film simulation.
+     * Extracts full preview result with dimensions, film simulation, and EXIF orientation.
      */
     fun extractPreviewResult(headerBytes: ByteArray, jpegPayload: ByteArray? = null): Result<RafPreviewResult> = runCatching {
         val header = parseRafHeader(headerBytes).getOrThrow()
         val jpegBytes = jpegPayload ?: extractEmbeddedJpeg(headerBytes).getOrThrow()
         val filmSim = extractFilmSimulation(jpegBytes)
         val (width, height) = parseJpegDimensions(jpegBytes)
+        val orientation = extractOrientation(jpegBytes)
 
         RafPreviewResult(
             previewJpegBytes = jpegBytes,
             filmSimulation = filmSim,
             cameraModel = header.cameraModel,
             width = width,
-            height = height
+            height = height,
+            orientation = orientation
+        )
+    }
+
+    /**
+     * Extracts EXIF Tag 0x0112 orientation from embedded JPEG payload.
+     */
+    fun extractOrientation(jpegBytes: ByteArray): Int {
+        return ExifOrientationHelper.extractOrientation(jpegBytes)
+    }
+
+    /**
+     * Extracts unified [EmbeddedPreviewResult] representation.
+     */
+    fun extractUnifiedPreview(headerBytes: ByteArray, jpegPayload: ByteArray? = null): Result<EmbeddedPreviewResult> = runCatching {
+        val startNs = System.nanoTime()
+        val preview = extractPreviewResult(headerBytes, jpegPayload).getOrThrow()
+        val elapsedMs = (System.nanoTime() - startNs) / 1_000_000L
+
+        EmbeddedPreviewResult(
+            jpegBytes = preview.previewJpegBytes,
+            width = preview.width,
+            height = preview.height,
+            orientation = preview.orientation,
+            format = "RAF",
+            parseTimeMs = elapsedMs
         )
     }
 
@@ -227,7 +259,7 @@ object RafPreviewExtractor {
         if (!isLittleEndian && !isBigEndian) return FujiFilmSimulation.UNKNOWN
 
         val byteOrder = if (isLittleEndian) ByteOrder.LITTLE_ENDIAN else ByteOrder.BIG_ENDIAN
-        val bb = ByteBuffer.wrap(bytes, tiffOffset, tiffLength).order(byteOrder)
+        val bb = ByteBuffer.wrap(bytes, tiffOffset, tiffLength).slice().order(byteOrder)
 
         val magic = bb.getShort(2).toInt() and 0xFFFF
         if (magic != 0x002A) return FujiFilmSimulation.UNKNOWN
@@ -248,7 +280,7 @@ object RafPreviewExtractor {
     ): FujiFilmSimulation {
         if (depth > 3 || ifdOffset + 2 > tiffLength) return FujiFilmSimulation.UNKNOWN
 
-        val bb = ByteBuffer.wrap(bytes, tiffOffset, tiffLength).order(byteOrder)
+        val bb = ByteBuffer.wrap(bytes, tiffOffset, tiffLength).slice().order(byteOrder)
         val entryCount = bb.getShort(ifdOffset).toInt() and 0xFFFF
         var pos = ifdOffset + 2
 

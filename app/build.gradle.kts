@@ -102,6 +102,9 @@ dependencies {
     // Image loading for gallery
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Camera Exif metadata extraction
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
+
     testImplementation(libs.junit)
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")

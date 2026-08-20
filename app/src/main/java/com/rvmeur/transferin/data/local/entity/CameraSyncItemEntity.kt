@@ -36,6 +36,13 @@ data class CameraSyncItemEntity(
 
     val status: CameraSyncStatus = CameraSyncStatus.DETECTED,
 
+    val thumbnailPath: String? = null,
+    val cullingVerdict: String = "OPTIMAL",
+    val meanLuminance: Double = 128.0,
+    val entropyScore: Double = 5.0,
+    val isCulled: Boolean = false,
+    val isManualUploadOverride: Boolean = false,
+
     val localFilePath: String? = null,
     val remoteFileId: String? = null,
     val bytesUploaded: Long = 0L,

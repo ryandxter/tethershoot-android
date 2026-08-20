@@ -66,6 +66,13 @@ data class CameraMediaItemEntity(
     val status: MediaStatus = MediaStatus.DISCOVERED,
     val serverId: String? = null,
 
+    // Culling Analysis Metadata
+    val cullingVerdict: String = "OPTIMAL",
+    val meanLuminance: Double = 128.0,
+    val entropyScore: Double = 5.0,
+    val isCulled: Boolean = false,
+    val isManualUploadOverride: Boolean = false,
+
     // Upload tracking
     val retryCount: Int = 0,
     val lastError: String? = null,

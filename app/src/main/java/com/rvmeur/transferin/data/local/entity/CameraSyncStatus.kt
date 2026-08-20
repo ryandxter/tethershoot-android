@@ -34,19 +34,32 @@ enum class CameraSyncStatus {
     PURGED_LOCAL,
 
     /**
+     * Frame flagged by culling engine; Tier 2 RAW transfer skipped to save cloud quota.
+     */
+    CULLED_SKIPPED,
+
+    /**
+     * Manual "Paksa Unggah" override triggered; enqueued for forced cloud transmission.
+     */
+    FORCE_UPLOAD_PENDING,
+
+    /**
      * Terminal or recoverable failure (increments retry count).
      */
     FAILED;
 
     val isTerminal: Boolean
-        get() = this == CONFIRMED_CLOUD || this == PURGED_LOCAL
+        get() = this == CONFIRMED_CLOUD || this == PURGED_LOCAL || this == CULLED_SKIPPED
 
     val isPendingUpload: Boolean
-        get() = this == DETECTED || this == BUFFERED_LOCAL
+        get() = this == DETECTED || this == BUFFERED_LOCAL || this == FORCE_UPLOAD_PENDING
 
     val isTransferring: Boolean
         get() = this == STREAMING_CLOUD
 
     val isPurgeable: Boolean
         get() = this == CONFIRMED_CLOUD
+
+    val isCulled: Boolean
+        get() = this == CULLED_SKIPPED
 }

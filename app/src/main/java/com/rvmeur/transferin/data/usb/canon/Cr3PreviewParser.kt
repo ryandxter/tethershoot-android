@@ -1,5 +1,7 @@
 package com.rvmeur.transferin.data.usb.canon
 
+import com.rvmeur.transferin.data.usb.model.EmbeddedPreviewResult
+import com.rvmeur.transferin.data.usb.model.ExifOrientationHelper
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -11,13 +13,15 @@ import java.nio.ByteOrder
  * @property height Image height in pixels.
  * @property isFullPreview True if high-resolution PRVW atom was extracted, false if 160x120 THMB fallback.
  * @property parseTimeMs Elapsed wall-clock time in milliseconds to locate and extract the preview.
+ * @property orientation EXIF Tag 0x0112 orientation (1=0°, 3=180°, 6=90° CW, 8=270° CW).
  */
 data class Cr3PreviewResult(
     val jpegBytes: ByteArray,
     val width: Int,
     val height: Int,
     val isFullPreview: Boolean,
-    val parseTimeMs: Long
+    val parseTimeMs: Long,
+    val orientation: Int = 1
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -27,6 +31,7 @@ data class Cr3PreviewResult(
         if (width != other.width) return false
         if (height != other.height) return false
         if (isFullPreview != other.isFullPreview) return false
+        if (orientation != other.orientation) return false
         return true
     }
 
@@ -35,6 +40,7 @@ data class Cr3PreviewResult(
         result = 31 * result + width
         result = 31 * result + height
         result = 31 * result + isFullPreview.hashCode()
+        result = 31 * result + orientation
         return result
     }
 }
@@ -261,6 +267,7 @@ object Cr3PreviewParser {
             height = if (isFullPreview) 1080 else 120
         }
 
+        val orientation = ExifOrientationHelper.extractOrientation(jpegBytes)
         val elapsedMs = (System.nanoTime() - startNs) / 1_000_000L
 
         return Cr3PreviewResult(
@@ -268,7 +275,23 @@ object Cr3PreviewParser {
             width = width,
             height = height,
             isFullPreview = isFullPreview,
-            parseTimeMs = elapsedMs
+            parseTimeMs = elapsedMs,
+            orientation = orientation
+        )
+    }
+
+    /**
+     * Extracts unified [EmbeddedPreviewResult] representation from a byte slice.
+     */
+    fun extractUnifiedPreviewFromSlice(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size): EmbeddedPreviewResult? {
+        val res = parsePreviewFromSlice(bytes, offset, length) ?: return null
+        return EmbeddedPreviewResult(
+            jpegBytes = res.jpegBytes,
+            width = res.width,
+            height = res.height,
+            orientation = res.orientation,
+            format = "CR3",
+            parseTimeMs = res.parseTimeMs
         )
     }
 

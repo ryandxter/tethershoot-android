@@ -17,5 +17,6 @@ enum class UploadStatus {
     QUEUED,
     UPLOADING,
     SUCCESS,
-    FAILED
+    FAILED,
+    SKIPPED
 }

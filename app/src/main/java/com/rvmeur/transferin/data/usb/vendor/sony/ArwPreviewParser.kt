@@ -1,6 +1,8 @@
 package com.rvmeur.transferin.data.usb.vendor.sony
 
 import android.util.Log
+import com.rvmeur.transferin.data.usb.model.EmbeddedPreviewResult
+import com.rvmeur.transferin.data.usb.model.ExifOrientationHelper
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -23,6 +25,7 @@ class ArwPreviewParser {
         // Tag IDs
         private const val TAG_IMAGE_WIDTH = 0x0100
         private const val TAG_IMAGE_HEIGHT = 0x0101
+        private const val TAG_ORIENTATION = 0x0112
         private const val TAG_STRIP_OFFSETS = 0x0111
         private const val TAG_STRIP_BYTE_COUNTS = 0x0117
         private const val TAG_SUB_IFDS = 0x014A
@@ -130,6 +133,26 @@ class ArwPreviewParser {
         return extracted
     }
 
+    /**
+     * Extracts unified [EmbeddedPreviewResult] representation from Sony ARW bytes.
+     */
+    fun extractUnifiedPreview(bytes: ByteArray): EmbeddedPreviewResult? {
+        val startNs = System.nanoTime()
+        val info = parsePreviewInfo(bytes) ?: return null
+        val jpegBytes = extractPreview(bytes) ?: return null
+        val elapsedMs = (System.nanoTime() - startNs) / 1_000_000L
+        val orientation = if (info.orientation in 1..8) info.orientation else ExifOrientationHelper.extractOrientation(jpegBytes)
+
+        return EmbeddedPreviewResult(
+            jpegBytes = jpegBytes,
+            width = info.width,
+            height = info.height,
+            orientation = orientation,
+            format = "ARW",
+            parseTimeMs = elapsedMs
+        )
+    }
+
     private data class IfdScanResult(
         val previewInfo: ArwPreviewInfo?,
         val subIfdOffsets: List<Int>,
@@ -154,6 +177,7 @@ class ArwPreviewParser {
         var stripByteCount = 0
         var width = 0
         var height = 0
+        var orientation = 1
         var exifIfdOffset = 0
         val subIfdOffsets = mutableListOf<Int>()
 
@@ -169,6 +193,20 @@ class ArwPreviewParser {
             when (tag) {
                 TAG_IMAGE_WIDTH -> width = valOrOffset
                 TAG_IMAGE_HEIGHT -> height = valOrOffset
+                TAG_ORIENTATION -> {
+                    val parsedOrientation = if (type == 3) {
+                        if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
+                            valOrOffset and 0xFFFF
+                        } else {
+                            (valOrOffset ushr 16) and 0xFFFF
+                        }
+                    } else {
+                        valOrOffset
+                    }
+                    if (parsedOrientation in 1..8) {
+                        orientation = parsedOrientation
+                    }
+                }
                 TAG_JPEG_INTERCHANGE_FORMAT -> jpegOffset = valOrOffset
                 TAG_JPEG_INTERCHANGE_FORMAT_LENGTH -> jpegLength = valOrOffset
                 TAG_STRIP_OFFSETS -> stripOffset = valOrOffset
@@ -192,12 +230,25 @@ class ArwPreviewParser {
         val chosenOffset = if (jpegOffset > 0) jpegOffset else stripOffset
         val chosenLength = if (jpegLength > 0) jpegLength else stripByteCount
 
+        if (orientation == 1 && chosenOffset > 0 && chosenOffset + 4 < bytes.size && isJpegHeaderAt(bytes, chosenOffset)) {
+            val maxCheck = minOf(chosenLength, bytes.size - chosenOffset)
+            if (maxCheck > 4) {
+                val exifOrientation = ExifOrientationHelper.extractOrientation(
+                    bytes.copyOfRange(chosenOffset, chosenOffset + minOf(maxCheck, 65536))
+                )
+                if (exifOrientation in 1..8 && exifOrientation != 1) {
+                    orientation = exifOrientation
+                }
+            }
+        }
+
         val previewInfo = if (chosenOffset > 0 && chosenLength > 0) {
             ArwPreviewInfo(
                 previewOffset = chosenOffset,
                 previewLength = chosenLength,
                 width = width,
                 height = height,
+                orientation = orientation,
                 isJpegValid = isJpegHeaderAt(bytes, chosenOffset)
             )
         } else null
