@@ -1,0 +1,121 @@
+# Requirements: TransferIn (Milestone v3.0)
+
+**Defined:** 2026-08-20  
+**Target Milestone:** v3.0 Multi-Vendor Production Engine & Zero-Leak Tether Core  
+**Core Value:** Enable professional photographers to shoot tethered across Fujifilm, Canon, Sony, and Nikon cameras with zero memory leaks, sub-second preview feedback, deterministic hardware disconnect lifecycle, and real-time cloud synchronization to Google Drive.
+
+---
+
+## v3.0 Requirements
+
+Requirements for Milestone v3.0 release. Each maps to roadmap phases.
+
+### 1. Hardware Lifecycle & Zero-Leak Core (CORE)
+
+- [ ] **CORE-01**: System executes deterministic USB hardware session lifecycle (`Idle` -> `Connected` -> `Handshake` -> `ActiveStreaming` -> `Disconnecting` -> `CleanTerminated`) with JNI IO execution latch preventing native `SIGSEGV` during rapid cable disconnects.
+- [ ] **CORE-02**: System ensures zero unmanaged coroutine leaks and zero Android `usbfs` file descriptor leaks by binding all background jobs to a centralized `SupervisorJob` with non-cancellable teardown barriers.
+- [ ] **CORE-03**: System streams high-throughput USB bulk payloads using a direct native `DirectByteBufferPool` (128KB/1MB slices) to eliminate JVM GC churn on 40MP–100MP RAW ingest.
+- [ ] **CORE-04**: System adheres strictly to Android 14+ (API 34/35) `FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE` lifecycle requirements with immediate `startForeground()` execution in `onCreate()`.
+- [ ] **CORE-05**: System eliminates all leaked `ContentResolver` file descriptors and duplicate thumbnail decoding across WorkManager workers and UI repositories.
+
+### 2. Fujifilm Native Wired Tether Engine (FUJI)
+
+- [ ] **FUJI-01**: System implements native PTP `FujiTetherAdapter` (VID `0x04CB`) bypassing generic MTP file loops, using explicit `0xD214` Host Control and `0xD216` PC+Card property handshakes.
+- [ ] **FUJI-02**: System drains Fuji Interrupt IN endpoint (`0x83`) asynchronously to capture `0x4002`/`0xC001` `ObjectAdded` events with $O(1)$ discovery latency (<15ms), completely eliminating the $O(N)$ full-card metadata scan loop.
+- [ ] **FUJI-03**: System implements a mandatory 4-step clean teardown sequence (`0xD214 = 0x0000` -> PTP `0x1003 CloseSession` -> `releaseInterface` -> `close`) preventing camera LCD "BUSY" / "PC TETHER" firmware freezes.
+- [ ] **FUJI-04**: System extracts embedded high-resolution JPEG previews directly from `.RAF` headers without downloading full RAW files over USB for instant live scroller display.
+- [ ] **FUJI-05**: System extracts and displays Fujifilm Film Simulation metadata (Provia, Velvia, Astia, Classic Chrome, Classic Neg, ACROS, Nostalgic Neg) in the active session HUD.
+
+### 3. Canon EOS Direct PTP & CTG Fallback Engine (CANON)
+
+- [ ] **CANON-01**: System implements `CanonPtpAdapter` (VID `0x04A9`) using EOS PTP remote mode (`0x9114`) and event mode (`0x9115`), continuously draining `0x9116 EOS_GetEvent` to prevent DIGIC event ring buffer overflow.
+- [ ] **CANON-02**: System parses `.CR3` ISO-BMFF box structure (`PRVW`/`THMB` atoms) from the first 128KB of the USB payload for sub-500ms preview rendering.
+- [ ] **CANON-03**: System provides a resilient two-stage stability-verified fallback for legacy `.CTG` catalog structures on older Canon EOS bodies.
+- [ ] **CANON-04**: System supports simultaneous multi-card slot enumeration (Slot 1 CFexpress + Slot 2 SD) without handle collision.
+
+### 4. Sony Alpha & Nikon Tethering Adapters (SONY / NIKON)
+
+- [ ] **SONY-01**: System implements `SonyPtpAdapter` (VID `0x054C`) with `0x9280 SDIOConnect` handshake and automatic verification that Save Destination is configured to `PC + Camera` (preventing volatile DRAM loss).
+- [ ] **SONY-02**: System handles Sony multi-packet PTP payload defragmentation and extracts embedded preview TIFF SubIFD from `.ARW` containers.
+- [ ] **NIKON-01**: System implements `NikonPtpAdapter` (VID `0x04B0`) supporting Nikon vendor PTP commands (`0x90C0`/`0x90C1`) with discrete storage ID enumeration for dual card slots.
+- [ ] **NIKON-02**: System implements an adaptive exponential backoff retry loop for Nikon `0x2019 PTP_RC_DeviceBusy` responses during in-camera EXPEED card buffer flushes.
+
+### 5. 5-Stage Cloud Sync & Storage Management (SYNC)
+
+- [ ] **SYNC-01**: System implements a transactional 5-stage media state machine (`DISCOVERED` -> `CACHED` -> `QUEUED` -> `UPLOADING` -> `CONFIRMED`) backed by Room DB.
+- [ ] **SYNC-02**: System computes composite SHA-256 media fingerprints to enforce idempotent deduplication across USB disconnect and reconnect cycles.
+- [ ] **SYNC-03**: System provides direct zero-copy streaming from USB Bulk IN endpoints to Google Drive Resumable Upload HTTP endpoints via OkHttp `UsbStreamRequestBody`.
+- [ ] **SYNC-04**: System manages local transit storage with an LRU 5GB boundary and automatic cache TTL eviction.
+- [ ] **SYNC-05**: System provides a dual-tier sync mode allowing instant 3-second JPEG preview delivery to cloud alongside background high-res RAW archival.
+
+### 6. Production Quality, UI & Security Rigor (QUAL)
+
+- [ ] **QUAL-01**: System purges all dead legacy code (`UsbDisconnectHandler.kt`, `SessionOrchestrator.kt`, fake `MediaStore` queries) and consolidates session managers into a single source of truth.
+- [ ] **QUAL-02**: System incorporates real USB packet fuzzing and protocol state machine regression test harnesses without relying on mock pseudo-tests.
+- [ ] **QUAL-03**: System passes mandatory AAS Code Review and UI Review audits enforcing strict memory safety, non-blocking UI threads, and quiet luxury visual guidelines.
+- [ ] **QUAL-04**: System passes comprehensive Security & Privacy audits verifying secure OAuth token storage in Android EncryptedSharedPreferences and zero transit data leakage.
+
+---
+
+## v2 Requirements (Deferred to Future Milestones)
+
+### Wireless Tethering & Remote Shutter
+- **WIFI-01**: Camera tethering over Wi-Fi Direct and PTP/IP.
+- **REMOTE-01**: In-app live view streaming and remote shutter trigger from phone.
+
+### AI Culling & Batch Presets
+- **AI-01**: On-device AI focus and blink detection scoring.
+- **LUT-01**: Real-time 3D LUT preview rendering for RAW files.
+
+---
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| In-camera firmware flashing | High risk of bricking customer hardware over USB OTG |
+| Direct RAW DNG transcoding | CPU/thermal throttling on mobile devices; defer to cloud |
+| Proprietary Tethering SDKs (Canon EDSDK .so / Sony Camera Remote SDK C++ binaries) | Proprietary NDK binary licenses & architecture incompatibility with clean Kotlin USB host stack |
+
+---
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CORE-01 | Phase 4 | Pending |
+| CORE-02 | Phase 4 | Pending |
+| CORE-03 | Phase 4 | Pending |
+| CORE-04 | Phase 4 | Pending |
+| CORE-05 | Phase 4 | Pending |
+| FUJI-01 | Phase 5 | Pending |
+| FUJI-02 | Phase 5 | Pending |
+| FUJI-03 | Phase 5 | Pending |
+| FUJI-04 | Phase 5 | Pending |
+| FUJI-05 | Phase 5 | Pending |
+| CANON-01 | Phase 6 | Pending |
+| CANON-02 | Phase 6 | Pending |
+| CANON-03 | Phase 6 | Pending |
+| CANON-04 | Phase 6 | Pending |
+| SONY-01 | Phase 7 | Pending |
+| SONY-02 | Phase 7 | Pending |
+| NIKON-01 | Phase 7 | Pending |
+| NIKON-02 | Phase 7 | Pending |
+| SYNC-01 | Phase 8 | Pending |
+| SYNC-02 | Phase 8 | Pending |
+| SYNC-03 | Phase 8 | Pending |
+| SYNC-04 | Phase 8 | Pending |
+| SYNC-05 | Phase 8 | Pending |
+| QUAL-01 | Phase 9 | Pending |
+| QUAL-02 | Phase 9 | Pending |
+| QUAL-03 | Phase 9 | Pending |
+| QUAL-04 | Phase 9 | Pending |
+
+**Coverage:**
+- v3.0 requirements: 25 total
+- Mapped to phases: 25
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-08-20*  
+*Last updated: 2026-08-20 after multi-vendor research synthesis*
