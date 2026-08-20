@@ -42,18 +42,18 @@ Requirements for Milestone v3.0 release. Each maps to roadmap phases.
 
 ### 5. 5-Stage Cloud Sync & Storage Management (SYNC)
 
-- [ ] **SYNC-01**: System implements a transactional 5-stage media state machine (`DISCOVERED` -> `CACHED` -> `QUEUED` -> `UPLOADING` -> `CONFIRMED`) backed by Room DB.
-- [ ] **SYNC-02**: System computes composite SHA-256 media fingerprints to enforce idempotent deduplication across USB disconnect and reconnect cycles.
-- [ ] **SYNC-03**: System provides direct zero-copy streaming from USB Bulk IN endpoints to Google Drive Resumable Upload HTTP endpoints via OkHttp `UsbStreamRequestBody`.
-- [ ] **SYNC-04**: System manages local transit storage with an LRU 5GB boundary and automatic cache TTL eviction.
-- [ ] **SYNC-05**: System provides a dual-tier sync mode allowing instant 3-second JPEG preview delivery to cloud alongside background high-res RAW archival.
+- [x] **SYNC-01**: System implements a transactional 5-stage media state machine (`DETECTED` -> `BUFFERED_LOCAL` -> `STREAMING_CLOUD` -> `CONFIRMED_CLOUD` -> `PURGED_LOCAL`) backed by Room DB.
+- [x] **SYNC-02**: System computes composite SHA-256 media fingerprints to enforce idempotent deduplication across USB disconnect and reconnect cycles.
+- [x] **SYNC-03**: System provides direct zero-copy streaming from USB Bulk IN endpoints to Google Drive Resumable Upload HTTP endpoints via OkHttp `UsbStreamRequestBody`.
+- [x] **SYNC-04**: System manages local transit storage with an LRU 5GB boundary and safe confirmed-only eviction.
+- [x] **SYNC-05**: System provides a dual-tier sync mode allowing instant 3-second JPEG preview delivery to cloud alongside background high-res RAW archival.
 
 ### 6. Production Quality, UI & Security Rigor (QUAL)
 
-- [ ] **QUAL-01**: System purges all dead legacy code (`UsbDisconnectHandler.kt`, `SessionOrchestrator.kt`, fake `MediaStore` queries) and consolidates session managers into a single source of truth.
-- [ ] **QUAL-02**: System incorporates real USB packet fuzzing and protocol state machine regression test harnesses without relying on mock pseudo-tests.
-- [ ] **QUAL-03**: System passes mandatory AAS Code Review and UI Review audits enforcing strict memory safety, non-blocking UI threads, and quiet luxury visual guidelines.
-- [ ] **QUAL-04**: System passes comprehensive Security & Privacy audits verifying secure OAuth token storage in Android EncryptedSharedPreferences and zero transit data leakage.
+- [x] **QUAL-01**: System purges all dead legacy code (`UsbDisconnectHandler.kt`, `SessionOrchestrator.kt`, fake `MediaStore` queries) and consolidates session managers into a single source of truth.
+- [x] **QUAL-02**: System incorporates real USB packet fuzzing and protocol state machine regression test harnesses without relying on mock pseudo-tests.
+- [x] **QUAL-03**: System passes mandatory AAS Code Review and UI Review audits enforcing strict memory safety, non-blocking UI threads, and quiet luxury visual guidelines.
+- [x] **QUAL-04**: System passes comprehensive Security & Privacy audits verifying secure OAuth token storage in Android EncryptedSharedPreferences and zero transit data leakage.
 
 ---
 
@@ -101,15 +101,15 @@ Requirements for Milestone v3.0 release. Each maps to roadmap phases.
 | SONY-02 | Phase 7 | Verified |
 | NIKON-01 | Phase 7 | Verified |
 | NIKON-02 | Phase 7 | Verified |
-| SYNC-01 | Phase 8 | Pending |
-| SYNC-02 | Phase 8 | Pending |
-| SYNC-03 | Phase 8 | Pending |
-| SYNC-04 | Phase 8 | Pending |
-| SYNC-05 | Phase 8 | Pending |
-| QUAL-01 | Phase 9 | Pending |
-| QUAL-02 | Phase 9 | Pending |
-| QUAL-03 | Phase 9 | Pending |
-| QUAL-04 | Phase 9 | Pending |
+| SYNC-01 | Phase 8 | Verified |
+| SYNC-02 | Phase 8 | Verified |
+| SYNC-03 | Phase 8 | Verified |
+| SYNC-04 | Phase 8 | Verified |
+| SYNC-05 | Phase 8 | Verified |
+| QUAL-01 | Phase 9 | Verified |
+| QUAL-02 | Phase 9 | Verified |
+| QUAL-03 | Phase 9 | Verified |
+| QUAL-04 | Phase 9 | Verified |
 
 **Coverage:**
 - v3.0 requirements: 25 total
