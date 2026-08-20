@@ -1,6 +1,9 @@
 package com.rvmeur.transferin.data.usb
 
 import android.util.Log
+import com.rvmeur.transferin.data.usb.canon.CtgMetadataSnapshot
+import com.rvmeur.transferin.data.usb.canon.CtgStabilityVerifier
+import com.rvmeur.transferin.data.usb.canon.StabilityStage1Result
 import com.rvmeur.transferin.domain.shoot.CtgDatabase
 import com.rvmeur.transferin.domain.shoot.CtgDatabaseParser
 import com.rvmeur.transferin.domain.shoot.CtgMediaSnapshot
@@ -53,12 +56,13 @@ data class CtgWatcherState(
  * Flow:
  * 1. initialize() - scan CTG baseline
  * 2. startWatching() - mulai polling
- * 3. onCtgChanged() - emit event saat CTG berubah
+ * 3. onCtgChanged() - emit event saat CTG berubah dengan stability verification
  * 4. stopWatching() - stop polling
  */
 class CtgWatcher(
     private val usbHelper: UsbHelper,
-    private val ctgParser: CtgDatabaseParser? = null  // Optional for backward compatibility
+    private val ctgParser: CtgDatabaseParser? = null,  // Optional for backward compatibility
+    private val stabilityVerifier: CtgStabilityVerifier = CtgStabilityVerifier()
 ) {
 
     companion object {
@@ -226,24 +230,52 @@ class CtgWatcher(
             if (timestampChanged || sizeChanged) {
                 Log.i(TAG, ">>> CTG CHANGED! ts=${currentMeta.timestamp} (was ${lastKnownTimestamp}), size=${currentMeta.size} (was ${lastKnownSize})")
 
+                // Verify stability before parsing active write
+                val stage1 = stabilityVerifier.verifyInvariance {
+                    findCtgFile(storageId)?.let {
+                        CtgMetadataSnapshot(
+                            handle = it.handle,
+                            name = it.name,
+                            size = it.size,
+                            modifiedTime = it.timestamp
+                        )
+                    }
+                }
+
+                if (stage1 is StabilityStage1Result.UnstableWriting) {
+                    Log.w(TAG, "CTG file write in progress (${stage1.reason}), deferring parsing.")
+                    return
+                }
+
+                val stableMeta = if (stage1 is StabilityStage1Result.Stable) {
+                    CtgFileMeta(
+                        handle = stage1.snapshot.handle,
+                        name = stage1.snapshot.name,
+                        timestamp = stage1.snapshot.modifiedTime,
+                        size = stage1.snapshot.size
+                    )
+                } else {
+                    currentMeta
+                }
+
                 // Emit legacy event for backward compatibility
                 val event = CtgChangeEvent(
-                    timestamp = currentMeta.timestamp,
-                    fingerprint = "${currentMeta.name}|${currentMeta.size}|${currentMeta.timestamp}",
-                    handle = currentMeta.handle,
-                    fileName = currentMeta.name,
-                    fileSize = currentMeta.size
+                    timestamp = stableMeta.timestamp,
+                    fingerprint = "${stableMeta.name}|${stableMeta.size}|${stableMeta.timestamp}",
+                    handle = stableMeta.handle,
+                    fileName = stableMeta.name,
+                    fileSize = stableMeta.size
                 )
 
                 _ctgChanges.emit(event)
 
-                // NEW: Parse CTG and emit snapshot if parser configured
+                // Parse CTG and emit snapshot if parser configured
                 if (ctgParser != null) {
                     parseAndEmitSnapshot(storageId)
                 }
 
-                lastKnownTimestamp = currentMeta.timestamp
-                lastKnownSize = currentMeta.size
+                lastKnownTimestamp = stableMeta.timestamp
+                lastKnownSize = stableMeta.size
 
                 _state.value = _state.value.copy(
                     changeCount = _state.value.changeCount + 1,
