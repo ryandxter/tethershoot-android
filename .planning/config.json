@@ -1,11 +1,8 @@
 {
   "aas_integration": true,
   "aas_version": "15.12.0",
-  "gsd_core_version": "latest",
-  "graphify": {
-    "enabled": true,
-    "auto_update": true
-  },
+  "gsd_core_version": "1.15.0",
+  "graphify": true,
   "parallelization": true,
   "workflow": {
     "inline_plan_threshold": 0,
@@ -26,7 +23,11 @@
     "ui_review": true,
     "text_mode": false,
     "research_before_questions": false,
-    "skip_discuss": false
+    "skip_discuss": false,
+    "mode": "autonomous",
+    "parallel": true,
+    "orchestrator": true,
+    "figma": true
   },
   "worktree": {
     "baseRef": "head"
@@ -42,5 +43,15 @@
   "git": {
     "branching_strategy": "none",
     "create_tag": true
-  }
+  },
+  "parallel_subagents": true,
+  "strict_subagent_spawning": true,
+  "agent_skills": true,
+  "orchestration": {
+    "enabled": true,
+    "parallel_waves": true,
+    "auto_dispatch": true,
+    "subagent_orchestrator": true
+  },
+  "figma_mcp": true
 }

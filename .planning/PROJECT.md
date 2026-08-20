@@ -31,24 +31,22 @@ Enable professional photographers to shoot tethered with Canon/Fuji cameras and 
 - **UI Architecture:** Jetpack Compose with Material 3, Accompanist / Compose Foundation Pager (`HorizontalPager`)
 - **Design Tokens:** `rvmeur.com` design system (`#FAF8F3` ground, `#F6F3EB` card, `#26170C` primary, `#2D4636` accent green, Cormorant Garamond, DM Sans, Roboto Mono)
 - **Database:** Room 2.8.4
-- **Background & Sync:** WorkManager 2.11.2, Google Drive REST API Client
+- **Background & Sync:** WorkManager 2.11.2, Google Drive REST API Client, Google Play Services Auth
 
-## Existing Capabilities
+## Shipped Capabilities
 
-1. **Package Namespace & Brand Token Integration** — Rebranded to `com.rvmeur.transferin` with local fonts and brand colors.
-2. **Google Drive Storage Engine** — OAuth2 sign-in, dynamic folder creation/resolution, and multipart REST uploads.
-3. **Camera File Traversal & Tethering Core** — MTP subfolder scanning, Canon/Fuji baseline extraction, RAW+JPG concurrent file emission.
+1. **RVM Quiet Luxury Design System (v2.0)** — Double-bezel concentric card containers (`DoppelrandCard`), tactile kinetic press physics (`KineticButton`), floating glass morphing dot navigation bar (`FluidDotNavigationBar`), custom typography and brand tokens.
+2. **Fluid Swipeable Setup Wizard (v2.0)** — Gesture-driven 3-step setup flow connecting Google Drive OAuth & folder selection, live camera tethering pulse, and session rules.
+3. **Studio Live Dashboard & Gallery (v2.0)** — Active session monitor with 4-stat metric grid, live queue stream, 3-column media thumbnail grid with full-screen dark modal viewer, and session summary.
+4. **Google Drive Cloud Storage Engine (v1.0)** — Direct Google Drive REST API integration with OAuth2 authentication, dynamic folder resolution, and multipart file upload.
+5. **Camera File Traversal Core (v2 Legacy)** — MTP subfolder scanning, Canon/Fuji baseline extraction, and RAW+JPG concurrent file emission.
 
-## Current Milestone: v2 — Fluid Wizard & Agency-Grade UI/UX Overhaul
+## Milestones Shipped
 
-**Goal:** Overhaul the entire application UI from a rigid functional layout into a fluid, gesture-driven wizard with a custom dynamic dot navigation bar, double-bezel card enclosures, and agency-grade micro-interactions matching `rvmeur.com` brand identity.
-
-**Target Features:**
-1. **Design System & Motion Foundations** — Double-bezel card containers (`Doppelrand`), kinetic button physics, custom brand tokens, and lowercase typography rules.
-2. **Fluid Swipeable Wizard Flow** — Gesture-driven `HorizontalPager` connecting Google Drive Auth, Folder Selection, and Camera Tethering into a single smooth flow.
-3. **Dynamic Dot Bar Navigation Bar** — Custom Compose indicator bar with animated dot sizing, morphing pill containers, and step validation feedback.
-4. **Live Shoot Dashboard Polish** — Refactored active session view with real-time transfer counters, pulse status indicators, and haptic feedback.
+- **v2.0:** Fluid Wizard & Agency-Grade UI/UX Overhaul (Shipped: 2026-08-12)
+- **v1.0:** Rebranding & Google Drive Migration (Shipped: 2026-08-12)
+- **v2 (Legacy):** Camera File Numbering & Traversal Alignment (Shipped: 2026-08-07)
 
 ---
 
-*Project updated: 2026-08-12*
+*Last updated: 2026-08-20 after v2.0 milestone*

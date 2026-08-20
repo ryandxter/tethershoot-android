@@ -1,5 +1,17 @@
 # Milestones
 
+## v2.0 — Fluid Wizard & Agency-Grade UI/UX Overhaul (Shipped: 2026-08-12)
+
+**Phases completed:** 3 phases (Phase 1, Phase 2, Phase 3)
+
+**Key accomplishments:**
+- Built agency-grade Jetpack Compose design system foundation with `rvmeur.com` brand tokens, double-bezel concentric card containers (`DoppelrandCard`), kinetic press buttons (`KineticButton`), and floating glass morphing dot navigation bar (`FluidDotNavigationBar`).
+- Implemented gesture-driven 3-step setup wizard (`FluidWizardScreen.kt`) with Google Drive OAuth2 sign-in, 2-column card folder browser grid (`Step1DriveFolder.kt`), live camera tether aura card (`Step2CameraTether.kt`), and session launch trigger (`Step3SessionRules.kt`).
+- Developed Live Shoot Dashboard (`SessionActiveScreen.kt`) with 4-stat real-time metric cards (`antrean`, `mengunggah`, `berhasil`, `gagal`), 3-column media gallery (`UploadedGalleryScreen.kt`) with quiet luxury full-screen dark modal viewer, and end-of-session summary card (`SessionSummaryScreen.kt`).
+- Integrated Google Play Services Native Sign-In dialog in `MainActivity.kt` with dynamic folder resolution, real-time token exchange, and credential isolation.
+
+---
+
 ## v1.0 — Rebranding & Google Drive Migration (Shipped: 2026-08-12)
 
 **Phases completed:** 3 phases (Phase 1, Phase 2, Phase 3)
