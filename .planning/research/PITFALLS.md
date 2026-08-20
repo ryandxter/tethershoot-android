@@ -1,670 +1,398 @@
-# USB Camera Tethering on Android: Pitfalls, Edge Cases & Failure Modes
+# Pitfalls Research
 
-**Document Version:** 1.0.0  
-**Analysis Date:** 2026-08-20  
-**Scope:** Android USB Host API, PTP/MTP Protocol Implementations, Vendor Extensions (Fujifilm, Canon EOS, Sony Remote, Nikon PTP), OS Lifecycle Boundaries (Android 14+ API 34/35), Coroutine & Memory Hygiene.
-
----
-
-## Executive Summary
-
-Building a reliable, production-grade camera tethering application on Android requires navigating a minefield of vendor-specific PTP/MTP dialects, hardware FIFO state machines, kernel-level USB host behaviors, and strict Android OS process lifecycle constraints. 
-
-A naive MTP polling loop or generic USB implementation invariably leads to:
-1. **Camera Lockups:** Physical shutter and dial freezes requiring camera battery pulls.
-2. **Native App Crashes (SIGSEGV):** Kernel/JNI race conditions during cable disconnects.
-3. **Data Loss & Corruption:** Truncated RAW files due to premature MTP handles or camera cache flushing races.
-4. **OS Terminations:** ForegroundService ANRs on Android 14+ and unrecoverable Low Memory Killer (LMK) process deaths.
-5. **Silent Memory Leaks:** Orphaned native USB requests, uncollected Kotlin Flows, and cancelled teardown coroutines.
-
-This document systematically analyzes every known failure mode across camera vendors (Fujifilm, Canon, Sony, Nikon), the Android OS USB stack, and Kotlin coroutine architectures, providing concrete protocol mechanisms and deterministic architectural solutions.
+**Domain:** On-Device Exposure Analysis, Smart Culling & Reliable Thumbnailing (Android/Kotlin/PTP)  
+**Researched:** 2026-08-20  
+**Confidence:** HIGH  
 
 ---
 
-## Table of Contents
+## Executive Overview for Milestone v4.0
 
-1. [Fujifilm Native Wired Tethering Quirks & Pitfalls](#1-fujifilm-native-wired-tethering-quirks--pitfalls)
-2. [Canon EOS PTP & CTG Architecture Failure Modes](#2-canon-eos-ptp--ctg-architecture-failure-modes)
-3. [Sony Remote & Nikon Vendor PTP Conflicts](#3-sony-remote--nikon-vendor-ptp-conflicts)
-4. [Android OS USB Lifecycle & Runtime Hazards](#4-android-os-usb-lifecycle--runtime-hazards)
-5. [Memory Leak Patterns in Android USB Applications](#5-memory-leak-patterns-in-android-usb-applications)
-6. [Comprehensive Remediation Matrix](#6-comprehensive-remediation-matrix)
-7. [Deterministic Architectural Patterns & Implementation Reference](#7-deterministic-architectural-patterns--implementation-reference)
+Milestone v4.0 equips TransferIn with zero-allocation on-device exposure analysis (<15ms per frame), automated upload culling (preventing wasted Google Drive quota and mobile bandwidth on flash misfires or blown frames), and a robust, deterministic camera-to-disk-to-UI thumbnailing pipeline across Fujifilm, Canon, Sony, and Nikon tethered sessions.
+
+Performing real-time image analysis and thumbnail caching in a high-throughput tethered camera pipeline (15–30 fps bursts, 40MP–100MP RAW sensors) presents critical failure modes:
+1. **JVM Heap Churn & ART GC Stalls:** Naive `BitmapFactory` decoding triggers continuous Garbage Collection pauses (100–350ms), dropping UI frames in the Live Studio Gallery and causing USB bulk transfer timeouts.
+2. **False Rejection in Smart Culling:** Creative low-key portraits (black studio backdrops) or high-key wedding scenes being misclassified as "Flash Misfires" or "Blown Highlights" and unintentionally culled.
+3. **Thumbnail File Flush Race Conditions:** Room database entities updating before background file descriptor syncs complete, causing Coil to load 0-byte or corrupted image files.
+4. **USB Bulk Pipe Contention:** Concurrent thumbnail extraction and full RAW cloud streaming colliding on the half-duplex USB endpoint, triggering PTP packet desynchronization.
+5. **Coil Cache Invalidation & RAW Format Failures:** Passing unhandled RAW file paths directly to Coil or using unstable cache keys, resulting in blank placeholders.
+6. **EXIF Orientation Loss:** Embedded preview JPEGs losing rotation metadata, causing portrait photos to render sideways in the Compose gallery grid.
 
 ---
 
-## 1. Fujifilm Native Wired Tethering Quirks & Pitfalls
+## Critical Pitfalls
 
-Fujifilm cameras (X-T3, X-T4, X-T5, X-H2, X-H2S, X-Pro3, GFX 50S/100/100 II) implement a proprietary vendor dialect layered over standard USB Still Image Class (`0x06`) and Vendor Specific Class (`0xFF`).
+### Pitfall 1: Heap Allocation Explosion & ART GC Pauses from Naive Full-Frame Bitmap Decoding in Burst Mode
+
+**What goes wrong:**  
+During high-speed tethered burst shooting (15–30 fps on Canon EOS R5, Sony A1, Fuji X-H2S), decoding incoming preview byte buffers into `android.graphics.Bitmap` objects naively generates 150MB–350MB of short-lived heap allocations every second (e.g., a single 2048×1365 ARGB_8888 bitmap consumes ~11.2 MB uncompressed memory). This triggers aggressive ART Garbage Collection sweeps (`GC_CONCURRENT` and `GC_FOR_ALLOC`), locking JVM threads for 100ms–350ms. The UI RenderThread drops below 30 fps (severe jank in the Live Gallery), and native USB bulk transfers exceed timeout thresholds (`LIBUSB_ERROR_TIMEOUT`), truncating incoming photos. On devices with 4GB–6GB RAM, this quickly leads to fatal `java.lang.OutOfMemoryError` (OOM).
+
+**Why it happens:**  
+Developers use standard `BitmapFactory.decodeByteArray(bytes, 0, bytes.size)` followed by `Bitmap.getPixels()` or `Bitmap.getPixel(x, y)` to calculate luminance histograms, creating full-resolution ARGB_8888 bitmap objects on the managed JVM heap for every single captured frame.
+
+**How to avoid:**  
+1. **Subsampled Single-Pass Direct Byte Analysis:** Execute luminance calculation on a severely downsampled representation or extract luminance directly from the JPEG Y-plane. Use `BitmapFactory.Options` with `inSampleSize = 8` or `16` (reducing a 2048×1365 image to a 256×170 thumbnail = ~174 KB uncompressed) and configure `inPreferredConfig = Bitmap.Config.ALPHA_8` or `RGB_565`.
+2. **Reusable Mutable Bitmap Pool (`inBitmap`):** Allocate a single mutable scratch Bitmap at session start and pass it via `BitmapFactory.Options.inBitmap` for zero heap allocation per frame.
+3. **Pre-allocated Histogram Scratch Arrays:** Allocate a single `IntArray(256)` luminance bin array per analyzer instance and reuse it across frames via `Arrays.fill(bins, 0)` instead of instantiating new arrays inside the loop.
+4. **Off-Heap Direct Buffering:** Leverage `DirectByteBufferPool.Default` for all intermediate byte buffer slices before decoding.
+
+**Warning signs:**  
+- Android Studio Profiler displays a continuous sharp "sawtooth" memory allocation pattern during burst shooting.
+- Logcat is flooded with `Starting a blocking GC Alloc` and `Concurrent mark sweep GC freed ...`.
+- Gallery scrolling drops frames whenever the camera shutter is triggered.
+
+**Phase to address:**  
+Phase 1: Zero-Allocation Exposure Analyzer Core (`CULL-01`).
+
+---
+
+### Pitfall 2: False Rejection in Smart Culling: Low-Key, Silhouette, and High-Key Aesthetic Misclassification
+
+**What goes wrong:**  
+Legitimate, artistically crafted photographs are incorrectly flagged as defective and auto-culled (skipped from cloud upload). Specifically:
+- **Low-Key Studio Portraits & Black Backdrops:** A model lit by a single key light against a matte black cyclorama has 80%–90% of frame pixels in the bottom 10% luminance bins ($Y < 25$). A naive analyzer flags this as a `UNDEREXPOSED_CRITICAL` (Flash Misfire).
+- **High-Key & Snow/Beach Photography:** A bride in a white wedding gown against a bright sunlit backdrop or snow landscape has 80%+ pixels in the top 10% bins ($Y > 230$). A naive analyzer flags this as `OVEREXPOSED_BLOWN`.
+- **Night Club & Concert Silhouettes:** Intentional rim-lit subjects in darkness are rejected.
+
+**Why it happens:**  
+Algorithms rely exclusively on global average luminance ($\mu_Y < 30$ or $\mu_Y > 225$) or crude percentile thresholds without evaluating **Histogram Entropy**, **Local Dynamic Range**, and **Sensor Noise Floor vs Signal**.
 
 ```
-+-------------------------------------------------------------------------+
-|                       FUJIFILM USB TETHER MODES                         |
-+------------------------------------+------------------------------------+
-|  USB CARD READER (MSC 0x08)        |  USB TETHER SHOOTING AUTO (0x06)   |
-|  - Storage only                    |  - Live shooting + PTP events      |
-|  - Physical camera locked          |  - Dual save (Card + USB host)     |
-+------------------------------------+------------------------------------+
-|  USB TETHER SHOOTING FIXED (0x06)  |  USB RAW CONV / BACKUP (0xFF)      |
-|  - Waits exclusively for host      |  - Fuji X-RAW Studio protocol      |
-|  - Shutter disabled until handshake|  - Non-standard vendor endpoints   |
-+------------------------------------+------------------------------------+
++-------------------------------------------------------------------------------+
+|                      HISTOGRAM CLASSIFICATION MATRIX                          |
++---------------------------+---------------------------+-----------------------+
+| SCENARIO                  | HISTOGRAM SIGNATURE       | CORRECT CLASSIFICATION|
++---------------------------+---------------------------+-----------------------+
+| True Flash Misfire        | 99%+ in Bins 0-3;         | UNDEREXPOSED_CRITICAL |
+|                           | Entropy < 0.8; SNR < 2dB  | (Auto-Cull Candidate) |
++---------------------------+---------------------------+-----------------------+
+| Low-Key Studio Portrait   | 85% in Bins 0-15;         | OPTIMAL / ARTISTIC    |
+| (Black Backdrop)          | Midtone Peak in Bins 80-140| (Preserve & Upload)  |
+|                           | Entropy > 3.2             |                       |
++---------------------------+---------------------------+-----------------------+
+| Blown TTL / Over-flash    | 40%+ saturated in Bin 255;| OVEREXPOSED_BLOWN     |
+|                           | Zero midtone gradation    | (Auto-Cull Candidate) |
++---------------------------+---------------------------+-----------------------+
+| High-Key Wedding / Snow   | 70% in Bins 200-245;      | OPTIMAL / HIGH-KEY    |
+|                           | Preserved skin tone detail| (Preserve & Upload)  |
++---------------------------+---------------------------+-----------------------+
 ```
 
-### 1.1 Camera Remaining Locked in "PC TETHER" Mode
+**How to avoid:**  
+1. **Multi-Feature Statistical Decision Engine:** Combine four statistical metrics:
+   - *Sensor Black Floor Density ($Y \le 3$):* Genuine flash misfire has $\ge 98\%$ pixels concentrated in bins $0..3$ with near-zero standard deviation.
+   - *Midtone Gradient Spread ($Y \in [40, 180]$):* Low-key portraits retain distinct subject detail and local contrast in midtone bins.
+   - *Shannon Histogram Entropy ($H = -\sum p_i \log_2 p_i$):* Total pitch-black frames have $H < 1.0$; artistic low-key frames maintain $H \ge 3.0$.
+   - *True Highlight Saturation ($Y = 255$):* Differentiate small specular catchlights / sun flares ($< 3\%$ area) from blown sensor clipping ($> 25\%$ flat saturation at bin 255).
+2. **Configurable Session Culling Modes:** Provide 3 distinct user-controlled modes in the Setup Wizard:
+   - `STRICT_AUTO_CULL`: Automatically skip cloud upload for definitive flash misfires ($H < 1.0, Y_{max} < 10$).
+   - `WARNING_BADGE_ONLY` (Default): Upload all photos, but render non-intrusive quiet-luxury warning badges on gallery cards.
+   - `DISABLED`: Upload all photos without culling intervention.
+3. **Non-Destructive Philosophy & 1-Tap Manual Override:** Never delete files from camera storage; allow photographers to override any culled file with a single swipe/tap in the UI.
 
-#### Mechanism & Root Cause
-When connected via USB, Fuji cameras inspect the host connection based on the camera menu setting (`CONNECTION SETTING` -> `USB MODE`).
-* In **`USB TETHER SHOOTING AUTO`** or **`USB TETHER SHOOTING FIXED`**, opening a generic PTP session (`OpenSession` `0x1002`) without issuing Fujifilm vendor initialization commands leaves the camera in an indeterminate suspended state.
-* The camera firmware displays `"PC TETHER"` or a flashing USB connection icon and **disables the physical shutter button, control dials, and autofocus trigger**.
-* The camera firmware expects a vendor-specific handshake sequence (negotiating vendor properties `0xD200`, `0xD201`, `0xD212`, `0xD214`, `0xD21C`). Without this handshake, the camera assumes the host is busy or in card-reader mode, keeping the physical controls locked.
+**Warning signs:**  
+- Test datasets with studio black-backdrop portraiture getting culled.
+- Photographers reporting missing photos in Google Drive when shooting with controlled studio strobes.
 
-#### Termination Handshake Failure
-If the Android application closes the connection simply by invoking `UsbDeviceConnection.close()` or if the app process crashes:
-* The camera does **not** receive the termination handshake (`CloseSession` `0x1003` preceded by vendor release sequence).
-* The camera firmware remains locked in PC TETHER mode indefinitely. The viewfinder/LCD remains dark or frozen with a USB icon, and the camera will not respond to any button presses until the user physically removes the battery.
+**Phase to address:**  
+Phase 1: Exposure & Luminance Clipping Analyzer (`CULL-01`) & Phase 3: Session Culling Rules (`UI-01`).
+
+---
+
+### Pitfall 3: Race Condition Between Asynchronous Thumbnail Disk Flush and Coil Gallery Load
+
+**What goes wrong:**  
+When a photo is captured, the app extracts the preview JPEG and starts writing it to local disk storage (`/data/user/0/.../cache/thumbnails/thumb_1042.jpg`). Concurrently, the Room database entity is updated with `thumbPath = "/data/user/0/.../thumb_1042.jpg"`. The Room `Flow<List<CameraMediaItemEntity>>` emits the update to `CameraGalleryViewModel`, triggering Jetpack Compose to recompose the `DoppelrandCard` with `AsyncImage(model = item.thumbPath)`. Coil attempts to read the file while `FileOutputStream` is still buffering in OS page cache or mid-write. Coil encounters `FileNotFoundException`, reads a 0-byte corrupt header, and permanently caches a failed/black thumbnail placeholder.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as Android Host (TransferIn)
-    participant Kernel as Linux USB Core
-    participant Fuji as Fujifilm Firmware
+    participant USB as PTP Tether Adapter
+    participant Worker as Thumbnail Worker
+    participant Disk as Flash Storage (Ext4/F2FS)
+    participant DB as Room Database (CameraMediaDao)
+    participant UI as Jetpack Compose (AsyncImage)
+    participant Coil as Coil ImageLoader
 
-    Note over App,Fuji: BROKEN / ABRUPT TERMINATION
-    App->>Fuji: OpenSession (0x1002)
-    App->>Kernel: close() [No PTP CloseSession]
-    Note over Fuji: Firmware waiting on Bulk OUT FIFO<br/>Camera UI remains LOCKED in "PC TETHER"
-    
-    Note over App,Fuji: CLEAN HANDSHAKE & SHUTDOWN
-    App->>Fuji: OpenSession (0x1002, SessionID=1)
-    App->>Fuji: SetDevicePropValue (Fuji Tether Mode = Active)
-    Note over Fuji: Physical shutter enabled, live shooting active
-    App->>Fuji: SetDevicePropValue (Fuji Tether Mode = Inactive)
-    App->>Fuji: CloseSession (0x1003, SessionID=1)
-    App->>Kernel: releaseInterface(PTP_INTF)
-    App->>Kernel: close()
-    Note over Fuji: Camera cleanly exits tether mode to standalone
+    USB->>Worker: 1. Extract Preview Bytes (128 KB)
+    Worker->>Disk: 2. FileOutputStream.write(bytes) [Asynchronous / Buffered]
+    Worker->>DB: 3. updateThumbPath(id, filePath) [RACE HAZARD!]
+    DB-->>UI: 4. Emit Flow<CameraMediaItemEntity>
+    UI->>Coil: 5. Load Image(filePath)
+    Coil->>Disk: 6. Open FileStream -> READ ERROR! (0 bytes / Truncated)
+    Coil-->>UI: 7. Render Error Placeholder (Permanent Black Box)
+    Worker->>Disk: 8. fos.flush() & fos.close() [Too late!]
 ```
 
-### 1.2 Infinite Polling Loops & Recursive Ping-Pong
+**Why it happens:**  
+Room database state transitions occur before ensuring disk I/O synchronization and POSIX file visibility.
 
-#### Mechanism
-In generic MTP mode, applications poll `MtpDevice.getObjectHandles()` to detect newly captured photos. On Fujifilm cameras in tether mode:
-1. When a photo is taken, the camera generates an asynchronous PTP event (`ObjectAdded` `0x4002` or vendor event `0xC001` / `0xC200`) on the Interrupt IN endpoint (`0x83`).
-2. If the host ignores the Interrupt endpoint and instead executes a rapid polling loop calling `getObjectHandles(storageId, 0, 0)` over the Bulk IN/OUT endpoints:
-   - The camera's internal task scheduler must suspend image processing and RAW writing to service the bulk MTP command.
-   - If a new 40MB–100MB RAW file is currently being processed by the image processor (X-Processor 4/5), `getObjectHandles()` blocks or returns an empty list `[]` while the file handle is locked.
-   - The host interprets the empty list as "no new file" and polls again immediately (busy-wait loop).
-   - This flood of Bulk OUT packets saturates the camera's USB FIFO, causing a communication stall (`STALL` PID handshake). Both host and camera become deadlocked.
+**How to avoid:**  
+1. **Atomic Two-Stage File Commit:** Write preview bytes to a temporary staging file (`.thumb_1042.jpg.tmp`), call `fos.fd.sync()` or `fos.flush()`, close the stream, and perform an atomic POSIX rename: `tmpFile.renameTo(targetFile)`.
+2. **Pre-condition Verification:** Before executing `cameraMediaDao.updateStatusAndThumb(id, MediaStatus.CACHED, thumbPath)`, verify `targetFile.exists() && targetFile.length() == expectedLength`.
+3. **Coil Cache Invalidation on Retry:** If Coil encounters an error loading a local file, ensure it does not permanently cache the error result for that URI.
 
-### 1.3 Endpoint Drain Failures & Leftover FIFO Bytes
+**Warning signs:**  
+- Black or blank placeholder boxes in the gallery during fast burst shooting that fix themselves only after an app restart.
+- Logcat warnings: `coil.request.NullRequestDataException` or `java.io.EOFException: End of input at line 1`.
 
-#### Mechanism
-Android's `UsbDeviceConnection.releaseInterface()` releases the kernel claim on the interface descriptor, but **does not flush pending bytes in hardware endpoints**.
-* If a bulk transfer is aborted mid-stream (e.g. timeout during a 50MB RAF transfer), 512-byte (USB 2.0 High-Speed) or 1024-byte (USB 3.0 SuperSpeed) packets remain stranded in the USB Host Controller (xHCI/DWC3) or camera FIFO.
-* When the app opens a new session, the next PTP command sent over Bulk OUT or read over Bulk IN reads the stranded data instead of the new PTP container header (`ContainerLength`, `ContainerType`, `Code`, `TransactionID`).
-* This results in an immediate **`PTP Container Desynchronization Error`** where all subsequent commands fail with corrupted opcode / payload errors.
-
-### 1.4 Buffer Overflows & GC Thrashing on 40MP/100MP RAWs
-
-#### Mechanism
-* Fujifilm X-T5 / X-H2 (40.2 MP X-Trans V) produces `.RAF` files between 45 MB (lossless compressed) and 85 MB (uncompressed). GFX 100 II (102 MP) produces `.RAF` files up to 210 MB.
-* Allocating single contiguous `ByteArray(size)` in JVM heap for each incoming shot during burst shooting (15–20 fps) causes instantaneous heap spikes (hundreds of megabytes within seconds).
-* This triggers aggressive ART Garbage Collection sweeps (concurrent mark-sweep / generational compacting), pausing JVM threads for 100ms–400ms.
-* During ART GC pauses, the Android USB stack fails to service native `bulkTransfer()` within the USB timeout window, resulting in `LIBUSB_ERROR_TIMEOUT` / `EPIPE` and truncated file imports.
+**Phase to address:**  
+Phase 2: End-to-End Tethered Thumbnail Pipeline Fix (`THUMB-01`).
 
 ---
 
-## 2. Canon EOS PTP & CTG Architecture Failure Modes
+### Pitfall 4: USB Bulk Endpoint Contention: Thumbnail Extraction Colliding with Full RAW Cloud Streaming
 
-Canon EOS DSLR and Mirrorless cameras (EOS R5, R6, R7, R8, R3, 5D Mark IV, 1DX Mark III) use the proprietary Canon PTP/EOS extension (Vendor ID `0x04A9`).
+**What goes wrong:**  
+Canon, Nikon, Sony, and Fujifilm PTP protocols share a **single pair of USB bulk endpoints** (Bulk OUT for commands, Bulk IN for data/responses). If Coroutine A initiates direct cloud streaming of a 50MB RAW file (`DirectStreamingEngine.streamWithFallback()`) while Coroutine B simultaneously attempts to call `getThumb()` or `getPartialObject()` for a newly captured frame on the same USB connection, PTP packets are interleaved on the USB controller. The camera firmware or host parser receives a data packet when expecting a command header, causing an unrecoverable **PTP Container Desynchronization Error**, killing the tethered session and stalling uploads.
 
-```
-+-------------------------------------------------------------------------+
-|                        CANON EOS PTP ARCHITECTURE                       |
-+-------------------------------------------------------------------------+
-|  Command Pipe (Bulk OUT / IN)                                           |
-|  - 0x9114: EOS_SetRemoteMode (0=Off, 1=On)                              |
-|  - 0x9115: EOS_SetEventMode (0=Off, 1=On)                               |
-|  - 0x9116: EOS_GetEvent (Polls pending events if no Interrupt pipe)    |
-|  - 0x9107: EOS_TakePicture                                              |
-|  - 0x9109: EOS_DownloadData                                             |
-+-------------------------------------------------------------------------+
-|  Interrupt Pipe (Endpoint 0x83 / Interrupt IN)                          |
-|  - Emits 0x4002 (ObjectAdded), 0xC101 (EOS_PropertyChange)              |
-+-------------------------------------------------------------------------+
-|  Storage / FAT Catalog Structure                                        |
-|  - AUTOMRIC.CTG / AUTOMSC1.CTG / CANON_MDC.CTG (Thumbnail/Index DB)     |
-+-------------------------------------------------------------------------+
-```
+**Why it happens:**  
+Developers treat the USB hardware session as a multi-threaded asynchronous bus rather than a strictly sequential, half-duplex packet pipeline.
 
-### 2.1 Event Pipe Blocking & "Busy" Shutter Freeze
+**How to avoid:**  
+1. **Strict Single-Flight Mutex Arbitration:** All PTP transactions (commands, preview extractions, bulk downloads) must be serialized through `SafeUsbTransportManager.ioMutex.withLock`.
+2. **Two-Tier Priority Queueing:** 
+   - **Tier 1 (High Priority, Latency-Critical):** Instant preview extraction (<100ms) executes immediately upon `ObjectAdded` event, holding the USB mutex briefly.
+   - **Tier 2 (Background, Throughput-Bound):** Full RAW direct cloud streaming acquires the USB mutex only after Tier 1 preview extraction has completed and released the lock.
+3. **Cooperative Chunked Streaming:** Direct cloud streaming should transfer data in bounded chunks (e.g. 1MB chunks via `DirectByteBufferPool`), yielding the USB mutex between chunks if high-priority preview requests are pending.
 
-#### Mechanism
-When Canon remote shooting is activated:
-1. The app sends `EOS_SetRemoteMode(1)` (`0x9114`) and `EOS_SetEventMode(1)` (`0x9115`).
-2. Canon's DIGIC processor diverts all camera state notifications (aperture, shutter speed, ISO, half-press shutter, capture complete, object added) into an internal circular event buffer (typically 128 to 256 entries).
-3. If the host application does not continuously drain this event stream via `MtpDevice.readEvent()` on the Interrupt endpoint or periodic `EOS_GetEvent` (`0x9116`) calls on the bulk pipe:
-   - The camera's internal circular buffer fills up completely.
-   - Once full, the DIGIC processor asserts a hardware flow-control lock: **the physical shutter button is blocked**, the top LCD / viewfinder displays a flashing `"Busy"` message, and the camera stops taking photos entirely.
+**Warning signs:**  
+- Logcat errors: `PTP container type mismatch: expected 1 (Command), got 2 (Data)`.
+- Camera LCD flashing error codes (`Err 70` on Canon, `USB Communication Error` on Sony/Fuji).
+- Sudden disconnects during rapid shooting while uploading.
 
-### 2.2 EOS Transaction ID Timeouts & Pipe Desynchronization
-
-#### Mechanism
-* Canon PTP commands require strict monotonically increasing `TransactionID` values per session.
-* When Android executes `connection.bulkTransfer(outEndpoint, cmdPacket, len, timeout)`:
-  * If a long exposure (e.g. 10 seconds) or sensor cleaning cycle is occurring and Android's timeout is set to 5000ms, the Android call throws a timeout exception.
-  * The Canon DIGIC processor, however, is still waiting to finish processing the previous command.
-  * If the Android app immediately sends the next PTP command with `TransactionID + 1`, the camera receives an unexpected packet while its receiver state machine is still processing the timed-out transaction.
-  * Canon responds with `0x2002` (`PTP_RC_SessionNotOpen`), `0x2019` (`PTP_RC_DeviceBusy`), or permanently drops USB communication.
-
-### 2.3 CTG Catalog File Race Conditions & Truncated Files
-
-#### Mechanism
-In MTP / Card Reader mode, Canon cameras maintain binary catalog files (`AUTOMRIC.CTG`, `AUTOMSC1.CTG`, `CANON_MDC.CTG`) containing directory indexes and thumbnail pointers.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant DIGIC as Canon DIGIC Processor
-    participant SD as SD/CFexpress Card
-    participant Watcher as Android CTG Watcher
-
-    DIGIC->>SD: 1. Create FAT directory entry (_MG_0001.CR3)
-    DIGIC->>SD: 2. Write CTG header update (Size changes)
-    Watcher->>SD: 3. Detect CTG size change -> Request ObjectHandle
-    Watcher->>SD: 4. ImportFile(_MG_0001.CR3)
-    Note over SD,Watcher: CRITICAL RACE: RAW data cluster chain<br/>is only partially written to flash!
-    SD-->>Watcher: Returns truncated 0-byte or corrupt RAW
-    DIGIC->>SD: 5. DIGIC finishes flushing RAW payload from DRAM
-```
-
-* When shooting high-speed bursts (e.g. 20–30 fps on EOS R5/R3), the CTG index file is rewritten continuously while the RAW data payload (`.CR3`) is still streaming from DIGIC buffer memory to the SD/CFexpress card.
-* If an Android watcher detects a CTG modification and immediately queries `importFile()`:
-  1. The MTP object handle points to a directory entry whose file length is still `0` or partially written in the FAT allocation table.
-  2. The downloaded file is corrupt or truncated (e.g. 1.2 MB downloaded out of 45 MB).
-  3. Reading the object handle while DIGIC holds an exclusive write lock can crash the camera's filesystem handler, producing `Err 70` on the camera LCD.
+**Phase to address:**  
+Phase 2: Tethered Thumbnail Pipeline & USB Synchronization (`THUMB-01`).
 
 ---
 
-## 3. Sony Remote & Nikon Vendor PTP Conflicts
+### Pitfall 5: Coil Cache Invalidation Failures & Broken File URI Schemes in Compose
 
-```
-+-------------------------------------------------------------------------+
-|                  SONY & NIKON CONNECTION ARCHITECTURE                   |
-+------------------------------------+------------------------------------+
-|  SONY ALPHA CONNECTION MODES       |  NIKON Z/DSLR PTP ARCHITECTURE     |
-|  - Auto (Ambiguous detection)      |  - Vendor Code: 0x0000000A         |
-|  - Mass Storage (Class 0x08)       |  - OpCodes: 0x90C0 - 0x91FF        |
-|  - MTP (Class 0x06, Subclass 0x01) |  - Dedicated Event Pipe (EP 0x83)  |
-|  - PC Remote (Vendor 0x9280 PTP)   |  - Dual-Slot Storage ID Mapping    |
-+------------------------------------+------------------------------------+
-```
+**What goes wrong:**  
+1. **Broken RAW File Rendering:** In `UploadedGalleryScreen.kt`, passing `File(item.filePath)` where `filePath` is a `.RAF` or `.CR3` RAW file fails completely because Android's native image decoders cannot decode proprietary RAW containers.
+2. **Stale Cache on Re-shooting:** If a camera assigns an identical object handle or file name across different sessions (e.g. `DSCF0001.JPG`), Coil displays the cached bitmap from the *previous* photoshoot.
+3. **URI Scheme Parsing Inconsistencies:** Passing raw string paths (`"/data/user/0/..."`) without standard `File` or `"file://"` URI wrappers causes inconsistent decoding in Coil 2.6.0.
 
-### 3.1 Sony USB Connection Mode Conflicts
+**Why it happens:**  
+- Relying on default Coil image pipeline without custom decoders or failing to route gallery thumbnails exclusively through extracted JPEG previews (`thumbPath`).
+- Not providing deterministic, unique cache keys that incorporate device ID, session ID, and modification timestamp.
 
-#### Mass Storage vs MTP vs PC Remote
-Sony cameras (A7 III/IV/V, A7R IV/V, A9 II/III, A1, A6700, FX3) require explicit USB mode selection in camera settings:
-* **`Mass Storage` (Class `0x08`, Subclass `0x06`, Protocol `0x50`):** Android's `MtpDevice.open(connection)` fails immediately with `false` because the USB device descriptor is not Still Image Class (`0x06`).
-* **`MTP`:** Android can mount the camera as a media device, but shooting is locked; the camera LCD displays an MTP connection screen.
-* **`PC Remote`:** Enables tethered shooting via Sony PTP vendor extensions.
+**How to avoid:**  
+1. **Strict Preview-Only Thumbnail Model:** Enforce that Compose gallery components (`CameraGalleryScreen`, `UploadedGalleryScreen`) bind exclusively to `item.thumbPath` (which is always a valid JPEG).
+2. **Deterministic Custom Cache Keys:** Construct `ImageRequest` with explicit memory and disk cache keys:
+   ```kotlin
+   ImageRequest.Builder(context)
+       .data(File(item.thumbPath))
+       .memoryCacheKey("thumb_${item.deviceId}_${item.objectHandle}_${item.modifiedAt}")
+       .diskCacheKey("thumb_${item.deviceId}_${item.objectHandle}_${item.modifiedAt}")
+       .crossfade(150)
+       .build()
+   ```
+3. **Bounded Dedicated Coil Disk & Memory Cache:** Configure a custom `ImageLoader` in `Application` with an LRU memory cache limited to 25% of available heap and a disk cache limited to 250MB in app internal storage.
 
-#### The "PC Only" Volatile RAM Trap
-In Sony firmware under `Network` / `USB` -> `PC Remote Settings` -> `Still Image Save Dest`:
-* If set to **`PC Only`** (default in many studio setups), the camera **does not write the photo to the internal SD card**.
-* Instead, the image is held temporarily in the camera's volatile DRAM buffer.
-* If the Android host application does not immediately read the `ObjectAdded` event and pull the data stream via Sony vendor PTP bulk transfer, **the photo is permanently lost** when the camera goes to sleep or takes the next shot in buffer-full conditions.
-* App must explicitly warn the user if storage destination is configured to PC Only or enforce dual-saving (`PC + Camera`).
+**Warning signs:**  
+- Gallery shows blank cards with file names for all RAW items.
+- Images from yesterday's photoshoot appear in today's new session.
+- Coil memory cache growing uncontrollably, leading to high garbage collection pressure.
 
-### 3.2 Sony PTP Data Packet Fragmentation
-
-#### Mechanism
-Sony PC Remote transfers do not always send fixed-size PTP containers. Large ARW (Sony RAW) transfers are segmented across hundreds of USB packets where the initial container header contains a dynamic length, followed by raw data packets, and terminated by a zero-length packet (ZLP) or short packet.
-* Naive implementations expecting every `bulkTransfer()` read to begin with a PTP container header will fail to parse subsequent packets, corrupting the transfer pipeline.
-
-### 3.3 Nikon Vendor Extensions & Dual-Slot StorageID Misalignment
-
-#### Mechanism
-Nikon cameras (Z6, Z7, Z8, Z9, D850) use Nikon vendor extension code `0x0000000A` with vendor opcodes `0x90C0`–`0x91FF`.
-* **Asynchronous Event Collision:** Nikon cameras emit `0x4002` (`ObjectAdded`) and `0x400D` (`CaptureComplete`) on Interrupt IN endpoint `0x83`. If the host sends a synchronous `GetDeviceInfo` or `GetObjectHandles` command over Bulk OUT at the exact microsecond the camera is dispatching an interrupt event, Nikon firmware desynchronizes transaction IDs and returns `0x2015` (`PTP_RC_TransactionCanceled`).
-* **Dual-Slot Storage ID Partitioning:** Nikon cameras with dual card slots (CFexpress + SD) partition storage handles into distinct 32-bit IDs:
-  * Slot 1: `0x00010001`
-  * Slot 2: `0x00020001`
-* Querying with `StorageID = 0xFFFFFFFF` (all storages) on certain Nikon firmware versions causes buffer truncation if the total handle count across both cards exceeds 10,000 objects. Handles must be enumerated per discrete StorageID.
+**Phase to address:**  
+Phase 2: Coil Image Loader Configuration & Gallery Integration (`THUMB-01`).
 
 ---
 
-## 4. Android OS USB Lifecycle & Runtime Hazards
+### Pitfall 6: EXIF Orientation Loss & 90-Degree Rotated Thumbnail Rendering
 
-The interaction between the Linux kernel USB host driver (`usbfs`), the Android framework (`UsbManager`), and user-space Kotlin coroutines introduces severe lifecycle hazards.
+**What goes wrong:**  
+Photos shot vertically (portrait orientation) appear rotated 90 degrees counter-clockwise (landscape) in the 3-column gallery grid and full-screen modal viewer. 
 
-```mermaid
-graph TD
-    A[Physical USB Cable Disconnected / Wiggled] --> B[Linux Kernel USB Core Detaches Device]
-    B --> C[Kernel Inactivates /dev/bus/usb/xxx/yyy Device Node]
-    B --> D[Android Framework fires ACTION_USB_DEVICE_DETACHED]
-    
-    C --> E[Concurrent Dispatchers.IO Thread in native bulkTransfer/importFile]
-    D --> F[BroadcastReceiver on Main Thread calls connection.close]
-    
-    F --> G[Native Pointer usbfs/libusbhost Freed]
-    E --> H[JNI uses freed native UsbDeviceConnection struct]
-    H --> I[FATAL CRASH: Native SIGSEGV / SIGBUS in libusbhost.so]
-```
+**Why it happens:**  
+Camera image sensors capture pixels in raw physical sensor orientation (landscape). Orientation metadata is stored in EXIF Tag `0x0112` (Orientation). 
+- When extracting embedded preview slices from `.RAF` (Fuji), `.CR3` (Canon), or `.ARW` (Sony), the extracted JPEG payload may omit the EXIF header or contain IFD pointers that simple decoders ignore.
+- If the thumbnail byte array is saved to disk without EXIF header preservation or if Coil's decoder does not normalize EXIF rotation, Android renders the raw unrotated landscape pixel matrix.
 
-### 4.1 Physical Unplug Race Conditions (Native SIGSEGV)
+**How to avoid:**  
+1. **Preserve EXIF Orientation in Preview Parsers:** Ensure `RafPreviewExtractor`, `Cr3PreviewParser`, and `ArwPreviewParser` retain EXIF APP1 segments containing Tag `0x0112`.
+2. **Coil EXIF-Aware Decoding:** Verify Coil 2.6.0's `BitmapFactoryDecoder` is configured with `exifOrientationPolicy = ExifOrientationPolicy.RESPECT_PERFORMANCE` or explicitly normalize orientation during thumbnail write.
+3. **Validation Unit Tests:** Include test cases verifying that photos shot at orientation 1 (0°), 6 (90° CW), 3 (180°), and 8 (270° CW) retain correct display aspect ratio and rotation in Compose.
 
-#### Detailed Failure Mechanics
-1. A physical USB-C disconnect occurs while a worker thread on `Dispatchers.IO` is blocked inside the native JNI call `android_hardware_UsbDeviceConnection_bulkTransfer()`.
-2. The Android OS receives the kernel uevent and broadcasts `UsbManager.ACTION_USB_DEVICE_DETACHED` on the Main Looper.
-3. If the app's `BroadcastReceiver` immediately invokes `connection.close()` or `mtpDevice.close()`:
-   - The native C++ destructor frees the underlying `struct usb_device*` and file descriptor.
-   - The blocked IO thread wakes up from the kernel abort and attempts to access the deallocated native struct.
-   - **Result:** Instant native crash (`SIGSEGV` / `SEGV_MAPERR` in `libusbhost.so` or `libmtp.so`) that completely bypasses Kotlin `try-catch` blocks and terminates the app process.
+**Warning signs:**  
+- Portrait photos displaying sideways in the Live Studio Gallery.
+- Aspect ratio distortion (squished faces) when scaling to square grid cells.
 
-### 4.2 Ephemeral USB Permissions & Device Re-enumeration
-
-#### Mechanism
-* Android USB permissions granted via `UsbManager.requestPermission()` are **strictly ephemeral**:
-  * They are tied to the specific Linux device node ID (`/dev/bus/usb/001/002`).
-  * If the USB cable is wiggled or the camera power-cycles, the OS assigns a new device ID (e.g. `/dev/bus/usb/001/003`).
-  * `UsbManager.hasPermission(newDevice)` immediately returns `false`.
-* **The Permission Dialog Spam Trap:** If an app automatically calls `requestPermission()` in response to `ACTION_USB_DEVICE_ATTACHED` without debouncing:
-  * A dirty/loose USB-C port generating rapid disconnect/reconnect events (5 times in 500ms) will spawn 5 stacked system permission dialogs.
-  * The user sees flickering dialogs, and dismissing one denies permission for subsequent instances, permanently blocking the session.
-
-### 4.3 Android 14+ (API 34/35) Foreground Service Enforcement & ANR
-
-Android 14 enforces strict foreground service types and startup time limits:
-
-```
-+-------------------------------------------------------------------------+
-|                  ANDROID 14+ FOREGROUND SERVICE RULES                   |
-+-------------------------------------------------------------------------+
-| 1. Mandatory Service Type in Manifest & Code                            |
-|    foregroundServiceType="connectedDevice"                              |
-|                                                                         |
-| 2. Strict 5-Second startForeground() Deadline                           |
-|    startForegroundService() -> startForeground() <= 5000ms              |
-|    Failure -> ForegroundServiceDidNotStartInTimeException (Crash)       |
-|                                                                         |
-| 3. Mandatory Permissions                                                |
-|    <uses-permission android:name=                                       |
-|      "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />        |
-|                                                                         |
-| 4. SecurityException on Missing Device                                  |
-|    Calling startForeground(CONNECTED_DEVICE) without an active          |
-|    connected device throws SecurityException.                           |
-+-------------------------------------------------------------------------+
-```
-
-#### The 5-Second Deadline Trap
-If an app launches `UsbTetherService` via `startForegroundService()`, and then performs synchronous USB device discovery, permission validation, or database initialization in `Service.onCreate()` before calling `startForeground()`:
-* If USB enumeration or I/O blocks for > 5000ms, Android 14+ throws `android.app.ForegroundServiceDidNotStartInTimeException`.
-* This is an uncatchable fatal exception that terminates the application.
-
-### 4.4 Process Death & LMK During Active Bulk Transfers
-
-#### Mechanism
-When transferring a large batch of RAW photos (e.g. 50 files @ 50MB = 2.5GB):
-* If the user switches to another heavy app (e.g. Lightroom Mobile or Camera), Android's Low Memory Killer (LMK) kills the tethering process if its OOM adj score is too high.
-* If a download was in progress:
-  1. A partial file (e.g. 23.4 MB of 50 MB) remains in the cache directory (`/data/user/0/.../cache/camera_transit/1042_DSCF0001.RAF`).
-  2. The Room database remains in state `UPLOADING` or `DISPATCHED`.
-  3. Upon app restart, if the system does not validate file integrity and database state, the corrupt partial file is uploaded to the cloud/NAS, permanently corrupting the client's photoshoot archive.
+**Phase to address:**  
+Phase 2: Thumbnail Parser & Rendering Engine (`THUMB-01`).
 
 ---
 
-## 5. Memory Leak Patterns in Android USB Applications
+### Pitfall 7: Camera Film Simulation & Picture Profile Skewing Exposure Analysis
 
-Camera tethering apps are especially prone to subtle, high-impact memory leaks due to the mix of native USB handles, coroutine scopes, and long-lived services.
+**What goes wrong:**  
+Fujifilm Film Simulations (e.g. *Velvia* with aggressive dynamic range contrast, *Acros* B&W with high red filter clipping), Canon Picture Styles (*Monochrome*, *High Contrast*), and Sony Creative Looks (*FL*, *VV*) heavily modify the tone curve of the embedded preview JPEG. 
+- A photo shot in *Velvia* or *Monochrome* might have intentional deep crushed shadows or boosted contrast, which a naive exposure analyzer flags as "Defective Severe Underexposure", even though the underlying 14-bit RAW sensor data contains 4+ stops of shadow detail.
 
-```mermaid
-graph TD
-    subgraph Leaks in USB Lifecycle
-        A[UsbTetherService.onDestroy] -->|Scope Cancelled First| B[closeCameraSession coroutine cancelled before execution]
-        B --> C[Native UsbDeviceConnection remains open in kernel]
-        
-        D[BroadcastReceiver] -->|Registered with Activity Context| E[Activity Leaked in Memory on Rotate/Nav]
-        
-        F[UsbRequest Async IO] -->|queue without close| G[Native libusbhost struct leaked]
-        
-        H[SharedFlow / StateFlow] -->|Collected on GlobalScope| I[ViewModel/Service Retained Forever]
-    end
-```
+**Why it happens:**  
+The on-device exposure analyzer evaluates the 8-bit sRGB preview JPEG without compensating for the camera's active tone curve and color profile metadata.
 
-### 5.1 CoroutineScope Cancellation Race in Services
+**How to avoid:**  
+1. **Profile-Aware Threshold Compensation:** Parse the active Film Simulation / Picture Style during header extraction (leveraging `RafPreviewExtractor.extractFilmSimulation` or Canon/Sony EXIF tags).
+2. **Dynamic Clipping Margin Adjustment:** Apply adaptive tolerance offsets:
+   - For high-contrast profiles (*Velvia*, *Acros*, *High Contrast*), widen shadow clipping threshold from 5% to 12% before triggering `UNDEREXPOSED_CRITICAL`.
+   - For flat profiles (*Pro Neg Std*, *Neutral*, *S-Log*), tighten thresholds to standard baseline.
+3. **Clear Profile Indicator on Badge:** Display the detected Film Simulation token alongside the exposure evaluation in the UI.
 
-#### Analysis of Anti-Pattern in Codebase
-Consider the following pattern observed in Android USB services:
+**Warning signs:**  
+- Photographers switching to black & white or punchy film simulations seeing sudden spikes in false exposure warning badges.
 
-```kotlin
-// ANTI-PATTERN: Found in typical service teardown implementations
-override fun onDestroy() {
-    openSessionJob?.cancel()
-
-    // BUG: Launching cleanup on a scope that is cancelled on the next line!
-    serviceScope.launch(Dispatchers.IO) {
-        runCatching {
-            usbHelper.closeCameraSession() // NEVER COMPLETES!
-        }
-    }
-
-    serviceScope.cancel() // Cancels serviceScope immediately!
-    super.onDestroy()
-}
-```
-
-* **Why it fails:** `serviceScope.cancel()` executes synchronously on the Main thread immediately after `launch`. The launched coroutine is marked `CANCELLED` before the thread dispatcher can even assign it to a thread in `Dispatchers.IO`.
-* **Consequence:** `usbHelper.closeCameraSession()` is **never executed**. The USB connection, native file descriptors, and camera PTP session remain active in the kernel until the entire OS process dies.
-
-### 5.2 Uncollected Flow Collectors & ViewModel Retention
-
-* Repositories exposing `StateFlow<UsbMonitorState>` or `SharedFlow<NewPhotoEvent>` that are collected by ViewModels or background helpers using unbounded scopes (`CoroutineScope(Dispatchers.IO + SupervisorJob())` without proper cancellation) retain the collecting class instances in memory indefinitely.
-* In Jetpack Compose navigation, navigating away from a screen without terminating the Flow collector leaves the screen's ViewModel, database DAOs, and UI state objects pinned in heap memory.
-
-### 5.3 Native `UsbRequest` & Direct ByteBuffer Leaks
-
-* When implementing asynchronous USB I/O via `UsbRequest`:
-  * Every call to `usbRequest.initialize(connection, endpoint)` allocates native resources in `android_hardware_UsbDeviceConnection`.
-  * If `usbRequest.close()` is not called explicitly in a `finally` block or when an endpoint is released, native C++ memory leaks continuously with every transferred packet.
-  * Direct ByteBuffers (`ByteBuffer.allocateDirect()`) used for USB bulk transfers reside in off-heap memory; failing to recycle them through a pre-allocated byte buffer pool causes native memory exhaustion.
-
-### 5.4 Static Singletons Holding Android Context
-
-* Singletons such as `DatabaseProvider` or USB orchestrators holding a direct reference to an `Activity` context instead of `context.applicationContext` permanently leak the entire Activity hierarchy (including Compose View trees, bitmaps, and window managers) across screen rotations or navigation events.
+**Phase to address:**  
+Phase 1: Exposure Analyzer Core & Profile Compensation (`CULL-01`).
 
 ---
 
-## 6. Comprehensive Remediation Matrix
+### Pitfall 8: Quiet Luxury UI Degradation: Intrusive Blocking Dialogs & Modal Alert Fatigue
 
-| Failure Mode / Edge Case | Vendor / Component | Root Cause | Failure Symptom | Deterministic Remediation |
-| :--- | :--- | :--- | :--- | :--- |
-| **Camera UI & Shutter Lock** | Fujifilm | Generic PTP session opened without vendor tether handshake | Camera LCD shows "PC TETHER"; dials/shutter frozen | Execute vendor handshake (`0xD200`/`0xD212`); send clean `0x1003` + vendor release before closing. |
-| **Infinite MTP Polling Deadlock** | Fujifilm | Polling `getObjectHandles` while camera processes RAW | FIFO buffer stall; camera stops responding | Eliminate MTP polling; listen strictly to Interrupt IN events (`0x4002` / `0xC001`) with debounced handle fetches. |
-| **Stranded Endpoint FIFO Bytes** | Fujifilm / All | Aborted transfer leaves unread bytes in USB controller | Next PTP container header is desynchronized/corrupted | Call `UsbDeviceConnection.clearHalt()` on endpoints; drain remaining packet bytes before re-use. |
-| **Event Buffer Overflow Freeze** | Canon EOS | Remote mode set (`0x9115`) but event queue not drained | Viewfinder freezes; top LCD flashes "Busy"; shutter blocked | Maintain a dedicated coroutine draining `readEvent()` / `EOS_GetEvent` (`0x9116`) continuously. |
-| **EOS Command Desynchronization** | Canon EOS | IO timeout leaves camera DIGIC processor waiting | Next command returns `0x2002` / `0x2019` (Busy) | Match IO timeouts to camera operations; reset PTP session on unrecoverable transaction failure. |
-| **CTG File Read Race Condition** | Canon EOS | CTG catalog read while RAW payload is flushing to card | Corrupted/truncated 0-byte RAW files (`.CR3`) | Implement 2-stage file stability verification (check file size stability across two intervals + format header check). |
-| **PC Only Volatile Loss** | Sony Alpha | Sony camera configured to "PC Only" instead of "PC+Camera" | Photo lost if host drops connection before download | Detect Sony vendor properties; prompt user to set "PC+Camera" or pull image stream immediately on capture event. |
-| **Asynchronous Interrupt Collision** | Nikon Z / DSLR | Bulk command sent simultaneously with Interrupt event | Nikon returns `0x2015` (`PTP_RC_TransactionCanceled`) | Synchronize Bulk and Interrupt operations behind a thread-safe `Mutex`; isolate transaction ID increments. |
-| **Native Disconnect SIGSEGV** | Android OS Stack | `connection.close()` called while JNI `bulkTransfer` is active | Native crash in `libusbhost.so` / `libmtp.so` | Implement an IO execution latch + double-checked lock state machine to prevent closing during active transfers. |
-| **Permission Dialog Stacking** | Android OS Stack | Reconnection events trigger multiple `requestPermission` | UI flicker; permission permanently denied | Debounce attach events with a 1500ms stabilization window; check `hasPermission` before requesting. |
-| **Foreground Service ANR (API 34+)** | Android 14+ | `startForeground()` delayed past 5-second deadline | `ForegroundServiceDidNotStartInTimeException` | Call `startForeground()` immediately in `onCreate()` with placeholder notification before any USB IO. |
-| **Service Teardown Coroutine Abort**| Android App Core | `serviceScope.cancel()` called right after `launch` | USB session & native file descriptors leaked | Use `NonCancellable` context or execute teardown on a dedicated application-scoped lifecycle runner. |
-| **Heap Spikes & GC Thrashing** | Transfer Engine | Allocating full `ByteArray` in JVM heap per RAW file | Out-Of-Memory (OOM); ART GC pauses causing USB timeouts | Stream bulk USB data directly into `FileOutputStream` / `FileChannel` using a fixed 64KB direct buffer pool. |
+**What goes wrong:**  
+When an underexposed or overexposed photo is detected, the app displays aggressive modal popups, loud red banners, or blocking confirmation dialogs. In a fast-paced commercial photoshoot (e.g. fashion runway or wedding with 3 shots/second), these interruptions block the photographer's view of the Live Dashboard, break physical shooting rhythm, and violate the `rvmeur.com` quiet luxury design philosophy.
 
----
+**Why it happens:**  
+Applying traditional error-handling dialog patterns to real-time high-throughput creative workflows.
 
-## 7. Deterministic Architectural Patterns & Implementation Reference
+**How to avoid:**  
+1. **Non-Intrusive Quiet Luxury Indicators:** 
+   - Use refined, elegant double-bezel `DoppelrandCard` badge overlays with subtle brand tokens:
+     - `UNDEREXPOSED_CRITICAL`: Muted warm amber `#B8860B` (`AccentGoldDark`) badge with label `"underexposed"`.
+     - `OVEREXPOSED_BLOWN`: Deep quiet burgundy `#8B0000` (`AccentBurgundy`) badge with label `"blown highlight"`.
+   - Never show modal blocking dialogs during active shooting.
+2. **Tactile Haptic Micro-Feedback:** Provide a single subtle haptic pulse (`HapticFeedbackType.LongPress` or soft tick) when an auto-culled shot is detected, without interrupting the visual stream.
+3. **Fluid 1-Tap Manual Override Gesture:** Allow the photographer to tap the badge or swipe the card in the Live Studio Gallery to instantly flip status from `CULLED_SKIPPED` to `QUEUED_FOR_UPLOAD`.
 
-### 7.1 Thread-Safe USB Session & Teardown State Machine
+**Warning signs:**  
+- Photographers disabling smart culling entirely because notifications disrupt their shoot.
+- UI reviews noting violations of the quiet luxury design tokens.
 
-To eliminate native `SIGSEGV` crashes during unexpected cable disconnects, all native USB operations must be guarded by an **IO Execution Latch** and a synchronized lifecycle state machine.
-
-```kotlin
-/**
- * SafeUsbTransportManager
- * Guarantees zero JNI use-after-free crashes during asynchronous cable detachment.
- */
-class SafeUsbTransportManager(
-    private val usbManager: UsbManager,
-    private val device: UsbDevice
-) {
-    private val stateMutex = Mutex()
-    private val activeTransfersCounter = AtomicInteger(0)
-    
-    @Volatile
-    private var isDetached: Boolean = false
-    
-    private var connection: UsbDeviceConnection? = null
-    private var usbInterface: UsbInterface? = null
-
-    suspend fun openSession(): Boolean = stateMutex.withLock {
-        if (isDetached) return false
-        val conn = usbManager.openDevice(device) ?: return false
-        val intf = findPtpInterface(device) ?: run {
-            conn.close()
-            return false
-        }
-        
-        if (!conn.claimInterface(intf, true)) {
-            conn.close()
-            return false
-        }
-        
-        this.connection = conn
-        this.usbInterface = intf
-        return true
-    }
-
-    /**
-     * Executes USB transfers safely. If a physical detachment occurs,
-     * the transfer completes or aborts cleanly before the connection is destroyed.
-     */
-    suspend fun <T> executeTransfer(
-        timeoutMs: Long = 5000L,
-        block: (connection: UsbDeviceConnection) -> T
-    ): Result<T> {
-        if (isDetached) return Result.failure(IOException("USB Device is already detached"))
-        
-        val conn = connection ?: return Result.failure(IOException("Connection is null"))
-        activeTransfersCounter.incrementAndGet()
-        
-        return try {
-            withContext(Dispatchers.IO) {
-                withTimeout(timeoutMs) {
-                    Result.success(block(conn))
-                }
-            }
-        } catch (t: Throwable) {
-            Result.failure(t)
-        } finally {
-            activeTransfersCounter.decrementAndGet()
-        }
-    }
-
-    /**
-     * Called when ACTION_USB_DEVICE_DETACHED is received.
-     * Waits for active IO operations to yield before releasing native pointers.
-     */
-    suspend fun safeTeardown() = stateMutex.withLock {
-        isDetached = true
-        
-        // Await in-flight transfers (max 1000ms safety window)
-        val startTime = System.currentTimeMillis()
-        while (activeTransfersCounter.get() > 0 && System.currentTimeMillis() - startTime < 1000L) {
-            delay(20)
-        }
-
-        val conn = connection
-        val intf = usbInterface
-
-        if (conn != null && intf != null) {
-            runCatching { conn.releaseInterface(intf) }
-        }
-        
-        runCatching { conn?.close() }
-        
-        connection = null
-        usbInterface = null
-    }
-
-    private fun findPtpInterface(device: UsbDevice): UsbInterface? {
-        for (i in 0 until device.interfaceCount) {
-            val intf = device.getInterface(i)
-            if (intf.interfaceClass == UsbConstants.USB_CLASS_STILL_IMAGE) return intf
-        }
-        return if (device.interfaceCount > 0) device.getInterface(0) else null
-    }
-}
-```
-
-### 7.2 Zero-Leak Service Lifecycle Pattern (Android 14+ Compliant)
-
-```kotlin
-/**
- * ProductionUsbTetherService
- * Strict Android 14+ compliance + leak-free coroutine lifecycle.
- */
-class ProductionUsbTetherService : Service() {
-
-    private val serviceJob = SupervisorJob()
-    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
-    
-    // Application-level scope for guaranteed cleanup execution
-    private val appCleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    override fun onCreate() {
-        super.onCreate()
-        createNotificationChannel()
-
-        // 1. MUST call startForeground immediately within 5 seconds
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                buildNotification("Initializing USB Camera..."),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            )
-        } else {
-            startForeground(
-                NOTIFICATION_ID,
-                buildNotification("Initializing USB Camera...")
-            )
-        }
-    }
-
-    override fun onDestroy() {
-        // 1. Stop accepting new UI events
-        serviceJob.cancel()
-
-        // 2. Perform camera PTP teardown on non-cancelled cleanup scope
-        val cleanupJob = appCleanupScope.launch {
-            withContext(NonCancellable) {
-                // Execute camera session shutdown handshake cleanly
-                closeCameraHardwareSession()
-            }
-        }
-
-        super.onDestroy()
-    }
-
-    private suspend fun closeCameraHardwareSession() {
-        // Dispatches PTP CloseSession and releases interfaces safely
-    }
-}
-```
-
-### 7.3 Direct Zero-Copy Streaming Pipeline for RAW Files
-
-To prevent Out-Of-Memory exceptions and ART GC pauses when transferring 50MB–200MB RAW files:
-
-```kotlin
-/**
- * DirectStreamingImporter
- * Streams bulk USB data directly to flash storage with zero JVM heap allocations.
- */
-class DirectStreamingImporter(
-    private val connection: UsbDeviceConnection,
-    private val bulkInEndpoint: UsbEndpoint
-) {
-    companion object {
-        private const val BUFFER_SIZE = 64 * 1024 // 64 KB native buffer
-        private const val USB_TIMEOUT_MS = 10_000
-    }
-
-    suspend fun streamToFile(
-        targetFile: File,
-        expectedSizeBytes: Long,
-        onProgress: (bytesRead: Long, totalBytes: Long) -> Unit
-    ): Boolean = withContext(Dispatchers.IO) {
-        val buffer = ByteArray(BUFFER_SIZE)
-        var totalBytesRead = 0L
-
-        targetFile.outputStream().use { fos ->
-            while (isActive && totalBytesRead < expectedSizeBytes) {
-                val toRead = minOf(BUFFER_SIZE.toLong(), expectedSizeBytes - totalBytesRead).toInt()
-                val bytesRead = connection.bulkTransfer(
-                    bulkInEndpoint,
-                    buffer,
-                    toRead,
-                    USB_TIMEOUT_MS
-                )
-
-                if (bytesRead < 0) {
-                    throw IOException("USB bulk transfer error during stream. Code: $bytesRead")
-                }
-
-                if (bytesRead > 0) {
-                    fos.write(buffer, 0, bytesRead)
-                    totalBytesRead += bytesRead
-                    onProgress(totalBytesRead, expectedSizeBytes)
-                }
-            }
-            fos.flush()
-        }
-        return@withContext totalBytesRead == expectedSizeBytes
-    }
-}
-```
-
-### 7.4 Two-Stage RAW File Stability Verification
-
-To eliminate CTG/MTP race conditions where partially-written RAW files are imported:
-
-```kotlin
-/**
- * Verifies that a camera file has finished flushing from camera buffer to storage.
- */
-class FileStabilityVerifier {
-
-    suspend fun awaitFileStabilization(
-        checkIntervalMs: Long = 300L,
-        maxRetries: Int = 5,
-        fetchSizeAndTimestamp: suspend () -> Pair<Long, Long>
-    ): Boolean {
-        var lastSize = -1L
-        var lastModified = -1L
-        var stableCount = 0
-
-        repeat(maxRetries) {
-            val (currentSize, currentModified) = fetchSizeAndTimestamp()
-
-            if (currentSize > 0 && currentSize == lastSize && currentModified == lastModified) {
-                stableCount++
-                if (stableCount >= 2) {
-                    // Size and timestamp have remained static across two consecutive polls
-                    return true
-                }
-            } else {
-                stableCount = 0
-                lastSize = currentSize
-                lastModified = currentModified
-            }
-
-            delay(checkIntervalMs)
-        }
-        return false
-    }
-}
-```
+**Phase to address:**  
+Phase 3: Session Culling Rules & Quiet Luxury UI Overlays (`UI-01`).
 
 ---
 
-## 8. Summary & Implementation Checklist for Milestone v3.0
+## Technical Debt Patterns
 
-Before promoting any vendor tether adapter to production, verify the following gates:
-
-- [ ] **Fujifilm:** PTP Vendor Handshake (`0xD200`/`0xD212`) sent on open; termination sequence (`0x1003` + vendor release) sent on disconnect.
-- [ ] **Canon:** Dedicated event drain loop active on Interrupt IN / `EOS_GetEvent` (`0x9116`) to prevent `"Busy"` shutter freezes.
-- [ ] **Canon:** File stability verifier enabled to avoid partial `.CR3` reads during CTG updates.
-- [ ] **Sony:** "PC+Camera" storage destination verified; multi-packet PTP payload fragmentation handled.
-- [ ] **Nikon:** Dedicated thread-safe mutex isolating Bulk transfers from Interrupt endpoint events.
-- [ ] **Android OS:** `SafeUsbTransportManager` latch wrapping all `UsbDeviceConnection` calls to prevent `SIGSEGV` on unplug.
-- [ ] **Android OS:** `ForegroundService` calling `startForeground()` within < 500ms in `onCreate()`.
-- [ ] **Memory Hygiene:** Zero JVM heap allocations for large media; direct 64KB streaming to disk cache.
-- [ ] **Coroutine Hygiene:** Teardown routines executed on `NonCancellable` application-level scopes.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+| :--- | :--- | :--- | :--- |
+| **Using `BitmapFactory.decodeByteArray()` on full preview** | 5 lines of code, no custom subsampling logic | Massive heap churn, ART GC pauses, OOM crashes during burst shooting | **NEVER** in tethered streaming pipeline |
+| **Passing raw RAW file path directly to Coil** | Avoids writing thumbnail extraction & disk cache logic | 100% decode failure in gallery; permanent black placeholder cards | **NEVER** |
+| **Storing thumbnails in OS temporary cache (`/cache`) without persistence sync** | Simple temporary file creation | Android OS purges cache under storage pressure, breaking gallery thumbnails mid-session | Acceptable only for ephemeral scratch analysis buffers |
+| **Hardcoding fixed single luminance threshold for all cameras** | Quick to implement in MVP | High false positive rates across diverse camera brands, sensors, and film simulations | **NEVER** (Must support profile-aware adaptive thresholds) |
+| **Updating Room database before thumbnail stream `flush()` / `sync()`** | UI feels marginally faster (5ms) | Race conditions; Coil loads 0-byte corrupt files permanently | **NEVER** (Must use atomic rename & verification) |
+| **Skipping EXIF orientation check on extracted preview** | Saves 15 lines of TIFF header parsing | Portrait photos permanently render rotated sideways in gallery | **NEVER** |
 
 ---
-*End of Pitfalls & Edge Cases Research Document.*
+
+## Integration Gotchas
+
+| Integration | Common Mistake | Correct Approach |
+| :--- | :--- | :--- |
+| **Google Drive REST API & Culling** | Enqueueing culled photos into WorkManager / OkHttp queue and canceling later | Filter culled photos at intake; mark Room status as `CULLED_SKIPPED` and do not dispatch to `DirectStreamingEngine` unless manually overridden |
+| **Room 2.8.4 Schema Evolution** | Adding `cullStatus`, `exposureScore`, `filmSimulation` to `CameraMediaItemEntity` without migration script | Provide explicit `Migration_10_11.kt` with SQLite `ALTER TABLE` statements and updated schema JSON in `app/schemas/` |
+| **Coil 2.6.0 with Compose `LazyVerticalGrid`** | Re-instantiating `ImageRequest` on every recomposition without stable keys | Use `remember(item.id, item.modifiedAt)` for `ImageRequest` and provide stable `key = { it.id }` in `items()` |
+| **Multi-Vendor PTP Preview Slices** | Assuming a single fixed byte slice size (e.g. 128KB) works for all cameras | Fuji RAF requires 92B header parse + dynamic offset; Canon CR3 requires ISO container box traversal; Sony ARW requires TIFF SubIFD scan |
+| **Android 14+ Process Lifecycle during Culling** | Running heavy histogram analysis on Main / UI thread | Offload all exposure analysis to `Dispatchers.Default` using pre-allocated native byte buffers |
+
+---
+
+## Performance Traps
+
+| Trap | Symptoms | Prevention | When It Breaks |
+| :--- | :--- | :--- | :--- |
+| **Unpooled `IntArray(256)` Allocation per Frame** | Rapid heap allocations during 20 fps bursts; GC thread pauses | Re-use pre-allocated instance array and clean with `Arrays.fill(bins, 0)` | Breaks at $> 10$ fps burst shooting |
+| **Floating-Point Luminance Calculation in Pixel Loop** | $Y = 0.299f \cdot R + 0.587f \cdot G + 0.114f \cdot B$ causes CPU thermal throttling | Use integer bit-shifts: $Y = (77 \cdot R + 150 \cdot G + 29 \cdot B) \gg 8$ | Breaks at $> 15$ fps on mobile ARM processors |
+| **Unsynchronized USB Endpoint Access** | `PTP Container Desynchronization Error`, corrupted RAW streams | Serialize all USB bulk operations through `SafeUsbTransportManager.ioMutex` | Breaks immediately when shooting during active upload |
+| **Unbounded Coil Disk Cache Growth** | App storage exceeds 5GB on long photoshoot; device storage full warning | Limit dedicated Coil thumbnail disk cache to 250MB with LRU eviction | Breaks after $\sim 2,000$ captured photos |
+| **Coil Memory Cache Bitmap Leaks** | Low Memory Killer (LMK) kills app process when switching to background | Cap Coil memory cache at 25% heap and enable hardware bitmap pooling | Breaks on devices with $\le 6\text{ GB}$ RAM |
+
+---
+
+## Security & Data Integrity Mistakes
+
+| Mistake | Risk | Prevention |
+| :--- | :--- | :--- |
+| **Destructive In-Camera Auto-Culling** | Permanent loss of client's original photos if camera deletion is triggered | **NEVER** issue PTP `DeleteObject` command on camera storage during auto-culling. Culling is strictly host-side upload filtering. |
+| **Storing Thumbnails in World-Readable External Storage** | Client photoshoot images exposed to other malicious apps on Android device | Store all cached thumbnails strictly in `context.filesDir` / `context.cacheDir` scoped internal storage. |
+| **Path Traversal via Camera File Names** | Camera providing file name with `../../` overwriting critical app files | Sanitize file names using `File(fileName).name` and validate target path within authorized cache sandbox directory. |
+| **Exposing Sensitive EXIF GPS Data in Cached Thumbnails** | Client privacy leak if cached thumbnails are shared or backed up insecurely | Strip sensitive GPS metadata from generated thumbnails or encrypt transit cache when configured. |
+
+---
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+| :--- | :--- | :--- |
+| **Intrusive Modal Alerts on Exposure Warnings** | Breaks photographer's concentration and blocks camera shutter readiness | Discreet double-bezel `DoppelrandCard` badge overlays with subtle haptic micro-feedback. |
+| **Silent Auto-Culling without Visual Record** | Photographer thinks app lost photos when they don't appear in Google Drive | Display all captured items in the Live Studio Gallery with explicit `"culled"` status badges and reason chips. |
+| **Complicated Multi-Step Override Flow** | Frustrating friction when photographer intentionally wants a dark/blown shot uploaded | 1-tap card click or swipe gesture in the gallery to immediately force upload. |
+| **Jumping Gallery Layout on Async Image Load** | Visual grid jitter and layout shift as thumbnails pop into view | Use fixed 1:1 or 3:2 aspect ratio placeholders matching the camera sensor format. |
+| **Ambiguous Culling Metrics** | Photographer doesn't know why a shot was flagged (flash failure vs overexposed) | Clear label badges: `"flash misfire"`, `"blown highlight"`, `"underexposed"`. |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **Exposure Analyzer:** Often tested only on standard daylight photos — verify with 100% pitch-black frames (lens cap on / flash misfire) and 100% white saturated frames (direct strobe into lens).
+- [ ] **Low-Key Artistic Safety:** Often flags dark studio portraits — verify with a test set of dramatic black-backdrop model shots (ensure $H \ge 3.0$ prevents false culling).
+- [ ] **Burst Load Resilience:** Often tested with 1 photo at a time — verify under a continuous 20 fps burst of 50 frames with active background Google Drive streaming.
+- [ ] **Disk Write Atomicity:** Often works on slow debug builds — verify on high-speed release builds that Coil never loads a 0-byte thumbnail or throws `FileNotFoundException`.
+- [ ] **EXIF Orientation:** Often tested in standard landscape — verify that portrait (90° CW and 270° CW) and upside-down orientations render upright in gallery and modal viewer.
+- [ ] **Manual Override Flow:** Often verifies auto-skip — verify that tapping a culled photo changes its status to `QUEUED`, triggers upload, and updates session metrics immediately.
+- [ ] **Room Database Migration:** Often passes with clean install — verify that upgrading from Schema v10 to v11 preserves all existing sessions and uploaded fingerprints without SQLite exceptions.
+
+---
+
+## Recovery Strategies
+
+| Pitfall | Recovery Cost | Recovery Steps |
+| :--- | :--- | :--- |
+| **Corrupted or 0-Byte Thumbnail Disk Cache** | LOW | Detect file length $\le 0$ or decode failure in `CameraGalleryViewModel`; re-extract preview slice from camera or transit cache and atomically rewrite. |
+| **False-Positive Culled Uploads** | LOW | User taps the culled photo card in Live Studio Gallery $\to$ status transitions to `QUEUED` $\to$ dispatched to `DirectStreamingEngine` for instant cloud sync. |
+| **Stale Coil Memory / Disk Cache** | LOW | Invalidate Coil cache key for specific item: `imageLoader.diskCache?.remove(cacheKey)` and `imageLoader.memoryCache?.remove(MemoryCache.Key(cacheKey))`. |
+| **PTP Endpoint Desynchronization from Contention** | MEDIUM | Execute `SafeUsbTransportManager.resetPtpSession()`: issue `clearHalt()` on endpoints, drain stranded FIFO bytes, and re-establish PTP transaction counter. |
+| **Room Database Migration Failure** | HIGH | Implement tested fallback migration `Migration_10_11.kt` with automated instrumentation tests verifying table column additions before app launch. |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase | Verification Method |
+| :--- | :--- | :--- |
+| **Heap Churn & GC Pauses** | Phase 1 (`CULL-01`) | Android Studio Memory Profiler: verify $< 1\text{ MB}$ allocation during 50-shot burst; analysis time $< 15\text{ ms}$ per frame. |
+| **False Rejection in Smart Culling** | Phase 1 (`CULL-01`) | Unit test matrix with 100+ synthetic and real RAW previews covering low-key, high-key, flash misfires, and film simulations. |
+| **Thumbnail Disk Flush Race Condition** | Phase 2 (`THUMB-01`) | Automated test asserting atomic rename and non-zero file size verification before Room DAO status update. |
+| **USB Endpoint Contention** | Phase 2 (`THUMB-01`) | Concurrency stress test: trigger 20 photo captures while simultaneously uploading a 100MB RAW file over USB. |
+| **Coil Cache Invalidation & RAW Failure** | Phase 2 (`THUMB-01`) | UI tests verifying gallery renders valid JPEG thumbnails for all supported vendor formats (RAF, CR3, ARW, NEF). |
+| **EXIF Orientation Loss** | Phase 2 (`THUMB-01`) | Orientation test suite validating upright rendering across all 4 EXIF orientation tags. |
+| **Film Simulation Skew** | Phase 1 (`CULL-01`) | Calibration test verifying Fuji Velvia / Monochrome previews do not trigger false underexposure warnings. |
+| **Quiet Luxury UI Degradation** | Phase 3 (`UI-01`) | GSD UI Review & Design Compliance audit ensuring non-blocking `DoppelrandCard` overlays and brand token fidelity. |
+
+---
+
+## Sources & References
+
+- **Android Developers Official Documentation:**
+  - *Managing Bitmap Memory & Reusing Bitmaps (`inBitmap`)*: [developer.android.com/topic/performance/graphics/manage-memory](https://developer.android.com/topic/performance/graphics/manage-memory)
+  - *Coil Image Loading Documentation (Memory & Disk Cache Keys, Compose Integration)*: [coil-kt.github.io/coil/compose](https://coil-kt.github.io/coil/compose)
+  - *Android Room Database Migrations*: [developer.android.com/training/data-storage/room/migrating-db-versions](https://developer.android.com/training/data-storage/room/migrating-db-versions)
+- **PTP & Image Processing Specifications:**
+  - *ISO 15740: Picture Transfer Protocol (PTP) for Digital Still Photography Devices*
+  - *ITU-R BT.601 / BT.709: Studio Encoding Parameters of Digital Television for Standard 4:3 and Widescreen 16:9 Aspect Ratios*
+  - *JEITA CP-3451: Exchangeable Image File Format for Digital Still Cameras (Exif 2.32)*
+  - *TIFF 6.0 Specification: SubIFD and Embedded JPEG Pointer Architecture*
+- **Codebase Truth References:**
+  - `DirectByteBufferPool.kt`: `com.rvmeur.transferin.data.usb.core.DirectByteBufferPool`
+  - `RafPreviewExtractor.kt`: `com.rvmeur.transferin.data.usb.vendor.fuji.RafPreviewExtractor`
+  - `Cr3PreviewParser.kt`: `com.rvmeur.transferin.data.usb.canon.Cr3PreviewParser`
+  - `ArwPreviewParser.kt`: `com.rvmeur.transferin.data.usb.vendor.sony.ArwPreviewParser`
+  - `DirectStreamingEngine.kt`: `com.rvmeur.transferin.data.upload.streaming.DirectStreamingEngine`
+  - `CameraGalleryScreen.kt`: `com.rvmeur.transferin.feature.gallery.CameraGalleryScreen`
+  - `UploadedGalleryScreen.kt`: `com.rvmeur.transferin.feature.gallery.UploadedGalleryScreen`
+
+---
+*Pitfalls research for: On-Device Exposure Analysis, Smart Culling & Reliable Thumbnailing (Milestone v4.0)*  
+*Researched: 2026-08-20*  

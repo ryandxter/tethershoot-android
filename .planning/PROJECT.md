@@ -33,6 +33,16 @@ Enable professional photographers to shoot tethered with Fujifilm, Canon, Sony, 
 6. **Fluid Swipeable Setup Wizard (v2.0)** — Gesture-driven 3-step setup flow connecting Google Drive OAuth & folder selection, live camera tethering pulse, and session rules.
 7. **Studio Live Dashboard & Gallery (v2.0)** — Active session monitor with 4-stat metric grid, live queue stream, 3-column media thumbnail grid with full-screen dark modal viewer, and session summary.
 
+## Current Milestone: v4.0 — On-Device AI Exposure Analysis, Smart Culling & Reliable Thumbnailing Engine
+
+**Goal:** Equip TransferIn with zero-allocation on-device exposure analysis (<15ms per frame) to detect severely underexposed (flash misfire) and overexposed (blown highlight) shots, provide smart automated culling rules to avoid wasting Google Drive cloud quota and cellular bandwidth, and definitively fix the tethered thumbnail rendering/transfer pipeline across all camera vendors.
+
+### Target Features:
+1. **On-Device Exposure & Luminance Clipping Analyzer (`CULL-01`):** Fast histogram analysis on raw preview byte buffers, classifying frames into `OPTIMAL`, `UNDEREXPOSED_CRITICAL`, or `OVEREXPOSED_BLOWN`.
+2. **End-to-End Tethered Thumbnail Pipeline Fix (`THUMB-01`):** Resolve camera-to-app thumbnail transfer/caching failures, ensuring every captured photo reliably renders high-fidelity thumbnails in the Live Studio Gallery and dark modal viewer upon upload/capture.
+3. **Session Culling Rules & Quiet-Luxury Warning Overlays (`UI-01`):** Configurable culling modes in Setup Wizard (Auto-Skip Upload, Warning Badge Only, Normal Upload), non-intrusive quiet luxury warning badges on `DoppelrandCard` gallery items, and manual upload override gestures.
+4. **Mandatory Quality & Design Verification:** High-end UI contracts via `/gsd-ui-phase`, zero-GC performance audit via `/gsd-code-review` (Grade A+), and visual design compliance via `/gsd-ui-review` (Grade A+).
+
 ## Key Decisions
 
 | Decision | Rationale | Status |
@@ -41,7 +51,26 @@ Enable professional photographers to shoot tethered with Fujifilm, Canon, Sony, 
 | **Direct Off-Heap Memory Buffering (`DirectByteBufferPool`)** | Prevents JVM Garbage Collection pauses and OOMs during multi-gigabyte burst shooting | ✓ Good |
 | **Confirmed-Only Transit Cache Eviction** | Ensures zero photo loss even under extreme local storage pressure | ✓ Good |
 | **Adversarial USB Packet Fuzzing Test Suite** | Validates native crash resilience against malformed packets and sudden cable disconnects | ✓ Good |
+| **On-Device Preview Histogram Analysis over Cloud AI** | Sub-15ms client-side luminance evaluation avoids latency and unnecessary cloud upload bandwidth | ✓ Proposed |
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
 
 ---
 
-*Last updated: 2026-08-20 after v3.0 milestone completion*
+*Last updated: 2026-08-20 for Milestone v4.0 planning*
+
