@@ -41,12 +41,33 @@ Enable professional photographers to shoot tethered with Canon/Fuji cameras and 
 4. **Google Drive Cloud Storage Engine (v1.0)** — Direct Google Drive REST API integration with OAuth2 authentication, dynamic folder resolution, and multipart file upload.
 5. **Camera File Traversal Core (v2 Legacy)** — MTP subfolder scanning, Canon/Fuji baseline extraction, and RAW+JPG concurrent file emission.
 
-## Milestones Shipped
+## Current Milestone: v3.0 Multi-Vendor Production Engine & Zero-Leak Tether Core
 
-- **v2.0:** Fluid Wizard & Agency-Grade UI/UX Overhaul (Shipped: 2026-08-12)
-- **v1.0:** Rebranding & Google Drive Migration (Shipped: 2026-08-12)
-- **v2 (Legacy):** Camera File Numbering & Traversal Alignment (Shipped: 2026-08-07)
+**Goal:** Transform TransferIn into a bulletproof, production-ready multi-vendor tethering platform with zero memory leaks, deterministic hardware lifecycle management, and full support for Fujifilm, Canon, Sony, and Nikon.
+
+**Target features:**
+- **Zero Memory Leaks & Resource Hygiene:** Systematic elimination of coroutine leaks, USB file descriptor leaks, foreground service lifecycle races, and unmanaged memory retention.
+- **Fuji Native Tether Clean Lifecycle:** Fix invisible recursive ping-pong communication, implement clean tether shutdown/disconnect handshake, and precise camera-to-cloud synchronization state.
+- **Multi-Vendor Architecture (Fuji, Canon, Sony, Nikon):** Vendor-specific protocol adapters (Fuji native wired tether, Canon PTP/CTG, Sony remote PTP/MTP, Nikon vendor PTP) behind a unified, robust tether abstraction.
+- **Production Rigor & Quality Gates:** Mandatory deep code reviews, UI audits, security audits, and real hardware/protocol regression testing (no pseudo-testing).
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
 
 ---
 
-*Last updated: 2026-08-20 after v2.0 milestone*
+*Last updated: 2026-08-20 for Milestone v3.0 initialization*
