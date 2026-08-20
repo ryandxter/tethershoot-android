@@ -7,10 +7,16 @@ import android.util.Log
 import com.rvmeur.transferin.data.usb.vendor.CameraVendorInitializer
 import com.rvmeur.transferin.data.usb.vendor.CanonCameraInitializer
 import com.rvmeur.transferin.data.usb.vendor.GenericCameraInitializer
+import com.rvmeur.transferin.data.usb.vendor.fuji.FujiCameraInitializer
+import com.rvmeur.transferin.data.usb.vendor.nikon.NikonCameraInitializer
+import com.rvmeur.transferin.data.usb.vendor.sony.SonyCameraInitializer
 
 class DefaultCameraSessionInitializer(
     private val initializers: List<CameraVendorInitializer> = listOf(
         CanonCameraInitializer(),
+        SonyCameraInitializer(),
+        NikonCameraInitializer(),
+        FujiCameraInitializer(),
         GenericCameraInitializer()
     )
 ) : CameraSessionInitializer {
@@ -24,6 +30,24 @@ class DefaultCameraSessionInitializer(
     }
 
     fun getCanonInitializer(): CanonCameraInitializer? = findCanonInitializer()
+
+    private fun findSonyInitializer(): SonyCameraInitializer? {
+        return initializers.firstOrNull { it is SonyCameraInitializer } as? SonyCameraInitializer
+    }
+
+    fun getSonyInitializer(): SonyCameraInitializer? = findSonyInitializer()
+
+    private fun findNikonInitializer(): NikonCameraInitializer? {
+        return initializers.firstOrNull { it is NikonCameraInitializer } as? NikonCameraInitializer
+    }
+
+    fun getNikonInitializer(): NikonCameraInitializer? = findNikonInitializer()
+
+    private fun findFujiInitializer(): FujiCameraInitializer? {
+        return initializers.firstOrNull { it is FujiCameraInitializer } as? FujiCameraInitializer
+    }
+
+    fun getFujiInitializer(): FujiCameraInitializer? = findFujiInitializer()
 
     override fun initialize(
         device: UsbDevice,
