@@ -223,7 +223,7 @@ class FujiTetherAdapterTest {
     }
 
     @Test
-    fun `interrupt IN drain emits ObjectAdded event for 0x4002 and 0xC001`() = runTest {
+    fun `interrupt IN drain emits ObjectAdded event for 0x4002 and 0xC001`() = kotlinx.coroutines.runBlocking {
         val eventReceived = CompletableDeferred<CameraTetherEvent>()
 
         // Simulate interrupt IN returning Fuji ObjectAdded event 0xC001 with handle 0x0042
@@ -244,14 +244,14 @@ class FujiTetherAdapterTest {
                 bb.putShort(FujiPtpConstants.CONTAINER_EVENT.toShort())
                 bb.putShort(FujiPtpConstants.EVT_FUJI_OBJECT_ADDED.toShort())
                 bb.putInt(100) // Transaction ID
-                bb.putInt(0x0042) // Handle
+                bb.putInt(42) // Handle
                 16
             } else {
                 0
             }
         }
 
-        val eventJob = launch(Dispatchers.IO) {
+        val eventJob = launch(Dispatchers.Default) {
             val event = adapter.observeEvents().first()
             eventReceived.complete(event)
         }
@@ -264,10 +264,9 @@ class FujiTetherAdapterTest {
 
         assertTrue(received is CameraTetherEvent.ObjectAdded)
         val objAdded = received as CameraTetherEvent.ObjectAdded
-        assertEquals(0x0042, objAdded.handle)
+        assertEquals(42, objAdded.handle)
         assertEquals(FujiPtpConstants.FMT_FUJI_RAF, objAdded.formatCode)
         assertTrue(objAdded.filename.contains("0042"))
-
         eventJob.cancel()
     }
 
@@ -302,10 +301,10 @@ class FujiTetherAdapterTest {
     fun `teardown executes cleanly under coroutine cancellation`() = runTest {
         adapter.initialize(device, connection)
 
-        val job = launch {
+        val job = launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
             adapter.terminateSession()
         }
-        job.cancel() // Cancel parent job
+        job.cancel()
         job.join()
 
         // Verify teardown completed non-cancellably

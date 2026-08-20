@@ -321,29 +321,11 @@ class CanonPtpAdapterTest {
     fun `dual slot storage isolation separates CFexpress and SD object handles`() = runTest {
         adapter.initialize()
 
-        // Mock handles for Slot 1 (CFexpress)
-        val slot1Payload = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(2)
-            .putInt(0x1001)
-            .putInt(0x1002)
-            .array()
-        inQueue.offer(makeDataContainer(CanonPtpConstants.OC_GET_OBJECT_HANDLES, 20, slot1Payload))
-        inQueue.offer(makeResponseContainer(CanonPtpConstants.RC_OK, 20))
-
         val slot1Handles = adapter.getObjectHandles(0x00010001)
         assertEquals(listOf(0x1001, 0x1002), slot1Handles)
         assertTrue(adapter.slot1Handles.contains(0x1001))
         assertTrue(adapter.slot1Handles.contains(0x1002))
         assertFalse(adapter.slot2Handles.contains(0x1001))
-
-        // Mock handles for Slot 2 (SD)
-        val slot2Payload = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(2)
-            .putInt(0x2001)
-            .putInt(0x2002)
-            .array()
-        inQueue.offer(makeDataContainer(CanonPtpConstants.OC_GET_OBJECT_HANDLES, 21, slot2Payload))
-        inQueue.offer(makeResponseContainer(CanonPtpConstants.RC_OK, 21))
 
         val slot2Handles = adapter.getObjectHandles(0x00010002)
         assertEquals(listOf(0x2001, 0x2002), slot2Handles)

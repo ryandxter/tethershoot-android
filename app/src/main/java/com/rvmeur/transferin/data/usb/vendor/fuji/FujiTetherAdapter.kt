@@ -65,6 +65,7 @@ class FujiTetherAdapter(
     override val connectionState: StateFlow<TetherState> = _connectionState.asStateFlow()
 
     private val _events = MutableSharedFlow<CameraTetherEvent>(
+        replay = 16,
         extraBufferCapacity = 64,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -186,6 +187,8 @@ class FujiTetherAdapter(
                         if (event != null) {
                             handlePtpEvent(event)
                         }
+                    } else {
+                        delay(10)
                     }
                 } catch (e: Exception) {
                     if (!isActive || isClosedFlag.get()) break
