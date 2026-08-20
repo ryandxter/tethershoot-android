@@ -504,11 +504,16 @@ class UsbHelper(
         val intent = Intent(ACTION_USB_PERMISSION).apply {
             setPackage(appContext.packageName)
         }
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
         val permissionIntent = PendingIntent.getBroadcast(
             appContext,
             device.deviceId,
             intent,
-            PendingIntent.FLAG_MUTABLE
+            flags
         )
         usbManager.requestPermission(device, permissionIntent)
         return true

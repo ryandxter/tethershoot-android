@@ -20,9 +20,6 @@ import com.rvmeur.transferin.data.sftp.TwoPhaseUploadHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.ExifInterface
 import java.io.File
 
 class TransferUploadWorker(
@@ -222,12 +219,8 @@ class TransferUploadWorker(
                 try {
                     val thumbDir = File(applicationContext.getExternalFilesDir(null), "camera_thumbnails")
                     val thumbFile = File(thumbDir, "thumb_${queueItem.id}.jpg")
-                    val thumbUri = if (thumbFile.exists() && thumbFile.length() > 0) {
-                        Uri.fromFile(thumbFile).toString()
-                    } else {
-                        createThumbnail(localUri.toString(), queueItem.id)
-                    }
-                    if (thumbUri.isNotBlank()) {
+                    if (thumbFile.exists() && thumbFile.length() > 0) {
+                        val thumbUri = Uri.fromFile(thumbFile).toString()
                         queueDao.updateSourceUri(queueItem.id, thumbUri)
                     }
                 } catch (e: Exception) {
@@ -420,76 +413,6 @@ class TransferUploadWorker(
                 "cleanupLocalSource() failed: uri=$sourceUri, error=${throwable.message}",
                 throwable
             )
-        }
-    }
-
-    private fun createThumbnail(sourceUriStr: String, itemId: String): String {
-        var bitmap: Bitmap? = null
-        return try {
-            val sourceUri = Uri.parse(sourceUriStr)
-
-            val isRaw = sourceUriStr.lowercase().endsWith(".raf") ||
-                        sourceUriStr.lowercase().endsWith(".cr2") ||
-                        sourceUriStr.lowercase().endsWith(".cr3") ||
-                        sourceUriStr.lowercase().endsWith(".nef")
-
-            if (isRaw) {
-                try {
-                    applicationContext.contentResolver.openFileDescriptor(sourceUri, "r")?.use { pfd ->
-                        val exifInterface = ExifInterface(pfd.fileDescriptor)
-                        val thumbBytes = exifInterface.thumbnailBytes
-                        if (thumbBytes != null) {
-                            bitmap = BitmapFactory.decodeByteArray(thumbBytes, 0, thumbBytes.size)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to extract EXIF thumbnail", e)
-                }
-            }
-
-            if (bitmap == null) {
-                val options = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                }
-                applicationContext.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream, null, options)
-                }
-
-                val reqWidth = 300
-                val reqHeight = 300
-                var inSampleSize = 1
-                if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
-                    val halfHeight = options.outHeight / 2
-                    val halfWidth = options.outWidth / 2
-                    while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                        inSampleSize *= 2
-                    }
-                }
-
-                val decodeOptions = BitmapFactory.Options().apply {
-                    this.inSampleSize = inSampleSize
-                }
-                applicationContext.contentResolver.openInputStream(sourceUri)?.use { decodeStream ->
-                    bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions)
-                }
-            }
-
-            val finalBitmap = bitmap ?: return ""
-
-            val thumbDir = File(applicationContext.getExternalFilesDir(null), "camera_thumbnails")
-            if (!thumbDir.exists()) thumbDir.mkdirs()
-
-            val thumbFile = File(thumbDir, "thumb_$itemId.jpg")
-            java.io.FileOutputStream(thumbFile).use { outputStream ->
-                finalBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
-            }
-
-            Uri.fromFile(thumbFile).toString()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create thumbnail", e)
-            ""
-        } finally {
-            bitmap?.recycle()
         }
     }
 }
