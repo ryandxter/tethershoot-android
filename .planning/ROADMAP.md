@@ -51,7 +51,9 @@ Full details archived: `.planning/milestones/v1.0-rebranding-ROADMAP.md`
 ## Backlog
 
 ### Milestone v4.0 (Candidate Requirements)
+- **CULL-01:** On-device AI exposure & automated culling filter (detect underexposed/overexposed misfires, reject/flag from cloud upload to save bandwidth & quota). *(See `.planning/seeds/SEED-001-smart-exposure-culling.md`)*
 - **WIFI-01:** Wireless tethering over Wi-Fi Direct and PTP/IP.
 - **REMOTE-01:** In-app live view streaming and remote shutter trigger from phone.
 - **AI-01:** On-device AI focus and blink detection scoring.
 - **LUT-01:** Real-time 3D LUT preview rendering for RAW files.
+

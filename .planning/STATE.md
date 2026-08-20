@@ -47,3 +47,10 @@ Last activity: 2026-08-20 — Milestone v3.0 completed and archived
 ## Operator Next Steps
 
 - Start the next milestone with /gsd-new-milestone
+
+## Session Continuity
+
+Last session: 2026-08-20
+Stopped at: Session resumed; Milestone v3.0 fully shipped and archived. Ready for next milestone.
+Resume file: .planning/HANDOFF.json
+
