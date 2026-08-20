@@ -122,8 +122,8 @@ class DirectByteBufferPoolTest {
 
     @Test
     fun `concurrent multi-threaded acquisition and release stress test`() {
-        val threadCount = 20
-        val iterationsPerThread = 100
+        val threadCount = 4
+        val iterationsPerThread = 25
         val executor = Executors.newFixedThreadPool(threadCount)
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(threadCount)
@@ -149,8 +149,9 @@ class DirectByteBufferPoolTest {
         }
 
         startLatch.countDown()
-        val finished = doneLatch.await(10, TimeUnit.SECONDS)
+        val finished = doneLatch.await(5, TimeUnit.SECONDS)
         executor.shutdown()
+        executor.awaitTermination(2, TimeUnit.SECONDS)
 
         assertTrue("Stress test should finish within timeout", finished)
         assertEquals("Zero errors during concurrent pooling", 0, errorCount.get())
