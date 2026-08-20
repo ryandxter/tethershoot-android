@@ -3,11 +3,13 @@ package com.rvmeur.transferin.data.local.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.rvmeur.transferin.data.local.dao.CameraMediaDao
+import com.rvmeur.transferin.data.local.dao.CameraSyncDao
 import com.rvmeur.transferin.data.local.dao.NasConnectionDao
 import com.rvmeur.transferin.data.local.dao.SessionDao
 import com.rvmeur.transferin.data.local.dao.TransferQueueDao
 import com.rvmeur.transferin.data.local.dao.UploadedFingerprintDao
 import com.rvmeur.transferin.data.local.entity.CameraMediaItemEntity
+import com.rvmeur.transferin.data.local.entity.CameraSyncItemEntity
 import com.rvmeur.transferin.data.local.entity.NasConnectionEntity
 import com.rvmeur.transferin.data.local.entity.SessionEntity
 import com.rvmeur.transferin.data.local.entity.TransferQueueItemEntity
@@ -19,7 +21,8 @@ import com.rvmeur.transferin.data.local.entity.UploadedFingerprintEntity
         SessionEntity::class,
         NasConnectionEntity::class,
         CameraMediaItemEntity::class,
-        UploadedFingerprintEntity::class
+        UploadedFingerprintEntity::class,
+        CameraSyncItemEntity::class
     ],
     version = TransferInDatabase.VERSION,
     exportSchema = true
@@ -36,8 +39,10 @@ abstract class TransferInDatabase : RoomDatabase() {
 
     abstract fun uploadedFingerprintDao(): UploadedFingerprintDao
 
+    abstract fun cameraSyncDao(): CameraSyncDao
+
     companion object {
-        const val VERSION = 9
+        const val VERSION = 10
         const val DATABASE_NAME = "transferin.db"
     }
 }

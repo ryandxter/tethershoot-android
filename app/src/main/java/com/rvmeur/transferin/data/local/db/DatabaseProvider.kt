@@ -15,7 +15,10 @@ object DatabaseProvider {
                 TransferInDatabase::class.java,
                 TransferInDatabase.DATABASE_NAME
             )
-                .addMigrations(Migration_8_9.MIGRATION_8_9)
+                .addMigrations(
+                    Migration_8_9.MIGRATION_8_9,
+                    Migration_9_10.MIGRATION_9_10
+                )
                 .fallbackToDestructiveMigration()
                 .build()
                 .also { instance ->

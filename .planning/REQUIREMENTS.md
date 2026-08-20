@@ -12,33 +12,33 @@ Requirements for Milestone v3.0 release. Each maps to roadmap phases.
 
 ### 1. Hardware Lifecycle & Zero-Leak Core (CORE)
 
-- [ ] **CORE-01**: System executes deterministic USB hardware session lifecycle (`Idle` -> `Connected` -> `Handshake` -> `ActiveStreaming` -> `Disconnecting` -> `CleanTerminated`) with JNI IO execution latch preventing native `SIGSEGV` during rapid cable disconnects.
-- [ ] **CORE-02**: System ensures zero unmanaged coroutine leaks and zero Android `usbfs` file descriptor leaks by binding all background jobs to a centralized `SupervisorJob` with non-cancellable teardown barriers.
-- [ ] **CORE-03**: System streams high-throughput USB bulk payloads using a direct native `DirectByteBufferPool` (128KB/1MB slices) to eliminate JVM GC churn on 40MP–100MP RAW ingest.
-- [ ] **CORE-04**: System adheres strictly to Android 14+ (API 34/35) `FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE` lifecycle requirements with immediate `startForeground()` execution in `onCreate()`.
-- [ ] **CORE-05**: System eliminates all leaked `ContentResolver` file descriptors and duplicate thumbnail decoding across WorkManager workers and UI repositories.
+- [x] **CORE-01**: System executes deterministic USB hardware session lifecycle (`Idle` -> `Connected` -> `Handshake` -> `ActiveStreaming` -> `Disconnecting` -> `CleanTerminated`) with JNI IO execution latch preventing native `SIGSEGV` during rapid cable disconnects.
+- [x] **CORE-02**: System ensures zero unmanaged coroutine leaks and zero Android `usbfs` file descriptor leaks by binding all background jobs to a centralized `SupervisorJob` with non-cancellable teardown barriers.
+- [x] **CORE-03**: System streams high-throughput USB bulk payloads using a direct native `DirectByteBufferPool` (128KB/1MB slices) to eliminate JVM GC churn on 40MP–100MP RAW ingest.
+- [x] **CORE-04**: System adheres strictly to Android 14+ (API 34/35) `FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE` lifecycle requirements with immediate `startForeground()` execution in `onCreate()`.
+- [x] **CORE-05**: System eliminates all leaked `ContentResolver` file descriptors and duplicate thumbnail decoding across WorkManager workers and UI repositories.
 
 ### 2. Fujifilm Native Wired Tether Engine (FUJI)
 
-- [ ] **FUJI-01**: System implements native PTP `FujiTetherAdapter` (VID `0x04CB`) bypassing generic MTP file loops, using explicit `0xD214` Host Control and `0xD216` PC+Card property handshakes.
-- [ ] **FUJI-02**: System drains Fuji Interrupt IN endpoint (`0x83`) asynchronously to capture `0x4002`/`0xC001` `ObjectAdded` events with $O(1)$ discovery latency (<15ms), completely eliminating the $O(N)$ full-card metadata scan loop.
-- [ ] **FUJI-03**: System implements a mandatory 4-step clean teardown sequence (`0xD214 = 0x0000` -> PTP `0x1003 CloseSession` -> `releaseInterface` -> `close`) preventing camera LCD "BUSY" / "PC TETHER" firmware freezes.
-- [ ] **FUJI-04**: System extracts embedded high-resolution JPEG previews directly from `.RAF` headers without downloading full RAW files over USB for instant live scroller display.
-- [ ] **FUJI-05**: System extracts and displays Fujifilm Film Simulation metadata (Provia, Velvia, Astia, Classic Chrome, Classic Neg, ACROS, Nostalgic Neg) in the active session HUD.
+- [x] **FUJI-01**: System implements native PTP `FujiTetherAdapter` (VID `0x04CB`) bypassing generic MTP file loops, using explicit `0xD214` Host Control and `0xD216` PC+Card property handshakes.
+- [x] **FUJI-02**: System drains Fuji Interrupt IN endpoint (`0x83`) asynchronously to capture `0x4002`/`0xC001` `ObjectAdded` events with $O(1)$ discovery latency (<15ms), completely eliminating the $O(N)$ full-card metadata scan loop.
+- [x] **FUJI-03**: System implements a mandatory 4-step clean teardown sequence (`0xD214 = 0x0000` -> PTP `0x1003 CloseSession` -> `releaseInterface` -> `close`) preventing camera LCD "BUSY" / "PC TETHER" firmware freezes.
+- [x] **FUJI-04**: System extracts embedded high-resolution JPEG previews directly from `.RAF` headers without downloading full RAW files over USB for instant live scroller display.
+- [x] **FUJI-05**: System extracts and displays Fujifilm Film Simulation metadata (Provia, Velvia, Astia, Classic Chrome, Classic Neg, ACROS, Nostalgic Neg) in the active session HUD.
 
 ### 3. Canon EOS Direct PTP & CTG Fallback Engine (CANON)
 
-- [ ] **CANON-01**: System implements `CanonPtpAdapter` (VID `0x04A9`) using EOS PTP remote mode (`0x9114`) and event mode (`0x9115`), continuously draining `0x9116 EOS_GetEvent` to prevent DIGIC event ring buffer overflow.
-- [ ] **CANON-02**: System parses `.CR3` ISO-BMFF box structure (`PRVW`/`THMB` atoms) from the first 128KB of the USB payload for sub-500ms preview rendering.
-- [ ] **CANON-03**: System provides a resilient two-stage stability-verified fallback for legacy `.CTG` catalog structures on older Canon EOS bodies.
-- [ ] **CANON-04**: System supports simultaneous multi-card slot enumeration (Slot 1 CFexpress + Slot 2 SD) without handle collision.
+- [x] **CANON-01**: System implements `CanonPtpAdapter` (VID `0x04A9`) using EOS PTP remote mode (`0x9114`) and event mode (`0x9115`), continuously draining `0x9116 EOS_GetEvent` to prevent DIGIC event ring buffer overflow.
+- [x] **CANON-02**: System parses `.CR3` ISO-BMFF box structure (`PRVW`/`THMB` atoms) from the first 128KB of the USB payload for sub-500ms preview rendering.
+- [x] **CANON-03**: System provides a resilient two-stage stability-verified fallback for legacy `.CTG` catalog structures on older Canon EOS bodies.
+- [x] **CANON-04**: System supports simultaneous multi-card slot enumeration (Slot 1 CFexpress + Slot 2 SD) without handle collision.
 
 ### 4. Sony Alpha & Nikon Tethering Adapters (SONY / NIKON)
 
-- [ ] **SONY-01**: System implements `SonyPtpAdapter` (VID `0x054C`) with `0x9280 SDIOConnect` handshake and automatic verification that Save Destination is configured to `PC + Camera` (preventing volatile DRAM loss).
-- [ ] **SONY-02**: System handles Sony multi-packet PTP payload defragmentation and extracts embedded preview TIFF SubIFD from `.ARW` containers.
-- [ ] **NIKON-01**: System implements `NikonPtpAdapter` (VID `0x04B0`) supporting Nikon vendor PTP commands (`0x90C0`/`0x90C1`) with discrete storage ID enumeration for dual card slots.
-- [ ] **NIKON-02**: System implements an adaptive exponential backoff retry loop for Nikon `0x2019 PTP_RC_DeviceBusy` responses during in-camera EXPEED card buffer flushes.
+- [x] **SONY-01**: System implements `SonyPtpAdapter` (VID `0x054C`) with `0x9280 SDIOConnect` handshake and automatic verification that Save Destination is configured to `PC + Camera` (preventing volatile DRAM loss).
+- [x] **SONY-02**: System handles Sony multi-packet PTP payload defragmentation and extracts embedded preview TIFF SubIFD from `.ARW` containers.
+- [x] **NIKON-01**: System implements `NikonPtpAdapter` (VID `0x04B0`) supporting Nikon vendor PTP commands (`0x90C0`/`0x90C1`) with discrete storage ID enumeration for dual card slots.
+- [x] **NIKON-02**: System implements an adaptive exponential backoff retry loop for Nikon `0x2019 PTP_RC_DeviceBusy` responses during in-camera EXPEED card buffer flushes.
 
 ### 5. 5-Stage Cloud Sync & Storage Management (SYNC)
 
@@ -83,24 +83,24 @@ Requirements for Milestone v3.0 release. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 4 | Pending |
-| CORE-02 | Phase 4 | Pending |
-| CORE-03 | Phase 4 | Pending |
-| CORE-04 | Phase 4 | Pending |
-| CORE-05 | Phase 4 | Pending |
-| FUJI-01 | Phase 5 | Pending |
-| FUJI-02 | Phase 5 | Pending |
-| FUJI-03 | Phase 5 | Pending |
-| FUJI-04 | Phase 5 | Pending |
-| FUJI-05 | Phase 5 | Pending |
-| CANON-01 | Phase 6 | Pending |
-| CANON-02 | Phase 6 | Pending |
-| CANON-03 | Phase 6 | Pending |
-| CANON-04 | Phase 6 | Pending |
-| SONY-01 | Phase 7 | Pending |
-| SONY-02 | Phase 7 | Pending |
-| NIKON-01 | Phase 7 | Pending |
-| NIKON-02 | Phase 7 | Pending |
+| CORE-01 | Phase 4 | Verified |
+| CORE-02 | Phase 4 | Verified |
+| CORE-03 | Phase 4 | Verified |
+| CORE-04 | Phase 4 | Verified |
+| CORE-05 | Phase 4 | Verified |
+| FUJI-01 | Phase 5 | Verified |
+| FUJI-02 | Phase 5 | Verified |
+| FUJI-03 | Phase 5 | Verified |
+| FUJI-04 | Phase 5 | Verified |
+| FUJI-05 | Phase 5 | Verified |
+| CANON-01 | Phase 6 | Verified |
+| CANON-02 | Phase 6 | Verified |
+| CANON-03 | Phase 6 | Verified |
+| CANON-04 | Phase 6 | Verified |
+| SONY-01 | Phase 7 | Verified |
+| SONY-02 | Phase 7 | Verified |
+| NIKON-01 | Phase 7 | Verified |
+| NIKON-02 | Phase 7 | Verified |
 | SYNC-01 | Phase 8 | Pending |
 | SYNC-02 | Phase 8 | Pending |
 | SYNC-03 | Phase 8 | Pending |
