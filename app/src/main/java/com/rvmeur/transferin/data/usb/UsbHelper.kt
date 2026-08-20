@@ -261,6 +261,12 @@ class UsbHelper(
         helperScope.launch { closeCameraSessionInternalAndRefresh() }
     }
 
+    suspend fun closeCameraSessionSuspend() {
+        withContext(Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
+            closeCameraSessionInternalAndRefresh()
+        }
+    }
+
     fun isSessionOpen(): Boolean = (currentSessionState.isOpen || activeMtpDeviceOverride != null) && activeMtp != null
 
     fun getActiveStorageIds(): List<Int> = activeMtpDeviceOverride?.storageIds?.toList() ?: currentSessionState.storageIds

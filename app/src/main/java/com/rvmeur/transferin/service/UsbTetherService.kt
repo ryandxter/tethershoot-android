@@ -14,13 +14,18 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.rvmeur.transferin.data.usb.UsbHelper
+import com.rvmeur.transferin.data.usb.core.UsbHardwareSession
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class UsbTetherService : Service() {
 
@@ -31,6 +36,9 @@ class UsbTetherService : Service() {
         private const val CHANNEL_ID = "usb_tether_channel"
         private const val CHANNEL_NAME = "USB Tether Service"
         private const val NOTIFICATION_ID = 1001
+
+        private const val TEARDOWN_WATCHDOG_TIMEOUT_MS = 3500L
+        private const val TEARDOWN_LATCH_AWAIT_MS = 3800L
 
         @Suppress("SpellCheckingInspection")
         private val CAMERA_KEYWORDS = listOf(
@@ -50,15 +58,17 @@ class UsbTetherService : Service() {
     }
 
     private lateinit var usbHelper: UsbHelper
-    private val serviceJob: Job = SupervisorJob()
+    private val serviceJob: CompletableJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
-    private var openSessionJob: Job? = null
+    private var openSessionJob: kotlinx.coroutines.Job? = null
+    var activeHardwareSession: UsbHardwareSession? = null
 
     override fun onCreate() {
         super.onCreate()
         usbHelper = UsbHelper(applicationContext)
         createNotificationChannel()
 
+        // Android 14/15 strict FGS compliance: immediate startForeground within onCreate()
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
@@ -72,9 +82,9 @@ class UsbTetherService : Service() {
                     buildNotification("USB camera service is starting")
                 )
             }
-            Log.d(TAG, "UsbTetherService created")
+            Log.d(TAG, "UsbTetherService created and foreground started")
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to enter foreground mode", t)
+            Log.e(TAG, "Failed to enter foreground mode in onCreate", t)
             stopSelf()
         }
     }
@@ -131,19 +141,45 @@ class UsbTetherService : Service() {
         return START_NOT_STICKY
     }
 
+    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     override fun onDestroy() {
         openSessionJob?.cancel()
 
-        serviceScope.launch(Dispatchers.IO) {
-            runCatching {
-                usbHelper.closeCameraSession()
-            }.onFailure { throwable ->
-                Log.w(TAG, "Failed to close camera session on destroy", throwable)
+        val latch = CountDownLatch(1)
+
+        // Dispatch clean teardown in unconfined IO + NonCancellable context with 3.5s watchdog timeout
+        GlobalScope.launch(Dispatchers.IO + NonCancellable) {
+            try {
+                withTimeoutOrNull(TEARDOWN_WATCHDOG_TIMEOUT_MS) {
+                    runCatching {
+                        activeHardwareSession?.close()
+                    }.onFailure { Log.w(TAG, "Failed closing activeHardwareSession", it) }
+
+                    runCatching {
+                        usbHelper.closeCameraSessionSuspend()
+                    }.onFailure { Log.w(TAG, "Failed closing camera session on destroy", it) }
+                }
+            } finally {
+                latch.countDown()
             }
         }
 
-        serviceScope.cancel()
-        Log.d(TAG, "UsbTetherService destroyed")
+        try {
+            latch.await(TEARDOWN_LATCH_AWAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (ignored: InterruptedException) {
+            Log.w(TAG, "Teardown latch interrupted")
+        }
+
+        serviceJob.cancel()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+
+        Log.d(TAG, "UsbTetherService destroyed cleanly")
         super.onDestroy()
     }
 
@@ -185,7 +221,7 @@ class UsbTetherService : Service() {
 
     private fun createNotificationChannel() {
         val manager = getSystemService(NotificationManager::class.java)
-        val existing = manager.getNotificationChannel(CHANNEL_ID)
+        val existing = manager?.getNotificationChannel(CHANNEL_ID)
         if (existing != null) return
 
         val channel = NotificationChannel(
@@ -197,7 +233,7 @@ class UsbTetherService : Service() {
             setShowBadge(false)
         }
 
-        manager.createNotificationChannel(channel)
+        manager?.createNotificationChannel(channel)
     }
 
     private fun buildNotification(contentText: String): Notification {
@@ -213,12 +249,12 @@ class UsbTetherService : Service() {
 
     private fun updateNotification(contentText: String) {
         val manager = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
-            androidx.core.content.PermissionChecker.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.PermissionChecker.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) !=
             androidx.core.content.PermissionChecker.PERMISSION_GRANTED) {
             Log.w(TAG, "Missing POST_NOTIFICATIONS permission")
             return
         }
-        manager.notify(NOTIFICATION_ID, buildNotification(contentText))
+        manager?.notify(NOTIFICATION_ID, buildNotification(contentText))
     }
 }

@@ -239,28 +239,24 @@ class UploadQueueManager(
         val mimeType: String?
     )
 
-    private fun createThumbnail(sourceUriStr: String, itemId: String) {
+    private fun createThumbnail(sourceUriStr: String, itemId: String): String? {
+        var bitmap: Bitmap? = null
         try {
             val sourceUri = Uri.parse(sourceUriStr)
-            val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return
 
             val isRaw = sourceUriStr.lowercase().endsWith(".raf") ||
                         sourceUriStr.lowercase().endsWith(".cr2") ||
                         sourceUriStr.lowercase().endsWith(".cr3") ||
                         sourceUriStr.lowercase().endsWith(".nef")
 
-            var bitmap: Bitmap? = null
-
             if (isRaw) {
                 try {
-                    val pfd = context.contentResolver.openFileDescriptor(sourceUri, "r")
-                    if (pfd != null) {
+                    context.contentResolver.openFileDescriptor(sourceUri, "r")?.use { pfd ->
                         val exifInterface = ExifInterface(pfd.fileDescriptor)
                         val thumbBytes = exifInterface.thumbnailBytes
                         if (thumbBytes != null) {
                             bitmap = BitmapFactory.decodeByteArray(thumbBytes, 0, thumbBytes.size)
                         }
-                        pfd.close()
                     }
                 } catch (e: Exception) {
                     android.util.Log.w("UploadQueueManager", "Failed to extract EXIF thumbnail", e)
@@ -271,8 +267,9 @@ class UploadQueueManager(
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
                 }
-                BitmapFactory.decodeStream(inputStream, null, options)
-                inputStream.close()
+                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream, null, options)
+                }
 
                 val reqWidth = 300
                 val reqHeight = 300
@@ -285,27 +282,30 @@ class UploadQueueManager(
                     }
                 }
 
-                val decodeStream = context.contentResolver.openInputStream(sourceUri) ?: return
                 val decodeOptions = BitmapFactory.Options().apply {
                     this.inSampleSize = inSampleSize
                 }
-                bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions)
-                decodeStream.close()
+                context.contentResolver.openInputStream(sourceUri)?.use { decodeStream ->
+                    bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions)
+                }
             }
 
-            if (bitmap == null) return
+            val finalBitmap = bitmap ?: return null
 
             val thumbDir = File(context.getExternalFilesDir(null), "camera_thumbnails")
             if (!thumbDir.exists()) thumbDir.mkdirs()
 
             val thumbFile = File(thumbDir, "thumb_$itemId.jpg")
-            val outputStream = java.io.FileOutputStream(thumbFile)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
-            outputStream.close()
-            bitmap.recycle()
+            java.io.FileOutputStream(thumbFile).use { outputStream ->
+                finalBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
+            }
             android.util.Log.d("UploadQueueManager", "Created thumbnail for itemId=$itemId at path=${thumbFile.absolutePath}")
+            return Uri.fromFile(thumbFile).toString()
         } catch (e: Exception) {
             android.util.Log.e("UploadQueueManager", "Failed to create thumbnail", e)
+            return null
+        } finally {
+            bitmap?.recycle()
         }
     }
 }

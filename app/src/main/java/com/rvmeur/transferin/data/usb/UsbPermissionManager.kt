@@ -157,17 +157,17 @@ class UsbPermissionManager(private val context: Context) {
             setPackage(appContext.packageName)
         }
 
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_MUTABLE
         } else {
-            PendingIntent.FLAG_NO_CREATE
+            0
         }
 
         val permissionIntent = PendingIntent.getBroadcast(
             appContext,
             device.deviceId,
             intent,
-            flags ?: 0
+            flags
         )
 
         usbManager.requestPermission(device, permissionIntent)
