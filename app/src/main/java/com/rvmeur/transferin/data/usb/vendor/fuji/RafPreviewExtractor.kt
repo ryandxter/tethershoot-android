@@ -151,6 +151,35 @@ object RafPreviewExtractor {
     }
 
     /**
+     * Extracts embedded JPEG preview directly from a RAF file on disk using fast seek.
+     */
+    fun extractEmbeddedJpeg(rafFile: java.io.File): Result<ByteArray> = runCatching {
+        if (!rafFile.exists() || rafFile.length() < MIN_HEADER_LENGTH) {
+            throw InvalidRafHeaderException("File not found or too small: ${rafFile.absolutePath}")
+        }
+        java.io.RandomAccessFile(rafFile, "r").use { raf ->
+            val headerBytes = ByteArray(128.coerceAtLeast(MIN_HEADER_LENGTH))
+            raf.readFully(headerBytes)
+            val header = parseRafHeader(headerBytes).getOrThrow()
+
+            val start = header.jpegOffset
+            val len = header.jpegLength
+            if (start + len > rafFile.length()) {
+                throw InvalidRafHeaderException("File truncated: needed ${start + len} bytes, file is ${rafFile.length()}")
+            }
+
+            raf.seek(start)
+            val jpegBytes = ByteArray(len.toInt())
+            raf.readFully(jpegBytes)
+
+            if (jpegBytes.size < 2 || jpegBytes[0] != 0xFF.toByte() || jpegBytes[1] != 0xD8.toByte()) {
+                throw InvalidRafHeaderException("Embedded JPEG SOI marker (0xFFD8) not found at offset $start")
+            }
+            jpegBytes
+        }
+    }
+
+    /**
      * Extracts Fuji Film Simulation from embedded JPEG or Exif MakerNotes.
      */
     fun extractFilmSimulation(jpegBytes: ByteArray): FujiFilmSimulation {

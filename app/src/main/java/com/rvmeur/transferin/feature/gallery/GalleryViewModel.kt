@@ -44,7 +44,7 @@ class GalleryViewModel(
                 // Load from TransferQueueRepository if provided
                 transferQueueRepository?.let { repo ->
                     val items = repo.getAll()
-                    galleryItems.addAll(items.map { it.toGalleryItem() })
+                    galleryItems.addAll(items.map { it.toGalleryItem(getApplication()) })
                 }
 
                 // Load from CameraSyncDao if available
@@ -289,14 +289,23 @@ fun CameraSyncItemEntity.toGalleryItem(): GalleryItem {
 /**
  * Extension to convert TransferQueueItemEntity to GalleryItem
  */
-fun TransferQueueItemEntity.toGalleryItem(): GalleryItem {
+fun TransferQueueItemEntity.toGalleryItem(context: android.content.Context? = null): GalleryItem {
     val extension = sourceFileName.substringAfterLast('.', "").lowercase()
     val isVideo = extension in listOf("mp4", "mov", "m4v", "avi", "mkv", "3gp")
+
+    var resolvedThumb: String? = null
+    if (context != null) {
+        val thumbStorage = com.rvmeur.transferin.data.thumbnail.ThumbnailStorageManager(context)
+        val file = thumbStorage.getThumbnailFile(id)
+            ?: thumbStorage.getThumbnailFile(sourceFingerprint)
+            ?: File(File(context.getExternalFilesDir(null), "camera_thumbnails"), "thumb_$id.jpg").takeIf { it.exists() && it.length() > 0 }
+        resolvedThumb = file?.absolutePath
+    }
 
     return GalleryItem(
         id = id,
         fileName = sourceFileName,
-        filePath = sourceUri,
+        filePath = resolvedThumb ?: sourceUri,
         fileSizeBytes = fileSizeBytes,
         uploadedAt = createdAtEpochMs,
         status = try {
@@ -304,6 +313,7 @@ fun TransferQueueItemEntity.toGalleryItem(): GalleryItem {
         } catch (e: Exception) {
             UploadStatus.QUEUED
         },
+        thumbnailPath = resolvedThumb,
         mimeType = if (isVideo) "video/$extension" else "image/$extension",
         isVideo = isVideo
     )

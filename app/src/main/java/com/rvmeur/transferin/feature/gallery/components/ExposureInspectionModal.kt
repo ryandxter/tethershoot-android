@@ -177,9 +177,16 @@ fun ExposureInspectionModal(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                val context = LocalContext.current
+                val thumbStorage = remember(context) { com.rvmeur.transferin.data.thumbnail.ThumbnailStorageManager(context) }
+                val resolvedFile = filePath.let { path ->
+                    val clean = if (path.startsWith("file://")) path.removePrefix("file://") else path
+                    File(clean).takeIf { it.exists() && it.length() > 0 }
+                } ?: thumbStorage.getThumbnailFile(fileName)?.takeIf { it.exists() && it.length() > 0 }
+
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(filePath))
+                    model = ImageRequest.Builder(context)
+                        .data(resolvedFile)
                         .crossfade(true)
                         .build(),
                     contentDescription = "Foto $fileName, status eksposur $cullingVerdict, ketuk dua kali untuk zoom",

@@ -68,7 +68,7 @@ class UploadQueueManager(
         val fileSizeBytes = metadata.fileSizeBytes.coerceAtLeast(0L)
 
         val entityId = UUID.randomUUID().toString()
-        createThumbnail(sourceUri.toString(), entityId)
+        createThumbnail(sourceUri.toString(), entityId, sourceFingerprint)
 
         val entity = TransferQueueItemEntity(
             id = entityId,
@@ -239,18 +239,48 @@ class UploadQueueManager(
         val mimeType: String?
     )
 
-    private fun createThumbnail(sourceUriStr: String, itemId: String): String? {
-        var bitmap: Bitmap? = null
+    private fun createThumbnail(sourceUriStr: String, itemId: String, fingerprint: String = ""): String? {
         try {
             val sourceUri = Uri.parse(sourceUriStr)
+            val thumbDir = File(context.getExternalFilesDir(null), "camera_thumbnails")
+            if (!thumbDir.exists()) thumbDir.mkdirs()
+            val thumbFile = File(thumbDir, "thumb_$itemId.jpg")
+            val thumbStorage = com.rvmeur.transferin.data.thumbnail.ThumbnailStorageManager(context)
 
-            val isRaw = sourceUriStr.lowercase().endsWith(".raf") ||
-                        sourceUriStr.lowercase().endsWith(".cr2") ||
-                        sourceUriStr.lowercase().endsWith(".cr3") ||
-                        sourceUriStr.lowercase().endsWith(".nef")
+            val lower = sourceUriStr.lowercase()
+            if (lower.endsWith(".raf")) {
+                val file = if (sourceUri.scheme == "file") {
+                    File(sourceUri.path.orEmpty())
+                } else if (!sourceUriStr.startsWith("content://")) {
+                    File(sourceUriStr)
+                } else null
 
-            if (isRaw) {
-                try {
+                val rafJpegBytes = if (file != null && file.exists()) {
+                    com.rvmeur.transferin.data.usb.vendor.fuji.RafPreviewExtractor.extractEmbeddedJpeg(file).getOrNull()
+                } else {
+                    context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                        val bytes = input.readBytes()
+                        com.rvmeur.transferin.data.usb.vendor.fuji.RafPreviewExtractor.extractEmbeddedJpeg(bytes).getOrNull()
+                    }
+                }
+
+                if (rafJpegBytes != null && rafJpegBytes.isNotEmpty()) {
+                    java.io.FileOutputStream(thumbFile).use { fos ->
+                        fos.write(rafJpegBytes)
+                        fos.flush()
+                    }
+                    thumbStorage.saveThumbnail(itemId, rafJpegBytes)
+                    if (fingerprint.isNotBlank()) {
+                        thumbStorage.saveThumbnail(fingerprint, rafJpegBytes)
+                    }
+                    android.util.Log.d("UploadQueueManager", "Created Fuji RAF thumbnail for itemId=$itemId at ${thumbFile.absolutePath}")
+                    return Uri.fromFile(thumbFile).toString()
+                }
+            }
+
+            var bitmap: Bitmap? = null
+            try {
+                if (lower.endsWith(".cr2") || lower.endsWith(".cr3") || lower.endsWith(".nef")) {
                     context.contentResolver.openFileDescriptor(sourceUri, "r")?.use { pfd ->
                         val exifInterface = ExifInterface(pfd.fileDescriptor)
                         val thumbBytes = exifInterface.thumbnailBytes
@@ -258,54 +288,55 @@ class UploadQueueManager(
                             bitmap = BitmapFactory.decodeByteArray(thumbBytes, 0, thumbBytes.size)
                         }
                     }
-                } catch (e: Exception) {
-                    android.util.Log.w("UploadQueueManager", "Failed to extract EXIF thumbnail", e)
-                }
-            }
-
-            if (bitmap == null) {
-                val options = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                }
-                context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream, null, options)
                 }
 
-                val reqWidth = 300
-                val reqHeight = 300
-                var inSampleSize = 1
-                if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
-                    val halfHeight = options.outHeight / 2
-                    val halfWidth = options.outWidth / 2
-                    while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                        inSampleSize *= 2
+                if (bitmap == null) {
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream, null, options)
+                    }
+
+                    val reqWidth = 400
+                    val reqHeight = 400
+                    var inSampleSize = 1
+                    if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
+                        val halfHeight = options.outHeight / 2
+                        val halfWidth = options.outWidth / 2
+                        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                            inSampleSize *= 2
+                        }
+                    }
+
+                    val decodeOptions = BitmapFactory.Options().apply {
+                        this.inSampleSize = inSampleSize
+                    }
+                    context.contentResolver.openInputStream(sourceUri)?.use { decodeStream ->
+                        bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions)
                     }
                 }
 
-                val decodeOptions = BitmapFactory.Options().apply {
-                    this.inSampleSize = inSampleSize
+                val finalBitmap = bitmap ?: return null
+                java.io.ByteArrayOutputStream().use { baos ->
+                    finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, baos)
+                    val jpegData = baos.toByteArray()
+                    java.io.FileOutputStream(thumbFile).use { fos ->
+                        fos.write(jpegData)
+                    }
+                    thumbStorage.saveThumbnail(itemId, jpegData)
+                    if (fingerprint.isNotBlank()) {
+                        thumbStorage.saveThumbnail(fingerprint, jpegData)
+                    }
                 }
-                context.contentResolver.openInputStream(sourceUri)?.use { decodeStream ->
-                    bitmap = BitmapFactory.decodeStream(decodeStream, null, decodeOptions)
-                }
+                android.util.Log.d("UploadQueueManager", "Created thumbnail for itemId=$itemId at path=${thumbFile.absolutePath}")
+                return Uri.fromFile(thumbFile).toString()
+            } finally {
+                bitmap?.recycle()
             }
-
-            val finalBitmap = bitmap ?: return null
-
-            val thumbDir = File(context.getExternalFilesDir(null), "camera_thumbnails")
-            if (!thumbDir.exists()) thumbDir.mkdirs()
-
-            val thumbFile = File(thumbDir, "thumb_$itemId.jpg")
-            java.io.FileOutputStream(thumbFile).use { outputStream ->
-                finalBitmap.compress(Bitmap.CompressFormat.JPEG, 75, outputStream)
-            }
-            android.util.Log.d("UploadQueueManager", "Created thumbnail for itemId=$itemId at path=${thumbFile.absolutePath}")
-            return Uri.fromFile(thumbFile).toString()
         } catch (e: Exception) {
             android.util.Log.e("UploadQueueManager", "Failed to create thumbnail", e)
             return null
-        } finally {
-            bitmap?.recycle()
         }
     }
 }

@@ -249,7 +249,15 @@ fun UploadedGalleryScreen(
                                 ) {
                                     Box(modifier = Modifier.fillMaxSize()) {
                                         val context = LocalContext.current
-                                        val imageFile = item.thumbnailPath?.let { File(it) }?.takeIf { it.exists() && it.length() > 0 } ?: File(item.filePath)
+                                        val thumbDir = remember(context) { File(context.getExternalFilesDir(null), "camera_thumbnails") }
+                                        val thumbStorage = remember(context) { com.rvmeur.transferin.data.thumbnail.ThumbnailStorageManager(context) }
+                                        val imageFile = item.thumbnailPath?.let { File(it) }?.takeIf { it.exists() && it.length() > 0 }
+                                            ?: thumbStorage.getThumbnailFile(item.id)?.takeIf { it.exists() && it.length() > 0 }
+                                            ?: File(thumbDir, "thumb_${item.id}.jpg").takeIf { it.exists() && it.length() > 0 }
+                                            ?: item.filePath.let { path ->
+                                                val clean = if (path.startsWith("file://")) path.removePrefix("file://") else path
+                                                File(clean).takeIf { it.exists() && it.length() > 0 }
+                                            }
                                         AsyncImage(
                                             model = ImageRequest.Builder(context)
                                                 .data(imageFile)
