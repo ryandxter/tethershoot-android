@@ -11,7 +11,9 @@ import com.rvmeur.transferin.data.usb.CameraInitResult
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-class CanonCameraInitializer : CameraVendorInitializer {
+class CanonCameraInitializer(
+    private val enableRemoteMode: Boolean = false
+) : CameraVendorInitializer {
 
     companion object {
         private const val TAG = "CanonCameraInit"
@@ -58,7 +60,7 @@ class CanonCameraInitializer : CameraVendorInitializer {
         device: UsbDevice,
         connection: UsbDeviceConnection
     ): CameraInitResult {
-        Log.d(TAG, ">>> Canon initializeUnlocked start: device=${device.deviceName}")
+        Log.d(TAG, ">>> Canon initializeUnlocked start: device=${device.deviceName}, enableRemoteMode=$enableRemoteMode")
 
         if (isSessionOpen && lastDeviceName == device.deviceName) {
             Log.d(TAG, "Session already open for device=${device.deviceName}, skipping duplicate handshake")
@@ -87,30 +89,33 @@ class CanonCameraInitializer : CameraVendorInitializer {
         Log.d(TAG, "Interface claimed, starting Canon handshake")
 
         return try {
+            var txId = 1
             sendPtpCommand(
                 connection = connection,
                 outEndpoint = outEndpoint,
                 inEndpoint = inEndpoint,
                 operationCode = PTP_OC_OPEN_SESSION,
-                transactionId = 1,
+                transactionId = txId++,
                 params = intArrayOf(SESSION_ID)
             )
 
-            sendPtpCommand(
-                connection = connection,
-                outEndpoint = outEndpoint,
-                inEndpoint = inEndpoint,
-                operationCode = EOS_OC_SET_REMOTE_MODE,
-                transactionId = 2,
-                params = intArrayOf(REMOTE_MODE_ON)
-            )
+            if (enableRemoteMode) {
+                sendPtpCommand(
+                    connection = connection,
+                    outEndpoint = outEndpoint,
+                    inEndpoint = inEndpoint,
+                    operationCode = EOS_OC_SET_REMOTE_MODE,
+                    transactionId = txId++,
+                    params = intArrayOf(REMOTE_MODE_ON)
+                )
+            }
 
             sendPtpCommand(
                 connection = connection,
                 outEndpoint = outEndpoint,
                 inEndpoint = inEndpoint,
                 operationCode = EOS_OC_SET_EVENT_MODE,
-                transactionId = 3,
+                transactionId = txId++,
                 params = intArrayOf(EVENT_MODE_ON)
             )
 
@@ -120,9 +125,9 @@ class CanonCameraInitializer : CameraVendorInitializer {
             activeInEndpoint = inEndpoint
             isSessionOpen = true
             lastDeviceName = device.deviceName
-            nextTransactionIdSeed = 4
+            nextTransactionIdSeed = txId
 
-            Log.d(TAG, ">>> Canon handshake completed, session kept open for tethered mode")
+            Log.d(TAG, ">>> Canon handshake completed, session kept open (remoteMode=$enableRemoteMode)")
             return CameraInitResult.ok("Canon handshake completed")
         } catch (t: Throwable) {
             Log.e(TAG, "Canon handshake error", t)
@@ -177,14 +182,18 @@ class CanonCameraInitializer : CameraVendorInitializer {
                 return
             }
 
-            sendPtpCommand(
-                connection = connection,
-                outEndpoint = outEndpoint,
-                inEndpoint = inEndpoint,
-                operationCode = EOS_OC_SET_REMOTE_MODE,
-                transactionId = 100,
-                params = intArrayOf(REMOTE_MODE_OFF)
-            )
+            if (enableRemoteMode) {
+                runCatching {
+                    sendPtpCommand(
+                        connection = connection,
+                        outEndpoint = outEndpoint,
+                        inEndpoint = inEndpoint,
+                        operationCode = EOS_OC_SET_REMOTE_MODE,
+                        transactionId = 100,
+                        params = intArrayOf(REMOTE_MODE_OFF)
+                    )
+                }.onFailure { Log.w(TAG, "Failed setting EOS Remote Mode OFF on close", it) }
+            }
 
             sendPtpCommand(
                 connection = connection,

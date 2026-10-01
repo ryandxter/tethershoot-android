@@ -19,6 +19,12 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.rvmeur.transferin.data.usb.vendor.CanonCameraInitializer
 import com.rvmeur.transferin.data.usb.vendor.CanonPtpEnumerator
+import com.rvmeur.transferin.data.usb.vendor.CanonPtpSession
+import com.rvmeur.transferin.data.usb.vendor.fuji.FujiCameraInitializer
+import com.rvmeur.transferin.data.usb.vendor.fuji.FujiTetherAdapter
+import com.rvmeur.transferin.data.usb.vendor.sony.SonyCameraInitializer
+import com.rvmeur.transferin.data.usb.vendor.sony.SonyPtpAdapter
+import com.rvmeur.transferin.data.usb.vendor.nikon.NikonCameraInitializer
 import com.rvmeur.transferin.domain.model.CameraMedia
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -298,46 +304,96 @@ class UsbHelper(
         return getAllObjectHandlesNoLock(storageId)
     }
 
-    private suspend fun getAllObjectHandlesNoLock(storageId: Int): List<Int> {
-        val mtp = activeMtp ?: return emptyList()
+    private suspend fun fetchMtpHandlesRecursively(
+        mtp: MtpDevice,
+        storageId: Int,
+        parentHandle: Int,
+        visitedFolders: MutableSet<Int> = mutableSetOf(),
+        collectedFiles: LinkedHashSet<Int> = LinkedHashSet(),
+        depth: Int = 0,
+        maxDepth: Int = 10
+    ): List<Int> {
+        if (depth > maxDepth) return collectedFiles.toList()
+        val rawHandles = runCatching {
+            mtp.getObjectHandles(storageId, 0, parentHandle)?.toList().orEmpty()
+        }.getOrDefault(emptyList())
 
-        Log.e(
-            TAG,
-            "$PATCH_TAG ENTER getAllObjectHandlesNoLock(storageId=$storageId), device=$currentSessionDeviceName, canonSession=${isCanonSession()}, activeNative=${hasActiveCanonNativeSession()}"
-        )
+        for (handle in rawHandles) {
+            val info = runCatching { mtp.getObjectInfo(handle) }.getOrNull()
+            val format = info?.format ?: 0
+            val isFolder = format == MtpConstants.FORMAT_ASSOCIATION || format == 0x3001 || format == 0x3000
 
-        val mtpHandles = withContext(Dispatchers.IO) {
-            runCatching {
-                withTimeout(OBJECT_LIST_TIMEOUT_MS) {
-                    mtp.getObjectHandles(storageId, 0, 0)?.toList() ?: emptyList()
+            if (isFolder) {
+                if (visitedFolders.add(handle)) {
+                    fetchMtpHandlesRecursively(
+                        mtp = mtp,
+                        storageId = storageId,
+                        parentHandle = handle,
+                        visitedFolders = visitedFolders,
+                        collectedFiles = collectedFiles,
+                        depth = depth + 1,
+                        maxDepth = maxDepth
+                    )
                 }
-            }.onFailure {
-                Log.e(TAG, "getAllObjectHandles failed for storageId=$storageId", it)
-            }.getOrDefault(emptyList())
+            } else {
+                collectedFiles.add(handle)
+            }
         }
+        return collectedFiles.toList()
+    }
 
-        Log.e(TAG, "$PATCH_TAG MTP handles count for storageId=$storageId -> ${mtpHandles.size}")
-
-        if (mtpHandles.isNotEmpty()) {
-            Log.d(
+    private suspend fun getAllObjectHandlesNoLock(storageId: Int): List<Int> {
+        val mtp = activeMtp
+        if (mtp != null) {
+            Log.e(
                 TAG,
-                "getAllObjectHandles(storageId=$storageId): using MTP handles count=${mtpHandles.size}"
+                "$PATCH_TAG ENTER getAllObjectHandlesNoLock(storageId=$storageId), device=$currentSessionDeviceName, canonSession=${isCanonSession()}, activeNative=${hasActiveCanonNativeSession()}"
             )
-            return mtpHandles
+
+            val mtpHandles = withContext(Dispatchers.IO) {
+                runCatching {
+                    withTimeout(OBJECT_LIST_TIMEOUT_MS) {
+                        fetchMtpHandlesRecursively(mtp, storageId, parentHandle = 0)
+                    }
+                }.onFailure {
+                    Log.e(TAG, "getAllObjectHandles failed for storageId=$storageId", it)
+                }.getOrDefault(emptyList())
+            }
+
+            Log.e(TAG, "$PATCH_TAG MTP handles count for storageId=$storageId -> ${mtpHandles.size}")
+
+            if (mtpHandles.isNotEmpty()) {
+                Log.d(
+                    TAG,
+                    "getAllObjectHandles(storageId=$storageId): using MTP handles count=${mtpHandles.size}"
+                )
+                return mtpHandles
+            }
         }
 
-        if (isCanonSession()) {
-            Log.w(TAG, "Canon session returned empty object handles via MtpDevice")
+        // 1. Sony Native Adapter Fallback
+        val sonyAdapter = getSonyInitializer()?.getActiveAdapter()
+        if (sonyAdapter != null && sonyAdapter.isSessionOpen) {
+            val sonyHandles = withContext(Dispatchers.IO) {
+                runCatching {
+                    sonyAdapter.getObjectHandles(storageId)
+                }.onFailure {
+                    Log.e(TAG, "Sony native getObjectHandles failed for storageId=$storageId", it)
+                }.getOrDefault(emptyList())
+            }
+            if (sonyHandles.isNotEmpty()) {
+                Log.d(
+                    TAG,
+                    "getAllObjectHandles(storageId=$storageId): using Sony native handles count=${sonyHandles.size}"
+                )
+                return sonyHandles
+            }
         }
 
+        // 2. Canon Native Adapter Fallback
         val canonInitializer = getCanonInitializer()
-        Log.e(
-            TAG,
-            "$PATCH_TAG Canon initializer available=${canonInitializer != null}, currentSessionDeviceName=$currentSessionDeviceName"
-        )
-
         val canonSession = canonInitializer?.getActivePtpSession()
-        if (canonSession != null && canonSession.deviceName == currentSessionDeviceName) {
+        if (canonSession != null && (currentSessionDeviceName == null || canonSession.deviceName == currentSessionDeviceName)) {
             return withContext(Dispatchers.IO) {
                 runCatching {
                     val mergedHandles = linkedSetOf<Int>()
@@ -346,11 +402,6 @@ class UsbHelper(
                     val nativeStorageIds = runCatching { enumeratorForStorageIds.getStorageIds() }
                         .onFailure { Log.e(TAG, "Canon native getStorageIds failed", it) }
                         .getOrDefault(emptyList())
-
-                    Log.e(
-                        TAG,
-                        "$PATCH_TAG Canon native storageIds=$nativeStorageIds, requestedStorageId=$storageId"
-                    )
 
                     val candidateStorageIds = buildList {
                         add(storageId)
@@ -370,16 +421,10 @@ class UsbHelper(
                             )
                         }.getOrDefault(emptyList())
 
-                        Log.e(
-                            TAG,
-                            "$PATCH_TAG Canon native getObjectHandles(candidateStorageId=$candidateStorageId): count=${handles.size}"
-                        )
-
                         mergedHandles.addAll(handles)
                     }
 
                     if (mergedHandles.isEmpty() && nativeStorageIds.isEmpty()) {
-                        Log.w(TAG, "$PATCH_TAG Canon native storageIds empty; trying raw requested storage only")
                         val retryHandles = runCatching {
                             CanonPtpEnumerator(canonSession).getObjectHandles(storageId)
                         }.getOrDefault(emptyList())
@@ -387,19 +432,15 @@ class UsbHelper(
                     }
 
                     val finalHandles = mergedHandles.toList()
-                    Log.e(
+                    Log.d(
                         TAG,
-                        "$PATCH_TAG Canon native merged handles for requestedStorageId=$storageId: count=${finalHandles.size}"
+                        "Canon native merged handles for requestedStorageId=$storageId: count=${finalHandles.size}"
                     )
                     finalHandles
                 }.onFailure {
                     Log.e(TAG, "Canon native enumeration failed for storageId=$storageId", it)
                 }.getOrDefault(emptyList())
             }
-        }
-
-        if (hasActiveCanonNativeSession()) {
-            Log.w(TAG, "Active Canon native session detected, but no matching PTP session snapshot available")
         }
 
         return emptyList()
@@ -410,28 +451,29 @@ class UsbHelper(
     }
 
     private suspend fun getObjectMetadataNoLock(handle: Int): CameraMedia? {
-        val mtp = activeMtp ?: return null
+        val mtp = activeMtp
+        if (mtp != null) {
+            val mtpMedia = withContext(Dispatchers.IO) {
+                runCatching {
+                    val info = mtp.getObjectInfo(handle)
+                    if (info == null) {
+                        Log.w(TAG, "getObjectMetadata(handle=$handle): MTP info is null")
+                        null
+                    } else {
+                        info.toCameraMedia(0, handle)
+                    }
+                }.onFailure {
+                    Log.e(TAG, "getObjectMetadata MTP failed for handle=$handle", it)
+                }.getOrNull()
+            }
 
-        val mtpMedia = withContext(Dispatchers.IO) {
-            runCatching {
-                val info = mtp.getObjectInfo(handle)
-                if (info == null) {
-                    Log.w(TAG, "getObjectMetadata(handle=$handle): MTP info is null")
-                    null
-                } else {
-                    info.toCameraMedia(0, handle)
-                }
-            }.onFailure {
-                Log.e(TAG, "getObjectMetadata MTP failed for handle=$handle", it)
-            }.getOrNull()
-        }
-
-        if (mtpMedia != null) {
-            return mtpMedia
+            if (mtpMedia != null) {
+                return mtpMedia
+            }
         }
 
         val canonSession = getCanonInitializer()?.getActivePtpSession()
-        if (canonSession != null && canonSession.deviceName == currentSessionDeviceName) {
+        if (canonSession != null && (currentSessionDeviceName == null || canonSession.deviceName == currentSessionDeviceName)) {
             val canonMedia = withContext(Dispatchers.IO) {
                 runCatching {
                     val objectInfo = CanonPtpEnumerator(canonSession).getObjectInfo(handle)
@@ -462,6 +504,29 @@ class UsbHelper(
             }
         }
 
+        val fujiAdapter = getFujiInitializer()?.getActiveAdapter()
+        if (fujiAdapter != null) {
+            val fujiMedia = withContext(Dispatchers.IO) {
+                runCatching {
+                    val metaResult = fujiAdapter.getObjectMetadata(handle)
+                    if (metaResult.isSuccess) {
+                        val meta = metaResult.getOrThrow()
+                        CameraMedia(
+                            storageId = 0,
+                            handle = handle,
+                            name = meta.filename,
+                            isFolder = false,
+                            size = meta.sizeBytes,
+                            parentHandle = 0,
+                            formatCode = meta.formatCode,
+                            modifiedTime = null
+                        )
+                    } else null
+                }.getOrNull()
+            }
+            if (fujiMedia != null) return fujiMedia
+        }
+
         if (hasActiveCanonNativeSession()) {
             Log.w(TAG, "getObjectMetadata(handle=$handle): Canon native session active but metadata unavailable")
         }
@@ -470,7 +535,7 @@ class UsbHelper(
     }
 
     suspend fun listMedia(storageId: Int): List<CameraMedia> = sessionMutex.withLock {
-        if (!currentSessionState.isOpen) {
+        if (!currentSessionState.isOpen && activeMtpDeviceOverride == null && getActiveFujiAdapter() == null && getActiveSonyAdapter()?.isSessionOpen != true && !hasActiveCanonNativeSession()) {
             throw IllegalStateException("Sesi kamera belum siap dipakai.")
         }
 
@@ -487,15 +552,65 @@ class UsbHelper(
     }
 
     suspend fun downloadMediaToCache(media: CameraMedia): File? = sessionMutex.withLock {
-        val mtpDevice = activeMtp ?: throw IllegalStateException("Sesi kamera belum terbuka.")
         val transitDir = appContext.getExternalFilesDir("camera_transit") ?: return@withLock null
+        if (!transitDir.exists()) {
+            transitDir.mkdirs()
+        }
         val targetFile = File(transitDir, "${media.handle}_${media.name}")
-        val success = withContext(Dispatchers.IO) {
-            withTimeout(OBJECT_IMPORT_TIMEOUT_MS) {
-                mtpDevice.importFile(media.handle, targetFile.absolutePath)
+
+        // 1. Check if Fuji native tether adapter is active
+        val fujiAdapter = getFujiInitializer()?.getActiveAdapter()
+        if (fujiAdapter != null) {
+            Log.d(TAG, "downloadMediaToCache: Using Fuji native tether adapter for handle=${media.handle}")
+            val streamed = withContext(Dispatchers.IO) {
+                runCatching {
+                    targetFile.outputStream().use { outputStream ->
+                        val result = fujiAdapter.streamMedia(media.handle, outputStream, { _, _ -> })
+                        result.isSuccess
+                    }
+                }.getOrDefault(false)
+            }
+            if (streamed && targetFile.exists() && targetFile.length() > 0L) {
+                return@withLock targetFile
+            }
+            Log.w(TAG, "Fuji native streamMedia failed for handle=${media.handle}, falling back...")
+        }
+
+        // 2. Check if Sony native tether adapter is active
+        val sonyAdapter = getSonyInitializer()?.getActiveAdapter()
+        if (sonyAdapter != null && sonyAdapter.isSessionOpen) {
+            Log.d(TAG, "downloadMediaToCache: Using Sony native tether adapter for handle=${media.handle}")
+            val streamed = withContext(Dispatchers.IO) {
+                runCatching {
+                    targetFile.outputStream().use { outputStream ->
+                        val result = sonyAdapter.streamMedia(media.handle, outputStream)
+                        result.isSuccess
+                    }
+                }.getOrDefault(false)
+            }
+            if (streamed && targetFile.exists() && targetFile.length() > 0L) {
+                return@withLock targetFile
+            }
+            Log.w(TAG, "Sony native streamMedia failed for handle=${media.handle}, falling back...")
+        }
+
+        // 3. Fallback to active MTP device if available
+        val mtpDevice = activeMtp
+        if (mtpDevice != null) {
+            val success = withContext(Dispatchers.IO) {
+                runCatching {
+                    withTimeout(OBJECT_IMPORT_TIMEOUT_MS) {
+                        mtpDevice.importFile(media.handle, targetFile.absolutePath)
+                    }
+                }.getOrDefault(false)
+            }
+            if (success && targetFile.exists() && targetFile.length() > 0L) {
+                return@withLock targetFile
             }
         }
-        return if (success) targetFile else null
+
+        Log.w(TAG, "downloadMediaToCache: Failed downloading handle=${media.handle}, name=${media.name}")
+        null
     }
 
     private fun requestPermission(device: UsbDevice): Boolean {
@@ -812,15 +927,39 @@ class UsbHelper(
         return currentSessionUsbDevice()?.vendorId == CANON_VENDOR_ID
     }
 
-    private fun getDefaultSessionInitializer(): DefaultCameraSessionInitializer? {
+    fun getDefaultSessionInitializer(): DefaultCameraSessionInitializer? {
         return cameraSessionInitializer as? DefaultCameraSessionInitializer
     }
 
-    private fun getCanonInitializer(): CanonCameraInitializer? {
+    fun getCanonInitializer(): CanonCameraInitializer? {
         return getDefaultSessionInitializer()?.getCanonInitializer()
     }
 
-    private fun hasActiveCanonNativeSession(): Boolean {
+    fun getSonyInitializer(): SonyCameraInitializer? {
+        return getDefaultSessionInitializer()?.getSonyInitializer()
+    }
+
+    fun getFujiInitializer(): FujiCameraInitializer? {
+        return getDefaultSessionInitializer()?.getFujiInitializer()
+    }
+
+    fun getNikonInitializer(): NikonCameraInitializer? {
+        return getDefaultSessionInitializer()?.getNikonInitializer()
+    }
+
+    fun getActiveFujiAdapter(): FujiTetherAdapter? {
+        return getFujiInitializer()?.getActiveAdapter()
+    }
+
+    fun getActiveSonyAdapter(): SonyPtpAdapter? {
+        return getSonyInitializer()?.getActiveAdapter()
+    }
+
+    fun getActiveCanonSession(): CanonPtpSession? {
+        return getCanonInitializer()?.getActivePtpSession()
+    }
+
+    fun hasActiveCanonNativeSession(): Boolean {
         val deviceName = currentSessionDeviceName ?: return false
         return getCanonInitializer()?.hasActiveSessionFor(deviceName) == true
     }

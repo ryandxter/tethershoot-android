@@ -11,6 +11,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.rvmeur.transferin.data.usb.UsbHelper
@@ -32,6 +33,8 @@ class UsbTetherService : Service() {
     companion object {
         private const val TAG = "UsbTetherService"
         const val ACTION_START_USB_TETHER = "com.rvmeur.transferin.action.START_USB_TETHER"
+        const val ACTION_STOP_USB_TETHER = "com.rvmeur.transferin.action.STOP_USB_TETHER"
+        const val WAKE_LOCK_TAG = "TransferIn:UsbTetherWakeLock"
 
         private const val CHANNEL_ID = "usb_tether_channel"
         private const val CHANNEL_NAME = "USB Tether Service"
@@ -62,6 +65,7 @@ class UsbTetherService : Service() {
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private var openSessionJob: kotlinx.coroutines.Job? = null
     var activeHardwareSession: UsbHardwareSession? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -70,26 +74,40 @@ class UsbTetherService : Service() {
 
         // Android 14/15 strict FGS compliance: immediate startForeground within onCreate()
         try {
+            val notification = buildNotification("USB camera service is starting")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val serviceTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
                 startForeground(
                     NOTIFICATION_ID,
-                    buildNotification("USB camera service is starting"),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                    notification,
+                    serviceTypes
                 )
             } else {
                 startForeground(
                     NOTIFICATION_ID,
-                    buildNotification("USB camera service is starting")
+                    notification
                 )
             }
-            Log.d(TAG, "UsbTetherService created and foreground started")
+            acquireWakeLock()
+            Log.d(TAG, "UsbTetherService created and foreground started with WakeLock")
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to enter foreground mode in onCreate", t)
+            releaseWakeLock()
             stopSelf()
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP_USB_TETHER) {
+            Log.d(TAG, "Stopping UsbTetherService on ACTION_STOP_USB_TETHER")
+            openSessionJob?.cancel()
+            releaseWakeLock()
+            stopSelfResult(startId)
+            return START_NOT_STICKY
+        }
+
         if (intent?.action != ACTION_START_USB_TETHER) {
             Log.w(TAG, "Ignoring unsupported action=${intent?.action}")
             stopSelfResult(startId)
@@ -114,6 +132,8 @@ class UsbTetherService : Service() {
             return START_NOT_STICKY
         }
 
+        acquireWakeLock()
+
         openSessionJob?.cancel()
         openSessionJob = serviceScope.launch {
             updateNotification("Opening camera session...")
@@ -130,6 +150,7 @@ class UsbTetherService : Service() {
             if (!opened) {
                 Log.w(TAG, "Camera session open failed for ${device.deviceName}")
                 updateNotification("Failed to open camera session")
+                releaseWakeLock()
                 stopSelfResult(startId)
                 return@launch
             }
@@ -171,6 +192,7 @@ class UsbTetherService : Service() {
         }
 
         serviceJob.cancel()
+        releaseWakeLock()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -184,6 +206,41 @@ class UsbTetherService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    @Synchronized
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock == null) {
+                val powerManager = getSystemService(PowerManager::class.java)
+                wakeLock = powerManager?.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    WAKE_LOCK_TAG
+                )?.apply {
+                    setReferenceCounted(false)
+                }
+            }
+            if (wakeLock?.isHeld == false) {
+                wakeLock?.acquire()
+                Log.d(TAG, "Acquired partial WakeLock: $WAKE_LOCK_TAG")
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to acquire WakeLock", t)
+        }
+    }
+
+    @Synchronized
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.d(TAG, "Released partial WakeLock: $WAKE_LOCK_TAG")
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to release WakeLock", t)
+        } finally {
+            wakeLock = null
+        }
+    }
 
     private fun extractUsbDevice(intent: Intent): UsbDevice? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -217,18 +217,35 @@ class SessionViewModel(
     }
 
     private suspend fun downloadMtpFile(handle: Int, name: String): java.io.File? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        val mtpDevice = cameraUnlockOrchestrator.getActiveMtpDevice() ?: return@withContext null
-        val transitDir = application.getExternalFilesDir("camera_transit") ?: return@withContext null
-        if (!transitDir.exists()) {
-            transitDir.mkdirs()
+        val media = com.rvmeur.transferin.domain.model.CameraMedia(
+            handle = handle,
+            name = name
+        )
+        val fileFromUsb = runCatching {
+            usbHelper.downloadMediaToCache(media)
+        }.getOrNull()
+        if (fileFromUsb != null && fileFromUsb.exists() && fileFromUsb.length() > 0L) {
+            return@withContext fileFromUsb
         }
-        val targetFile = java.io.File(transitDir, "${handle}_$name")
-        val success = runCatching {
-            kotlinx.coroutines.withTimeout(30_000L) {
-                mtpDevice.importFile(handle, targetFile.absolutePath)
+
+        val mtpDevice = cameraUnlockOrchestrator.getActiveMtpDevice()
+        if (mtpDevice != null) {
+            val transitDir = application.getExternalFilesDir("camera_transit") ?: return@withContext null
+            if (!transitDir.exists()) {
+                transitDir.mkdirs()
             }
-        }.getOrDefault(false)
-        if (success) targetFile else null
+            val targetFile = java.io.File(transitDir, "${handle}_$name")
+            val success = runCatching {
+                kotlinx.coroutines.withTimeout(30_000L) {
+                    mtpDevice.importFile(handle, targetFile.absolutePath)
+                }
+            }.getOrDefault(false)
+            if (success && targetFile.exists() && targetFile.length() > 0L) {
+                return@withContext targetFile
+            }
+        }
+
+        null
     }
 
     private fun observeNewPhotos() {

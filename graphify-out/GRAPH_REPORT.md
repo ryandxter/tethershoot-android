@@ -1,16 +1,16 @@
-# Graph Report - TransferInFuji  (2026-08-09)
+# Graph Report - TransferInFuji  (2026-10-01)
 
 ## Corpus Check
-- 622 files · ~767,261 words
+- 907 files · ~6,033,002 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3516 nodes · 4243 edges · 448 communities (410 shown, 38 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 73 edges (avg confidence: 0.8)
+- 7178 nodes · 8990 edges · 724 communities (619 shown, 105 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 200 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `54fc3985`
+- Built from commit: `42d51de4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -145,6 +145,7 @@
 - Phase 4: Upload Integrity - Research
 - Research: WebDAV Protocol Support & Starting Shared Folder
 - .requestPermission
+- .getAllObjectHandlesNoLock
 - TransferItemStatus
 - SessionRepositoryAdapter
 - ImportCameraEngine
@@ -450,18 +451,293 @@
 - settings.gradle.kts
 - MTP Handle Staleness
 - WorkManager 2.11.2
+- RecorderProcessor
+- RecorderProcessor
+- R
+- KineticButton
+- TransitCacheManager
+- UsbHardwareSession
+- split_configs
+- 3. Accessibility & Quality Verification Checklist (WIZARD-01..04)
+- 3. Accessibility & Quality Verification Checklist (WIZARD-01..04)
+- Deep-Dive Technical Audit
+- NikonStorageMapper
+- SonyPtpDefragmenterTest
+- CullingDecisionGateTest
+- CanonPtpAdapterTest
+- FujiTetherAdapter
+- ExposureScratchBuffer
+- AAS Code Review Report: Phase 04 — Zero-Leak Hardware Core & Resource Lifecycle
+- CanonCameraInitializer
+- NikonRetryPolicy
+- FujiTetherAdapterTest
+- SonyPtpAdapterTest
+- _typeof
+- Detailed Task Breakdown
+- 4. Work Breakdown Structure & Task List
+- 4. Work Breakdown Structure & Atomic Tasks
+- CameraSyncStatus
+- FujiPtpConstants
+- .a
+- AAS Code Review Report: Phase 05 — Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle
+- AAS Code Review Report: Phase 06 — Canon EOS Direct PTP Engine & Fast Preview Extraction
+- AAS Code Review Report: Phase 07 — Sony Alpha & Nikon Multi-Vendor Tether Adapters
+- Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (PLAN.md)
+- Phase 9: Production Hardening, Codebase Pruning & Comprehensive Audits (PLAN.md)
+- DefaultCameraSessionInitializer
+- CameraTetherAdapterFactoryTest
+- NikonPreviewParser
+- NEDialog
+- enum
+- enum
+- Phase 3 Visual UI Specification Contract — Live Shoot Dashboard & Gallery Polish
+- Phase 3 Visual UI Specification Contract — Live Shoot Dashboard & Gallery Polish
+- Detailed Task Breakdown
+- v3.0 Requirements
+- CameraPictureProfile
+- NikonPtpAdapterTest
+- ExposureAnalyzerTest
+- _slicedToArray
+- .sendEvent
+- _slicedToArray
+- .sendEvent
+- 3. Core Component Specifications
+- 3. Core Component Specifications
+- Phase 4 Verification Report: Zero-Leak Hardware Core & Resource Lifecycle
+- Detailed Task Breakdown
+- Phase 11: Persistent Multi-Vendor Thumbnail Pipeline & USB Synchronization (11-01-PLAN.md)
+- .executePtpCommand
+- NikonPtpTransport
+- DoppelrandCard
+- ExposureSyntheticFixtures
+- Phase 10: Zero-Allocation Exposure & Luminance Engine (10-01-PLAN.md)
+- Phase 13 Security & Threat Mitigation Review: Milestone v4.0 Hardening Audit
+- Pillar-by-Pillar Detailed Audit
+- .verifyAndEnforceSafety
+- LuminanceHistogram
+- UsbHardwareSessionTest
+- RafPreviewExtractorTest
+- _typeof
+- Proposed Changes
+- CameraTetherEvent
+- NikonCameraInitializer
+- SonyCameraInitializer
+- SonyPtpTransport
+- ExposureClassification
+- SmartUploadFilter
+- ThumbnailStorageManagerTest
+- apk_unpacked/schema/draft-04.json
+- unknown/schema/draft-04.json
+- extracted/manifest.json
+- 2. Technical Component Implementation Patterns
+- 2. Technical Component Implementation Patterns
+- UploadedFingerprintRepositoryImpl
+- UploadedFingerprintRepository
+- SyncOrchestratorTest
+- FluidWizardScreen
+- Cr3PreviewParserTest
+- Forensic Report: Android Google OAuth Redirection & Client Type Misconfiguration
+- 1. Accomplished Features
+- 1. Accomplished Features
+- 2. Technical Implementation & Compose Patterns
+- 2. Technical Implementation & Compose Patterns
+- Assessment Scorecard (Scale 1-4)
+- Implementation Decisions Locked
+- Implementation Decisions Locked
+- Implementation Decisions Locked
+- 3. Component Design Specifications
+- Implementation Decisions Locked
+- 2. Work Packages & Plan Waves
+- 2. Key Accomplishments
+- .streamWithFallback
+- CameraTetherAdapter
+- TetherState
+- DuplicateVerdict
+- CanonCameraInitializerTest
+- InstrumentationProxy.java
+- definitions
+- definitions
+- 2. Root Cause Analysis: 3 Masalah Kritis TransferInFuji
+- Locked Design Decisions
+- Locked Design Decisions
+- Tasks
+- Tasks
+- Locked Design Decisions
+- Locked Design Decisions
+- Tasks
+- Tasks
+- Tasks
+- 1. Existing Session & Gallery Codebase Analysis
+- Tasks
+- 1. Existing Session & Gallery Codebase Analysis
+- Plan - Phase 6: Camera File Number Baseline Extraction
+- Work Accomplished
+- Security Audit & OAuth Session Governance — TransferInFuji
+- .parseIfdForOrientation
+- CameraVendor
+- CullingPolicy
+- SyncTier
+- .processFrame
+- CameraSyncDuplicateDetectorTest
+- .attachBaseContext
+- .a
+- d
+- Field
+- DebugProbesKt
+- apk_unpacked/assets/flutter_assets/packages/flutter_image_compress_web/assets/pica.min.js
+- WhiteScreenCollector
+- apktool_out/assets/flutter_assets/packages/flutter_image_compress_web/assets/pica.min.js
+- WhiteScreenCollector
+- Utils
+- 1. Primary Findings & Anomaly Detection
+- Test Cases
+- 1. Accomplished Features
+- 1. Accomplished Features
+- Connection Layers
+- Phase 5 Verification Report: Fujifilm Native Wired Tether Engine
+- Phase 6 Verification Report: Canon EOS Direct PTP & Fast Preview Engine
+- Phase 7 Verification Report: Sony Alpha & Nikon Tether Adapters
+- Phase 9 Code Review: Production Hardening, Codebase Pruning & Memory Safety Audit
+- Phase 9 UI & Design System Audit: Quiet Luxury Visual & Performance Verification
+- Work Accomplished
+- Work Accomplished
+- additionalProperties
+- .a
+- o
+- Phases Shipped
+- Test Cases
+- Test Cases
+- Phase 3 Research: Google Drive Integration & NAS Replacement
+- Phase 04 Summary: Zero-Leak Hardware Core & Resource Lifecycle
+- Phase 5 Summary: Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle
+- Quality Gates Passed
+- SEED-001: On-Device AI Exposure & Automated Culling Engine
+- Subagent Summoning & Spawning Protocol (No Generic 'self')
+- UploadedFingerprintEntity
+- .initialize
+- ThumbnailImageLoaderProvider
+- CompoundFingerprintGeneratorTest
+- DualTierSyncRouterTest
+- stringArray
+- stringArray
+- a
+- c
+- .getAppCtx
+- e
+- f
+- g
+- Completed Phases
+- Phase 6 Research - Camera File Number Baseline Extraction
+- Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (SUMMARY.md)
+- Phase 9 Security & Privacy Audit: Android 14/15 Security & Credential Protection
+- TmpFileInfo
+- .classify
+- thumbnailCompoundKey
+- b
+- Project Handoff: Milestone v3.0 Shipped
+- schemaArray
+- dependencies
+- schemaArray
+- d
+- Phase 1 Research: Rebranding & Package Rename
+- Phase 2 Research: UI Style Refactoring (rvmeur.com Design)
+- Milestone v3.0 Audit: Multi-Vendor Production Engine & Zero-Leak Tether Core
+- Phase 6 Summary: Canon EOS Direct PTP Engine & Fast Preview Extraction
+- Phase 7 Summary: Sony Alpha & Nikon Multi-Vendor Tether Adapters
+- EmbeddedPreviewResult
+- CompoundFingerprintGenerator
+- ThumbnailImageLoaderTest
+- enum
+- multipleOf
+- getPathByURL
+- enum
+- multipleOf
+- h.java
+- Session Handoff: Tethered Fuji RAF Gallery Thumbnailing & Live Sync
+- app/src/main/java/com/reflection/transferin/data/local/db/DatabaseProvider.kt
+- app/src/main/java/com/reflection/transferin/domain/session/SourceWatcher.kt
+- app/schemas/com.rvmeur.transferin.data.local.db.TransferInDatabase/8.json
+- app/src/main/java/com/rvmeur/transferin/domain/session/ImportCameraEngine.kt
+- Phase 1 Summary — Design System & Motion Foundations
+- Phase 1 Summary — Design System & Motion Foundations
+- Phase 6 Context - Camera File Number Baseline Extraction
+- Phase 6 Summary - Camera File Number Baseline Extraction
+- Phase 7 Context - Robust RAW+JPG Co-existence & Verification
+- Phase 7 Research - Robust RAW+JPG Co-existence & Verification
+- Phase 7 Summary - Robust RAW+JPG Co-existence & Verification
+- Phase 8 Context - Canon and Fuji Connection Polish
+- Phase 8 Research - Canon and Fuji Connection Polish
+- Phase 4: Zero-Leak Hardware Core & Resource Lifecycle - Context
+- Phase 8 Context: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming
+- Phase 9 Context: Production Hardening, Codebase Pruning & Comprehensive Audits
+- Phase 9: Production Hardening, Codebase Pruning & Comprehensive Audits (SUMMARY.md)
+- Phase 14 Verification: Universal PTP Transport, Storage & AI Culling Pipeline
+- Milestone v4.0 Audit: On-Device AI Exposure Analysis, Smart Culling & Reliable Thumbnailing Engine
+- addErrorHandlerIfEventEmitter
+- additionalItems
+- exclusiveMaximum
+- exclusiveMinimum
+- items
+- pattern
+- uniqueItems
+- getType
+- additionalItems
+- exclusiveMaximum
+- exclusiveMinimum
+- items
+- pattern
+- uniqueItems
+- Entry
+- p
+- Requirements — Milestone v1.0 (Rebranding & Google Drive Migration)
+- Milestone v2.0 Requirements (Archived)
+- Phase 1 Plan: Rebranding & Package Rename
+- Phase 2 Plan: UI Style Refactoring (rvmeur.com Design)
+- Phase 3 Plan: Google Drive Integration & NAS Replacement
+- Phase 6 Discussion Log - Camera File Number Baseline Extraction
+- Phase 7 Discussion Log - Robust RAW+JPG Co-existence & Verification
+- Phase 8 Discussion Log - Canon and Fuji Connection Polish
+- Phase 5: Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle - Context
+- Phase 6: Canon EOS Direct PTP Engine & Fast Preview Extraction - Context
+- Phase 7: Sony Alpha & Nikon Multi-Vendor Tether Adapters - Context
+- Milestone v1 Audit Report
+- AGENTS.md
+- graphify.md
+- Migration_10_11.kt
+- Migration_9_10.kt
+- CanonPtpConstants.kt
+- NikonPtpConstants.kt
+- SonyPtpConstants.kt
+- format
+- maxLength
+- minimum
+- title
+- format
+- maxLength
+- minProperties
+- oneOf
+- required
+- title
+- rflccaf/a.java
+- i.java
+- j.java
+- k.java
+- l.java
+- m.java
+- n.java
+- 09-production-hardening-pruning/.continue-here.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `Communities (277 total, 63 thin omitted)` - 194 edges
-2. `UsbHelper` - 65 edges
-3. `Codebase Map` - 52 edges
-4. `Communities (66 total, 16 thin omitted)` - 44 edges
-5. `TransferQueueItemEntity` - 42 edges
-6. `CameraMediaItemEntity` - 39 edges
-7. `TransferQueueDao` - 37 edges
-8. `SessionViewModel` - 35 edges
-9. `TransferQueueRepositoryImpl` - 34 edges
-10. `CameraMediaRepositoryImpl` - 33 edges
+1. `Communities (448 total, 38 thin omitted)` - 398 edges
+2. `MyApplication` - 112 edges
+3. `UsbHelper` - 73 edges
+4. `Codebase Map` - 52 edges
+5. `Communities (66 total, 16 thin omitted)` - 44 edges
+6. `permissions` - 43 edges
+7. `TransferQueueItemEntity` - 42 edges
+8. `CameraMediaItemEntity` - 39 edges
+9. `TransferQueueDao` - 37 edges
+10. `FujiTetherAdapter` - 36 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `TransferInApp()` --calls--> `NasConnectionRepositoryImpl`  [INFERRED]
@@ -483,23 +759,23 @@
 - **Complete Technology Stack** — tech_kotlin, tech_jetpack_compose, tech_room, tech_workmanager, tech_jsch [EXTRACTED 1.00]
 - **Core Technology Stack** — library_jsch_mwiede, library_room, library_workmanager [EXTRACTED 1.00]
 
-## Communities (448 total, 38 thin omitted)
+## Communities (724 total, 105 thin omitted)
 
 ### Community 0 - "USB Camera & MTP"
 Cohesion: 0.01
-Nodes (194): Communities (277 total, 63 thin omitted), Community 100 - "Phase 1 Plan 02: State Differ and CTG Change Detection", Community 103 - "ProjectSession", Community 104 - "Implementation Decisions", Community 105 - "SessionActiveScreen", Community 106 - "Phase 01: CTG Foundation Summary", Community 107 - "Plan: Phase 1 - SFTP Pooling & Reconnection Resilience", Community 108 - "Phase 02 Plan 01: Fingerprint Persistence Layer Summary" (+186 more)
+Nodes (398): Communities (448 total, 38 thin omitted), Community 0 - "USB Camera & MTP", Community 100 - "Phase 1 Plan 02: State Differ and CTG Change Detection", Community 101 - "CanonCameraInitializer", Community 102 - "TransferQueueItemEntity", Community 103 - "ProjectSession", Community 104 - "Implementation Decisions", Community 105 - "SessionActiveScreen" (+390 more)
 
 ### Community 1 - "SFTP & Remote Operations"
 Cohesion: 0.05
 Nodes (44): Communities (66 total, 16 thin omitted), Community 0 - "USB Camera & MTP", Community 10 - "Camera Unlock Orchestrator", Community 11 - "Camera Media DAO", Community 12 - "Camera Media Repository", Community 13 - "Connect Camera Screen", Community 15 - "Community 15", Community 18 - "Community 18" (+36 more)
 
 ### Community 2 - "Transfer Session UI"
-Cohesion: 0.15
-Nodes (12): app/build.gradle.kts, ast_hash, mtime, semantic_hash, app/src/main/java/com/reflection/transferin/data/local/db/DatabaseProvider.kt, ast_hash, mtime, semantic_hash (+4 more)
+Cohesion: 0.50
+Nodes (4): app/build.gradle.kts, ast_hash, mtime, semantic_hash
 
 ### Community 3 - "Camera Initialization"
-Cohesion: 0.15
-Nodes (12): app/build.gradle.kts, ast_hash, mtime, semantic_hash, app/schemas/com.rvmeur.transferin.data.local.db.TransferInDatabase/8.json, ast_hash, mtime, semantic_hash (+4 more)
+Cohesion: 0.50
+Nodes (4): app/build.gradle.kts, ast_hash, mtime, semantic_hash
 
 ### Community 4 - "Database & NAS Connection"
 Cohesion: 0.17
@@ -508,10 +784,6 @@ Nodes (11): Community Hubs (Navigation), Corpus Check, God Nodes (most connected
 ### Community 5 - "Gallery UI"
 Cohesion: 0.18
 Nodes (10): Community Hubs (Navigation), Corpus Check, God Nodes (most connected - your core abstractions), Graph Report - .  (2026-07-31), Hyperedges (group relationships), Import Cycles, Knowledge Gaps, Suggested Questions (+2 more)
-
-### Community 6 - "Document Scanner"
-Cohesion: 0.40
-Nodes (3): T, ViewModelProvider, SessionViewModelFactory
 
 ### Community 7 - "Transfer Queue"
 Cohesion: 0.50
@@ -542,8 +814,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/data/local/db/TransferInDatabase.kt, ast_hash, mtime, semantic_hash
 
 ### Community 14 - "Transfer Queue DAO"
-Cohesion: 0.50
-Nodes (4): app/src/main/java/com/reflection/transferin/data/local/entity/CameraMediaItemEntity.kt, ast_hash, mtime, semantic_hash
+Cohesion: 0.15
+Nodes (12): app/src/main/java/com/reflection/transferin/data/local/entity/CameraMediaItemEntity.kt, ast_hash, mtime, semantic_hash, gradlew, ast_hash, mtime, semantic_hash (+4 more)
 
 ### Community 15 - "SessionEntity"
 Cohesion: 0.50
@@ -586,8 +858,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/data/sftp/SftpClient.kt, ast_hash, mtime, semantic_hash
 
 ### Community 26 - "UsbTetherService"
-Cohesion: 0.18
-Nodes (7): Intent, Job, UsbDevice, UsbTetherService, IBinder, Notification, Service
+Cohesion: 0.16
+Nodes (9): CompletableJob, Intent, kotlinx, UsbDevice, UsbTetherService, IBinder, Notification, PowerManager (+1 more)
 
 ### Community 27 - "MediaStatus"
 Cohesion: 0.50
@@ -662,12 +934,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/data/usb/UsbPermissionManager.kt, ast_hash, mtime, semantic_hash
 
 ### Community 46 - "CanonCameraInitializer"
-Cohesion: 0.07
-Nodes (21): CameraInitContext, CameraInitResult, fail(), ok(), CameraSessionInitializer, MtpDevice, UsbDevice, UsbDeviceConnection (+13 more)
-
-### Community 47 - "UploadedFingerprintDao"
-Cohesion: 0.05
-Nodes (10): Flow, UploadedFingerprintDao, UploadedFingerprintEntity, Flow, UploadedFingerprintRepositoryImpl, Flow, UploadedFingerprintRepository, FilterResult (+2 more)
+Cohesion: 0.15
+Nodes (8): CameraInitContext, CameraInitResult, ok(), MtpDevice, UsbDevice, UsbDeviceConnection, CameraVendorInitializer, GenericCameraInitializer
 
 ### Community 48 - "gradlew"
 Cohesion: 0.50
@@ -738,8 +1006,8 @@ Cohesion: 0.07
 Nodes (8): newDetected(), TransferQueueItem, Flow, TransferSessionManager, SessionRuntimeState, Flow, StateFlow, TransferSessionManagerImpl
 
 ### Community 68 - "GalleryViewModel"
-Cohesion: 0.08
-Nodes (27): FilterMode, ALL, FAILED, PHOTOS, UPLOADED, VIDEOS, GalleryItem, GalleryUiState (+19 more)
+Cohesion: 0.05
+Nodes (29): UploadedGalleryScreenTest, CullingMetrics, FilterMode, ALL, CULLED, FAILED, OPTIMAL, PHOTOS (+21 more)
 
 ### Community 69 - "Phase 2: Smart Upload Detection - Research"
 Cohesion: 0.05
@@ -754,48 +1022,48 @@ Cohesion: 0.08
 Nodes (4): CameraMediaRepository, com, Flow, java
 
 ### Community 72 - "SessionViewModel"
-Cohesion: 0.13
-Nodes (8): SessionStats, SessionSummaryState, AndroidViewModel, java, Job, StateFlow, Uri, SessionViewModel
+Cohesion: 0.12
+Nodes (11): SessionStats, SessionSummaryState, ShootModeState, TetherState, AndroidViewModel, java, Job, StateFlow (+3 more)
 
 ### Community 73 - "CameraMediaItemEntity"
-Cohesion: 0.10
-Nodes (4): CameraMediaDao, Flow, CameraMediaItemEntity, Flow
+Cohesion: 0.11
+Nodes (3): CameraMediaDao, Flow, CameraMediaItemEntity
 
 ### Community 75 - "ConnectCameraViewModel"
-Cohesion: 0.12
-Nodes (5): ConnectCameraUiState, ConnectCameraViewModel, StateFlow, ViewModel, UsbDeviceInfo
+Cohesion: 0.13
+Nodes (4): ConnectCameraUiState, ConnectCameraViewModel, StateFlow, ViewModel
 
 ### Community 76 - "TransferQueueDao"
 Cohesion: 0.07
 Nodes (3): Flow, TransferQueueDao, TransferQueueItemEntity
 
 ### Community 77 - "UsbHelper"
-Cohesion: 0.14
-Nodes (8): android, CameraSessionState, MtpDevice, StateFlow, UsbDeviceConnection, UsbManager, UsbHelper, kotlinx
+Cohesion: 0.10
+Nodes (10): CameraSessionState, android, Intent, kotlinx, MtpDevice, StateFlow, UsbDevice, UsbDeviceConnection (+2 more)
 
 ### Community 79 - "AutoStorageDetector"
 Cohesion: 0.15
 Nodes (10): AutoStorageDetector, Uri, StorageLocation, StorageType, DCIM, DOWNLOAD, OTHER, PICTURES (+2 more)
 
 ### Community 80 - "SessionEntity"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (3): Flow, SessionDao, SessionEntity
 
 ### Community 81 - "UsbDisconnectHandler"
-Cohesion: 0.11
-Nodes (13): ConnectionState, Disconnected, Error, Intent, Job, StateFlow, UsbDevice, SftpConnected (+5 more)
+Cohesion: 0.06
+Nodes (30): CanonPtpAdapter, CanonPtpResponse, create(), findBulkInEndpoint(), findBulkOutEndpoint(), findPtpInterface(), ByteArray, ByteBuffer (+22 more)
 
 ### Community 82 - "DelegatingSftpClient"
-Cohesion: 0.21
+Cohesion: 0.19
 Nodes (6): DelegatingSftpClient, bytesTransferred, Result, totalBytes, Uri, RemoteFolder
 
 ### Community 83 - "SelectFolderViewModel"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (4): StateFlow, Uri, ViewModel, SelectFolderViewModel
 
 ### Community 85 - "TwoPhaseUploadHandlerTest"
 Cohesion: 0.13
-Nodes (7): Result, Uri, SizeMismatchException, TwoPhaseUploadHandler, com, Uri, TwoPhaseUploadHandlerTest
+Nodes (8): Exception, Result, Uri, SizeMismatchException, TwoPhaseUploadHandler, com, Uri, TwoPhaseUploadHandlerTest
 
 ### Community 86 - "PhotoWatcher"
 Cohesion: 0.17
@@ -818,8 +1086,8 @@ Cohesion: 0.11
 Nodes (18): 1. JSch Session Pooling (RESILIENCE-01), 2. Keepalive Implementation (RESILIENCE-02), 3. Exponential Backoff Reconnection (RESILIENCE-03), 4. USB Disconnect Handling (RESILIENCE-04), 5. Thread Safety and Coroutines Integration, 6. Error Handling Patterns, Architecture Recommendations, File Structure (+10 more)
 
 ### Community 91 - "CameraRuntimeState"
-Cohesion: 0.32
-Nodes (15): ActionButtonsArea(), ActiveIndicator(), CameraStatusHeader(), Color, Modifier, MiniStatPill(), QuickStatsCard(), SessionActiveScreen() (+7 more)
+Cohesion: 0.16
+Nodes (10): Modifier, LoginNasScreen(), Modifier, TetherState, SessionActiveScreen(), StatMetric, Modifier, RvmFooterBar() (+2 more)
 
 ### Community 92 - "Phase 03 Plan 04: USB Disconnect Handler - Summary"
 Cohesion: 0.11
@@ -830,20 +1098,20 @@ Cohesion: 0.12
 Nodes (7): MediaStatus, CACHED, DISCOVERED, FAILED, QUEUED, UPLOADED, UPLOADING
 
 ### Community 94 - "CameraMedia"
-Cohesion: 0.12
+Cohesion: 0.16
 Nodes (4): CameraMedia, CtgChangeEvent, NewShotDetector, ListCameraMediaUseCase
 
 ### Community 95 - "GoogleDriveClient"
 Cohesion: 0.26
-Nodes (6): GoogleDriveClient, bytesTransferred, Result, totalBytes, Uri, Exception
+Nodes (5): GoogleDriveClient, bytesTransferred, Result, totalBytes, Uri
 
 ### Community 97 - "CameraGalleryViewModel"
 Cohesion: 0.14
-Nodes (10): CameraGalleryState, CameraGalleryViewModel, create(), AndroidViewModel, Job, StateFlow, CameraGalleryViewModelFactory, T (+2 more)
+Nodes (10): CameraGalleryState, CameraGalleryViewModel, create(), AndroidViewModel, Application, Job, StateFlow, CameraGalleryViewModelFactory (+2 more)
 
 ### Community 98 - "TransferIn"
 Cohesion: 0.12
-Nodes (15): Clean Architecture, MVVM Pattern, Project Structure, Core Value, Current Milestone: v2 Camera File Numbering & Traversal Alignment, Evolution, Existing Capabilities, Technology (+7 more)
+Nodes (15): Clean Architecture, MVVM Pattern, Project Structure, Core Value, Evolution, Key Decisions, Shipped Capabilities, Technology (+7 more)
 
 ### Community 99 - "Phase 1 Plan 01: CTG Foundation - Tracer (End-to-End CTG Parsing)"
 Cohesion: 0.12
@@ -862,8 +1130,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/domain/model/TransferItemStatus.kt, ast_hash, mtime, semantic_hash
 
 ### Community 103 - "ProjectSession"
-Cohesion: 0.09
-Nodes (11): CameraRuntimeState, ProjectSession, CameraConnectionCoordinator, StateFlow, CameraEngine, Flow, StateFlow, ImportCameraEngine (+3 more)
+Cohesion: 0.07
+Nodes (14): CameraRuntimeState, ProjectSession, CameraConnectionCoordinator, StateFlow, CameraEngine, Flow, StateFlow, ImportCameraEngine (+6 more)
 
 ### Community 104 - "Implementation Decisions"
 Cohesion: 0.12
@@ -894,16 +1162,16 @@ Cohesion: 0.13
 Nodes (14): Completed Tasks, Deviations from Plan, Implementation Details, JschSftpClient Integration, Known Stubs, One-liner, Phase 03 Plan 01: SFTP Session Pool Infrastructure, Self-Check: PASSED (+6 more)
 
 ### Community 111 - "NasConnectionRepositoryImpl"
-Cohesion: 0.22
-Nodes (3): NasConnectionRepositoryImpl, NasConnection, NasConnectionRepository
+Cohesion: 0.06
+Nodes (17): NasConnectionRepositoryImpl, getAuthorizationUri(), getGoogleSignInClient(), GoogleDriveAuthManager, Context, Result, Uri, launchAuthorizationBrowser() (+9 more)
 
 ### Community 112 - "SftpClient"
-Cohesion: 0.18
-Nodes (6): bytesTransferred, Result, totalBytes, Uri, SftpClient, TmpFileInfo
+Cohesion: 0.26
+Nodes (5): bytesTransferred, Result, totalBytes, Uri, SftpClient
 
 ### Community 113 - "TransferInApp"
-Cohesion: 0.19
-Nodes (9): Modifier, SelectSourceFolderScreen(), Intent, MainActivity, PreviewFallbackApp(), TransferInApp(), TransferInPreview(), TransferInTheme() (+1 more)
+Cohesion: 0.14
+Nodes (14): Modifier, SelectSourceFolderScreen(), ViewModelProvider, SessionViewModelFactory, Bundle, Intent, MainActivity, PreviewFallbackApp() (+6 more)
 
 ### Community 114 - "Phase 1 Plan 2: State Differ and CTG Change Detection Summary"
 Cohesion: 0.14
@@ -926,7 +1194,7 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/domain/repository/CameraMediaRepository.kt, ast_hash, mtime, semantic_hash
 
 ### Community 119 - "SessionState"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (9): SessionState, CANCELLED, COMPLETED, FAILED, IDLE, RUNNING, STARTING, STOPPING_INTAKE (+1 more)
 
 ### Community 120 - ".create"
@@ -969,10 +1237,6 @@ Nodes (12): Architectural Responsibility Map, Assumptions Log, Don't Hand-Roll, 
 Cohesion: 0.15
 Nodes (12): 1. Starting Shared Folder for SFTP/WebDAV, 2. WebDAV Client Implementation, 3. UI and Database Integration, Automated Tests, Connection Setup Screen, Database Changes, Findings, Manual Verification (+4 more)
 
-### Community 130 - ".requestPermission"
-Cohesion: 0.18
-Nodes (4): Intent, UsbDevice, UsbEndpoint, UsbInterface
-
 ### Community 132 - "TransferItemStatus"
 Cohesion: 0.17
 Nodes (11): TransferItemStatus, CANCELLED, DETECTED, DISPATCHED, FAILED, QUEUED, RETRY_SCHEDULED, SKIPPED_DUPLICATE (+3 more)
@@ -986,8 +1250,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/domain/repository/NasConnectionRepository.kt, ast_hash, mtime, semantic_hash
 
 ### Community 135 - "LoginNasViewModel"
-Cohesion: 0.17
-Nodes (3): ViewModel, LoginNasUiState, LoginNasViewModel
+Cohesion: 0.04
+Nodes (31): addErrorHandlerIfEventEmitter(), adopt(), areInOrder(), calcResourceTimingData(), combineConfig(), delBadMea(), doCover(), doSupplement() (+23 more)
 
 ### Community 136 - "rvmeur/transferin/feature/gallery/CameraGalleryScreen.kt"
 Cohesion: 0.30
@@ -1014,8 +1278,8 @@ Cohesion: 0.17
 Nodes (11): 1. SFTP Connection Resilience (SFTP), 2. USB Device Stability (USB), 3. Service Compliance (SVC), 4. Large File Resumability (FILE), 5. Room Migration Verification (DB), Future Requirements, Milestone v1 Active Requirements, Out of Scope (+3 more)
 
 ### Community 142 - "Proposed Changes"
-Cohesion: 0.17
-Nodes (11): Automated Verification, Manual Verification, [MODIFY] [PhotoWatcher.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/PhotoWatcher.kt), [MODIFY] [SessionViewModel.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModel.kt), [MODIFY] [SftpConnectionConfig.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/sftp/SftpConnectionConfig.kt), PhotoWatcher, Plan - Phase 7: Robust RAW+JPG Co-existence & Verification, Proposed Changes (+3 more)
+Cohesion: 0.04
+Nodes (30): adopt(), areInOrder(), calcResourceTimingData(), combineConfig(), delBadMea(), doCover(), doSupplement(), fixRelativeUrl() (+22 more)
 
 ### Community 143 - "JschSftpClient"
 Cohesion: 0.50
@@ -1030,7 +1294,7 @@ Cohesion: 0.18
 Nodes (9): WatcherStatus, ENQUEUEING, ERROR, IDLE, PAUSED, SCANNING, STARTING, STOPPED (+1 more)
 
 ### Community 146 - "TransferUploadWorker"
-Cohesion: 0.23
+Cohesion: 0.24
 Nodes (4): Result, Uri, TransferUploadWorker, CoroutineWorker
 
 ### Community 147 - "TransferInDatabase"
@@ -1046,12 +1310,12 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/domain/session/CameraEngine.kt, ast_hash, mtime, semantic_hash
 
 ### Community 150 - "DocumentFileScanner"
-Cohesion: 0.40
-Nodes (5): DocumentFileScanner, Uri, NodeToScan, ScannedDocument, Bundle
+Cohesion: 0.42
+Nodes (4): DocumentFileScanner, Uri, NodeToScan, ScannedDocument
 
 ### Community 152 - "ShootModeEngine"
-Cohesion: 0.27
-Nodes (3): Job, StateFlow, ShootModeEngine
+Cohesion: 0.07
+Nodes (20): Corrupted, CtgMetadataSnapshot, CtgStabilityVerifier, CtgVerificationResult, EmptyFile, ByteArray, NotFound, StabilityStage1Result (+12 more)
 
 ### Community 153 - "Phase 3 Session Resilience"
 Cohesion: 0.50
@@ -1066,8 +1330,8 @@ Cohesion: 0.20
 Nodes (9): Created, Files Created/Modified, Modified, Objective, Overview, Phase 04 Plan 01: End-to-end two-phase upload tracer Summary, Requirements Addressed, Tasks Completed (+1 more)
 
 ### Community 156 - "Assessment Scorecard (Scale 1-4)"
-Cohesion: 0.20
-Nodes (9): 1. Typography & Font Families, 2. Color Palette & Brand Consistency, 3. Spatial Rhythm & Layout, 4. Soft Depth & Elevation, 5. Responsive Layout, 6. Microinteractions & Touch Target States, Action Items, Assessment Scorecard (Scale 1-4) (+1 more)
+Cohesion: 0.07
+Nodes (32): InvalidRafHeaderException, ByteArray, ByteOrder, Exception, java, Result, RafHeaderInfo, RafPreviewExtractor (+24 more)
 
 ### Community 157 - "UsbDeviceInfo"
 Cohesion: 0.50
@@ -1075,7 +1339,7 @@ Nodes (4): app/src/main/java/com/reflection/transferin/domain/session/ImportCame
 
 ### Community 158 - "TransferInDatabase"
 Cohesion: 0.20
-Nodes (4): DatabaseProvider, TransferInDatabase, Context, RoomDatabase
+Nodes (4): DatabaseProvider, Context, TransferInDatabase, RoomDatabase
 
 ### Community 160 - "Plan: Phase 3 - Multi-Vendor MTP Fallback"
 Cohesion: 0.22
@@ -1090,8 +1354,8 @@ Cohesion: 0.22
 Nodes (8): Files Created/Modified, Modified, Objective, Overview, Phase 04 Plan 02: Stale .part file cleanup Summary, Requirements Addressed, Tasks Completed, Verification Results
 
 ### Community 163 - "Plan - Phase 6: Camera File Number Baseline Extraction"
-Cohesion: 0.22
-Nodes (8): Manual Verification, [MODIFY] [PhotoWatcher.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/PhotoWatcher.kt), [MODIFY] [SessionViewModel.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModel.kt), PhotoWatcher, Plan - Phase 6: Camera File Number Baseline Extraction, Proposed Changes, Session Presentation, Verification Plan
+Cohesion: 0.07
+Nodes (18): AiFaceCullingEngine, DefaultAiFaceCullingEngine, FaceQualityDetector, ByteArray, AiFaceQualityMetrics, CullingAction, FLAG_WARNING_ONLY, PROCEED_UPLOAD (+10 more)
 
 ### Community 164 - "Milestone v1: Rebranding & Google Drive Migration (Active)"
 Cohesion: 0.50
@@ -1110,8 +1374,8 @@ Cohesion: 0.43
 Nodes (4): CanonPtpTransport, ByteArray, IntArray, PtpResponse
 
 ### Community 169 - ".create"
-Cohesion: 0.25
-Nodes (5): Modifier, LoginNasScreen(), T, ViewModelProvider, LoginNasViewModelFactory
+Cohesion: 0.05
+Nodes (42): anyOf, $dynamicRef, allOf, $comment, additionalProperties, $comment, default, deprecated (+34 more)
 
 ### Community 170 - "Technology Stack"
 Cohesion: 0.50
@@ -1130,12 +1394,12 @@ Cohesion: 0.25
 Nodes (7): Milestone v1 Phases, Phase 1: SFTP Pooling & Reconnection Resilience, Phase 2: USB Debounce & Service Compliance, Phase 3: Multi-Vendor MTP Fallback, Phase 4: Resumable Transfers & Server Cleanup, Phase 5: Room Migration Validation Suite, Roadmap
 
 ### Community 174 - "Test Cases"
-Cohesion: 0.25
-Nodes (7): Phase 3 UAT: Google Drive Integration & NAS Replacement, Summary, Test Case 1: Database Credentials Adaptor, Test Case 2: Google Drive API Client implementation, Test Case 3: Connection Setup and Folder Resolution, Test Case 4: Complete Compilation, Test Cases
+Cohesion: 0.05
+Nodes (42): anyOf, $dynamicRef, allOf, $comment, additionalProperties, $comment, default, deprecated (+34 more)
 
 ### Community 175 - "Connection Layers"
-Cohesion: 0.25
-Nodes (7): Connection Layers, Manual Verification, [MODIFY] [CameraUnlockOrchestrator.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/CameraUnlockOrchestrator.kt), [MODIFY] [UsbHelper.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/UsbHelper.kt), Plan - Phase 8: Canon and Fuji Connection Polish, Proposed Changes, Verification Plan
+Cohesion: 0.05
+Nodes (43): permissions, android.permission.ACCESS_ADSERVICES_AD_ID, android.permission.ACCESS_ADSERVICES_ATTRIBUTION, android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE, android.permission.ACCESS_ADSERVICES_TOPICS, android.permission.ACCESS_COARSE_LOCATION, android.permission.ACCESS_FINE_LOCATION, android.permission.ACCESS_MEDIA_LOCATION (+35 more)
 
 ### Community 176 - "Milestone v2 Active Requirements"
 Cohesion: 0.50
@@ -1162,8 +1426,8 @@ Cohesion: 0.38
 Nodes (6): FileType, JPEG, OTHER, RAW, fromFileName(), fromMimeType()
 
 ### Community 183 - "DiscoveredFile"
-Cohesion: 0.52
-Nodes (3): DiscoveredFile, Flow, SourceWatcher
+Cohesion: 0.36
+Nodes (4): DiscoveredFile, Flow, SourceWatcher, T
 
 ### Community 184 - "ConnectCameraScreen"
 Cohesion: 0.48
@@ -1202,31 +1466,31 @@ Cohesion: 0.29
 Nodes (6): 1. Automated Tests, 2. Manual Verification, Phase 3: Multi-Vendor MTP Fallback - Validation Strategy, Size & Date Diff Fallback Test, Unit Tests, Vendor Database Detection Test
 
 ### Community 193 - "Test Cases"
-Cohesion: 0.29
-Nodes (6): Phase 1 UAT: Rebranding & Package Rename, Summary, Test Case 1: Package Directory Structure, Test Case 2: Codebase Package References, Test Case 3: Compilation and Build, Test Cases
+Cohesion: 0.05
+Nodes (41): 1. Executive Summary, 2. Automated Test Execution Evidence, 3. Comprehensive Milestone Requirement Verification Audit, 4. Requirement Traceability Matrix (100% Verified), 5. Final Sign-off & Milestone Acceptance, CANON-01: Canon EOS PTP Remote & Event Draining, CANON-02: Sub-500ms .CR3 ISO-BMFF Box Preview Parsing, CANON-03: Two-Stage CTG Stability Verification (+33 more)
 
 ### Community 194 - "Test Cases"
-Cohesion: 0.29
-Nodes (6): Phase 2 UAT: UI Style Refactoring (rvmeur.com Design), Summary, Test Case 1: Color Token Refactoring, Test Case 2: Typography Style & Custom Fonts, Test Case 3: Compilation Check, Test Cases
+Cohesion: 0.07
+Nodes (18): fromInputStream(), fromStreamWriter(), bytesTransferred, totalBytes, UsbStreamRequestBody, BufferBucketType, LARGE, SMALL (+10 more)
 
 ### Community 195 - "Phase 3 Research: Google Drive Integration & NAS Replacement"
-Cohesion: 0.29
-Nodes (6): 1. Google Drive OAuth2 flow:, 2. Google Drive Multipart Upload REST API:, Codebase Modification Impact, Context & Objective, Phase 3 Research: Google Drive Integration & NAS Replacement, Technical Design & API Specification
+Cohesion: 0.05
+Nodes (36): 1. Executive Summary & Security Posture, 2. Detailed Audit Findings, 3. Resilience Assessment: Adversarial USB OTG Disconnection, 4. Component Export & IPC Security Verification, 5. Prioritized Remediation Roadmap, AAS Security Audit Report: Phase 04 — Zero-Leak Hardware Core & Resource Lifecycle, Assessment & Verification, Defensive Remediation (+28 more)
 
 ### Community 196 - "UploadStatus"
 Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/feature/connectcamera/ConnectCameraViewModel.kt, ast_hash, mtime, semantic_hash
 
 ### Community 197 - "UploadStatus"
-Cohesion: 0.33
-Nodes (5): UploadStatus, FAILED, QUEUED, SUCCESS, UPLOADING
+Cohesion: 0.29
+Nodes (6): UploadStatus, FAILED, QUEUED, SKIPPED, SUCCESS, UPLOADING
 
 ### Community 198 - "SourceSelectionMode"
 Cohesion: 0.33
 Nodes (3): SourceSelectionMode, AUTO_DETECT, BROWSE_FOLDER
 
 ### Community 199 - "SessionSummaryScreen"
-Cohesion: 0.60
+Cohesion: 0.53
 Nodes (5): Color, Modifier, SessionSummaryScreen(), SummaryRow(), SummaryStatItem()
 
 ### Community 202 - "Integrations"
@@ -1270,28 +1534,32 @@ Cohesion: 0.33
 Nodes (5): Codebase Context, Docs Context, Onboarding Summary, Project State, Recommended Next Step
 
 ### Community 212 - "Phase 6 Research - Camera File Number Baseline Extraction"
-Cohesion: 0.33
-Nodes (5): 1. Directory Traversal & Storage Structure, 2. Filename Number Extraction, 3. Reset Prevention Anchors, 4. DB Query for Highest File Number, Phase 6 Research - Camera File Number Baseline Extraction
+Cohesion: 0.12
+Nodes (8): ArwPreviewInfo, ArwPreviewParser, IfdScanResult, ByteArray, ByteOrder, ByteArray, MultiVendorPreviewExtractorTest, ArwPreviewParserTest
 
 ### Community 213 - "Research: Target Features & Behaviors"
 Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/feature/connectcamera/ConnectCameraViewModelFactory.kt, ast_hash, mtime, semantic_hash
 
 ### Community 214 - "Key Findings"
-Cohesion: 0.20
-Nodes (9): 1. Connection & SFTP Resilience, 2. Multi-Vendor Camera & USB Support, 3. Foreground Service Lifecycle, 4. Large Media transfers & Checkpoints, 5. Migration Safety, Implications for Roadmap, Key Findings, Project Research Summary (+1 more)
+Cohesion: 0.11
+Nodes (18): Architecture Approach, Confidence Assessment, Critical Pitfalls, Executive Summary, Expected Features, Gaps to Address, Implications for Roadmap, Key Findings (+10 more)
 
 ### Community 215 - "DefaultCameraSessionInitializer"
 Cohesion: 0.50
 Nodes (4): app/src/main/java/com/reflection/transferin/feature/folder/FolderUiState.kt, ast_hash, mtime, semantic_hash
 
+### Community 216 - "MediaFingerprint"
+Cohesion: 0.22
+Nodes (3): fromStorageKey(), MediaFingerprint, MediaFingerprintTest
+
 ### Community 217 - "SelectFolderScreen"
-Cohesion: 0.40
+Cohesion: 0.33
 Nodes (3): FolderUiState, Modifier, SelectFolderScreen()
 
 ### Community 218 - "GalleryViewModelFactory"
-Cohesion: 0.40
-Nodes (3): GalleryViewModelFactory, T, ViewModelProvider
+Cohesion: 0.06
+Nodes (33): Execution Waves & Architecture Dependency Graph, Mandatory Quality Gates, Mandatory Quality Gates, Mandatory Quality Gates, Mandatory Quality Gates, Mandatory Quality Gates, Mandatory Quality Gates, Milestone v1.0: Rebranding & Google Drive Migration (Shipped: 2026-08-12) (+25 more)
 
 ### Community 219 - "Phase 3: Multi-Vendor MTP Fallback - Summary"
 Cohesion: 0.40
@@ -1326,12 +1594,12 @@ Cohesion: 0.40
 Nodes (4): 1. Deliverables Completed, 2. Verification Results, Instrumented Test Build Verification, Phase 5: Room Migration Validation Suite - Summary
 
 ### Community 227 - "Phase 1 Research: Rebranding & Package Rename"
-Cohesion: 0.40
-Nodes (4): Codebase Analysis & Occurrences of "Reflection", Context & Objective, Migration Strategy, Phase 1 Research: Rebranding & Package Rename
+Cohesion: 0.10
+Nodes (3): CameraSyncDao, Flow, CameraSyncItemEntity
 
 ### Community 228 - "Phase 2 Research: UI Style Refactoring (rvmeur.com Design)"
-Cohesion: 0.40
-Nodes (4): Context & Objective, Extracted Design Tokens, Implementation Plan, Phase 2 Research: UI Style Refactoring (rvmeur.com Design)
+Cohesion: 0.06
+Nodes (33): $ref, $ref, type, type, type, $ref, $ref, $ref (+25 more)
 
 ### Community 230 - "SessionSummaryScreen"
 Cohesion: 0.50
@@ -1354,32 +1622,32 @@ Cohesion: 0.50
 Nodes (4): Primary (HIGH confidence), Secondary (MEDIUM confidence), Sources, Tertiary (LOW confidence)
 
 ### Community 235 - "Phase 6 Context - Camera File Number Baseline Extraction"
-Cohesion: 0.50
-Nodes (3): Decisions, Open Questions, Phase 6 Context - Camera File Number Baseline Extraction
+Cohesion: 0.06
+Nodes (31): 1. Executive Summary & Security Posture, 2. Detailed Audit Findings, 3. Resilience Assessment: Multi-Vendor Edge Cases, 4. Prioritized Remediation Roadmap, AAS Security Audit Report: Phase 07 — Sony Alpha & Nikon Multi-Vendor Tether Adapters, Additional Hardening Requirement, Defensive Remediation, Defensive Remediation (+23 more)
 
 ### Community 236 - "Phase 6 Summary - Camera File Number Baseline Extraction"
-Cohesion: 0.50
-Nodes (3): Accomplishments, Phase 6 Summary - Camera File Number Baseline Extraction, Verification Results
+Cohesion: 0.07
+Nodes (31): default, $ref, $ref, type, type, type, $ref, $ref (+23 more)
 
 ### Community 237 - "Phase 7 Context - Robust RAW+JPG Co-existence & Verification"
-Cohesion: 0.50
-Nodes (3): Decisions, Open Questions, Phase 7 Context - Robust RAW+JPG Co-existence & Verification
+Cohesion: 0.09
+Nodes (28): ApiCollector(), ArmsRum(), Bounds(), BrowserReporter(), _callSuper(), CanvasElementContainer(), CanvasRenderer(), _classCallCheck() (+20 more)
 
 ### Community 238 - "Phase 7 Research - Robust RAW+JPG Co-existence & Verification"
-Cohesion: 0.50
-Nodes (3): 1. Parallel Upload Feasibility & SFTP Pool Capacity, 2. Filename-Level Verification for Reconnection, Phase 7 Research - Robust RAW+JPG Co-existence & Verification
+Cohesion: 0.09
+Nodes (28): ApiCollector(), ArmsRum(), Bounds(), BrowserReporter(), _callSuper(), CanvasElementContainer(), CanvasRenderer(), _classCallCheck() (+20 more)
 
 ### Community 239 - "Phase 7 Summary - Robust RAW+JPG Co-existence & Verification"
-Cohesion: 0.50
-Nodes (3): Accomplishments, Phase 7 Summary - Robust RAW+JPG Co-existence & Verification, Verification Results
+Cohesion: 0.07
+Nodes (28): 1.1 Risk Severity Matrix, 1. Executive Summary & Critical Risk Matrix, 2.1 The Invisible Recursive Ping-Pong Communication, 2.2 Unsynchronized Native `MtpDevice` Concurrency, 2.3 Why Camera Shutdown Fails (The Lockup Sequence), 2.4 `UsbTetherService.onDestroy()` Cancellation Bug, 2. Forensic Analysis: Fuji Device Communication & Shutdown Lock Failure, 3.1 Uncancelled `CoroutineScope` Allocations (+20 more)
 
 ### Community 240 - "Phase 8 Context - Canon and Fuji Connection Polish"
-Cohesion: 0.50
-Nodes (3): Decisions, Open Questions, Phase 8 Context - Canon and Fuji Connection Polish
+Cohesion: 0.07
+Nodes (28): 1. Executive Summary & Security Posture, 2. Detailed Audit Findings, 3. Resilience Assessment: Volatile LCD Lockup & OTG Disconnection, 4. Prioritized Remediation Roadmap, AAS Security Audit Report: Phase 05 — Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle, Defensive Remediation, Defensive Remediation, Defensive Remediation (+20 more)
 
 ### Community 241 - "Phase 8 Research - Canon and Fuji Connection Polish"
-Cohesion: 0.50
-Nodes (3): 1. Close Session Order on Android MTP, 2. Syncing Override States to UsbHelper, Phase 8 Research - Canon and Fuji Connection Polish
+Cohesion: 0.07
+Nodes (27): 1. Executive Summary & Security Posture, 2. Detailed Audit Findings, 3. Resilience Assessment: Canon DIGIC Event Pump & Shutter Locks, 4. Prioritized Remediation Roadmap, AAS Security Audit Report: Phase 06 — Canon EOS Direct PTP Engine & Fast Preview Extraction, Defensive Remediation, Defensive Remediation, Defensive Remediation (+19 more)
 
 ### Community 242 - "gradlew"
 Cohesion: 0.83
@@ -1393,9 +1661,33 @@ Nodes (3): Applicable ASVS Categories, Known Threat Patterns for SFTP Uploads, S
 Cohesion: 0.67
 Nodes (3): Core, Phase-3 Dependencies (REQUIRED before Phase 4), Standard Stack
 
+### Community 250 - "Phase 1 Plan: Rebranding & Package Rename"
+Cohesion: 0.12
+Nodes (9): fail(), IOException, UsbTransportClosedException, T, UsbPriorityMutex, UsbTransferPriority, TIER_1_PREVIEW, TIER_2_STREAMING (+1 more)
+
+### Community 251 - "Phase 2 Plan: UI Style Refactoring (rvmeur.com Design)"
+Cohesion: 0.12
+Nodes (6): Override, Application, ApplicationInfo, ClassLoader, Context, MyJni
+
+### Community 252 - "Phase 3 Plan: Google Drive Integration & NAS Replacement"
+Cohesion: 0.08
+Nodes (24): 1. Executive Summary, 20 Film Simulation Presets & HUD Styling Tokens:, 2. Multi-Vendor Token & Component Audit Matrix, 3.1 Multi-Vendor Identity & Brand Tokens, 3.2 Fujifilm Film Simulation Badges (`FujiFilmSimulation.kt`), 3.3 Sony Volatile DRAM Safety Warning Banners (`SonyDramSafetyStatus`), 3.4 Dual-Slot Storage Representation (Canon & Nikon), 3.5 Real-Time Connection States (`TetherState`) & Live Studio HUD (+16 more)
+
+### Community 253 - "Phase 6 Discussion Log - Camera File Number Baseline Extraction"
+Cohesion: 0.16
+Nodes (9): ByteArray, CameraTetherAdapter, CompletableJob, Job, SharedFlow, UsbDevice, UsbEndpoint, UsbInterface (+1 more)
+
+### Community 255 - "Phase 8 Discussion Log - Canon and Fuji Connection Polish"
+Cohesion: 0.17
+Nodes (9): ByteArray, CameraTetherAdapter, java, Result, StateFlow, UsbDevice, UsbEndpoint, UsbInterface (+1 more)
+
 ### Community 256 - "Context"
-Cohesion: 0.67
-Nodes (3): Context, Problem, Users
+Cohesion: 0.13
+Nodes (11): _addListener(), arrayClone(), checkListener(), Client(), EventEmitter(), _getMaxListeners(), _listeners(), _onceWrap() (+3 more)
+
+### Community 264 - "rvmeur/transferin/session/runtime/SessionOrchestrator.kt"
+Cohesion: 0.13
+Nodes (11): _addListener(), arrayClone(), checkListener(), Client(), EventEmitter(), _getMaxListeners(), _listeners(), _onceWrap() (+3 more)
 
 ### Community 277 - "app/src/main/java/com/reflection/transferin/feature/folder/SelectSourceFolderScreen.kt"
 Cohesion: 0.50
@@ -1514,8 +1806,8 @@ Cohesion: 0.50
 Nodes (4): .claude/settings.local.json, ast_hash, mtime, semantic_hash
 
 ### Community 306 - "gradlew"
-Cohesion: 0.50
-Nodes (4): gradlew, ast_hash, mtime, semantic_hash
+Cohesion: 0.13
+Nodes (5): ThumbnailStorageConfig, ByteArray, ThumbnailStorageManager, ByteArray, ThumbnailPipelineIntegrationTest
 
 ### Community 307 - ".gsd/runtime/write-gate-state.json"
 Cohesion: 0.50
@@ -1574,8 +1866,8 @@ Cohesion: 0.50
 Nodes (4): .planning/REQUIREMENTS.md, ast_hash, mtime, semantic_hash
 
 ### Community 321 - ".planning/ROADMAP.md"
-Cohesion: 0.50
-Nodes (4): .planning/ROADMAP.md, ast_hash, mtime, semantic_hash
+Cohesion: 0.13
+Nodes (8): ByteArray, ByteBuffer, T, UsbEndpoint, SafeUsbTransportManager, UsbDeviceConnection, UsbEndpoint, SafeUsbTransportManagerTest
 
 ### Community 322 - ".planning/STATE.md"
 Cohesion: 0.50
@@ -1618,8 +1910,8 @@ Cohesion: 0.50
 Nodes (4): app/src/main/java/com/rvmeur/transferin/data/local/dao/SessionDao.kt, ast_hash, mtime, semantic_hash
 
 ### Community 332 - "app/src/main/java/com/rvmeur/transferin/data/local/dao/TransferQueueDao.kt"
-Cohesion: 0.50
-Nodes (4): app/src/main/java/com/rvmeur/transferin/data/local/dao/TransferQueueDao.kt, ast_hash, mtime, semantic_hash
+Cohesion: 0.15
+Nodes (12): app/src/main/java/com/rvmeur/transferin/data/local/dao/TransferQueueDao.kt, ast_hash, mtime, semantic_hash, .planning/codebase/STRUCTURE.md, ast_hash, mtime, semantic_hash (+4 more)
 
 ### Community 333 - "app/src/main/java/com/rvmeur/transferin/data/local/dao/UploadedFingerprintDao.kt"
 Cohesion: 0.50
@@ -2014,8 +2306,8 @@ Cohesion: 0.50
 Nodes (4): .planning/codebase/STACK.md, ast_hash, mtime, semantic_hash
 
 ### Community 431 - ".planning/codebase/STRUCTURE.md"
-Cohesion: 0.50
-Nodes (4): .planning/codebase/STRUCTURE.md, ast_hash, mtime, semantic_hash
+Cohesion: 0.12
+Nodes (10): CameraMediaMetadata, CameraTetherAdapter, AutoCloseable, ByteArray, Result, StateFlow, TetherState, UsbDevice (+2 more)
 
 ### Community 432 - ".planning/codebase/TESTING.md"
 Cohesion: 0.50
@@ -2062,8 +2354,8 @@ Cohesion: 0.50
 Nodes (4): .planning/research/SUMMARY.md, ast_hash, mtime, semantic_hash
 
 ### Community 443 - ".planning/ROADMAP.md"
-Cohesion: 0.50
-Nodes (4): .planning/ROADMAP.md, ast_hash, mtime, semantic_hash
+Cohesion: 0.12
+Nodes (7): CameraSyncMetrics, CameraSyncTracker, AutoCloseable, Job, StateFlow, StatusCounts, CameraSyncTrackerTest
 
 ### Community 444 - ".planning/STATE.md"
 Cohesion: 0.50
@@ -2073,25 +2365,845 @@ Nodes (4): .planning/STATE.md, ast_hash, mtime, semantic_hash
 Cohesion: 0.50
 Nodes (4): settings.gradle.kts, ast_hash, mtime, semantic_hash
 
+### Community 450 - "R"
+Cohesion: 0.10
+Nodes (20): anim, animator, array, attr, bool, color, dimen, drawable (+12 more)
+
+### Community 451 - "KineticButton"
+Cohesion: 0.11
+Nodes (14): ExposureInspectionModalTest, CullingStatusBadge(), Modifier, ExposureHistogramCanvas(), IntArray, Modifier, ExifTag(), ExposureInspectionModal() (+6 more)
+
+### Community 452 - "TransitCacheManager"
+Cohesion: 0.13
+Nodes (4): IOException, TransitCacheExhaustedException, TransitCacheManager, TransitCacheManagerTest
+
+### Community 453 - "UsbHardwareSession"
+Cohesion: 0.14
+Nodes (13): ActiveStreaming, CleanTerminated, Connected, Disconnecting, Failed, Handshake, HardwareSessionState, Idle (+5 more)
+
+### Community 454 - "split_configs"
+Cohesion: 0.10
+Nodes (20): split_configs, config.ar, config.arm64_v8a, config.de, config.en, config.es, config.fr, config.hi (+12 more)
+
+### Community 455 - "3. Accessibility & Quality Verification Checklist (WIZARD-01..04)"
+Cohesion: 0.10
+Nodes (19): 1. Screen Architecture (`FluidWizardScreen`), 2.1 Step 01: Google Drive Auth & Target Folder Card Grid (`01 google drive`), 2.2 Step 02: Camera Tethering & Live Pulse Aura (`02 camera tethering`), 2.3 Step 03: Session Preferences & Launch Action (`03 session rules`), 2. Step Specifications, 3.1 Minimum 44dp Touch Target Contract, 3.2 2-Column Card Grid Scaling & Dynamic Text Contract, 3.3 RVM Microcopy & Lowercase Rule Contract (+11 more)
+
+### Community 456 - "3. Accessibility & Quality Verification Checklist (WIZARD-01..04)"
+Cohesion: 0.10
+Nodes (19): 1. Screen Architecture (`FluidWizardScreen`), 2.1 Step 01: Google Drive Auth & Target Folder Card Grid (`01 google drive`), 2.2 Step 02: Camera Tethering & Live Pulse Aura (`02 camera tethering`), 2.3 Step 03: Session Preferences & Launch Action (`03 session rules`), 2. Step Specifications, 3.1 Minimum 44dp Touch Target Contract, 3.2 2-Column Card Grid Scaling & Dynamic Text Contract, 3.3 RVM Microcopy & Lowercase Rule Contract (+11 more)
+
+### Community 457 - "Deep-Dive Technical Audit"
+Cohesion: 0.10
+Nodes (19): 1. Schema Migration (`Migration_10_11.kt`), 1. Sync Coordination & Culling State Machine (`SyncOrchestrator.kt`), 1. Two-Stage Atomic Write & Sync (`ThumbnailStorageManager.kt`), 1. Two-Tier Priority USB Mutex (`UsbPriorityMutex.kt`), 1. Zero-Allocation Integer Fixed-Point Luminance Math (`ExposureAnalyzer.kt`), 2. Unidirectional Data Flow (`GalleryViewModel.kt`), Code Review Findings & Actionable Recommendations, Deep-Dive Technical Audit (+11 more)
+
+### Community 458 - "NikonStorageMapper"
+Cohesion: 0.15
+Nodes (9): NikonStorageInfo, NikonStorageMapper, NikonStorageSlot, ALL_STORAGES, INTERNAL, SLOT_1, SLOT_2, UNKNOWN (+1 more)
+
+### Community 459 - "SonyPtpDefragmenterTest"
+Cohesion: 0.15
+Nodes (10): CorruptedPtpPayloadException, Data, ByteArray, IOException, Response, SonyPtpContainer, SonyPtpDefragmenter, UsbDeviceConnection (+2 more)
+
+### Community 461 - "CanonPtpAdapterTest"
+Cohesion: 0.17
+Nodes (7): CanonPtpAdapterTest, CommandRecord, ByteArray, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface
+
+### Community 462 - "FujiTetherAdapter"
+Cohesion: 0.24
+Nodes (9): FujiTetherAdapter, CameraTetherAdapter, Job, StateFlow, TetherState, UsbDevice, UsbDeviceConnection, UsbEndpoint (+1 more)
+
+### Community 463 - "ExposureScratchBuffer"
+Cohesion: 0.20
+Nodes (8): ExposureAnalyzer, ExposureScratchBuffer, ByteArray, ByteBuffer, IntArray, ExposureAnalysisResult, IntArray, Bitmap
+
+### Community 464 - "AAS Code Review Report: Phase 04 — Zero-Leak Hardware Core & Resource Lifecycle"
+Cohesion: 0.11
+Nodes (17): 1. Executive Summary, 2. Review Scope & Files Audited, 3.1 Memory Safety & Off-Heap Direct Buffer Pooling (`CORE-03`), 3.2 Thread Safety, JNI Concurrency & IO Latches (`CORE-01`), 3.3 Android 14/15 Foreground Service Compliance (`CORE-02`, `CORE-04`), 3.4 Stream & File Descriptor Resource Hygiene (`CORE-05`), 3. Invariant & Safety Assessment, 4. Findings & Remediation Matrix (+9 more)
+
+### Community 465 - "CanonCameraInitializer"
+Cohesion: 0.30
+Nodes (6): CanonCameraInitializer, IntArray, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface
+
+### Community 466 - "NikonRetryPolicy"
+Cohesion: 0.23
+Nodes (7): IOException, T, NikonDeviceBusyException, NikonDeviceBusyTimeoutException, NikonRetryConfig, NikonRetryPolicy, NikonRetryPolicyTest
+
+### Community 467 - "FujiTetherAdapterTest"
+Cohesion: 0.12
+Nodes (6): FujiTetherAdapterTest, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface, SentCommand
+
+### Community 468 - "SonyPtpAdapterTest"
+Cohesion: 0.21
+Nodes (6): ByteArray, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface, SonyPtpAdapterTest
+
+### Community 469 - "_typeof"
+Cohesion: 0.12
+Nodes (17): ajax(), _assertThisInitialized(), _createClass(), _defineProperties(), _defineProperty(), formatParams(), hackFunction(), isBoolean() (+9 more)
+
+### Community 470 - "Detailed Task Breakdown"
+Cohesion: 0.12
+Nodes (16): 1. Mandatory Automated Verification, 2. Code Review Audit (`/gsd-code-review`), 3. UI & Telemetry Audit (`/gsd-ui-review`), 4. Security & Hardware Safety Audit (`/gsd-secure-phase`), Architecture Dependency Graph, Artifacts Produced & Modified, Detailed Task Breakdown, Fujifilm PTP Protocol Sequence & Clean Disconnect Lifecycle (+8 more)
+
+### Community 471 - "4. Work Breakdown Structure & Task List"
+Cohesion: 0.12
+Nodes (16): 1. Executive Summary & Architectural Overview, 2. Architecture & Component Interaction, 3. Requirements & Traceability, 4. Work Breakdown Structure & Task List, 6. Testing Strategy & Synthetic Fixtures, 7. Quality Gates & Acceptance Criteria, Key Technical Innovations & Safeguards:, Phase 7: Sony Alpha & Nikon Multi-Vendor Tether Adapters (PLAN.md) (+8 more)
+
+### Community 472 - "4. Work Breakdown Structure & Atomic Tasks"
+Cohesion: 0.12
+Nodes (16): 1. Executive Summary & Architectural Overview, 2. Architecture & State Machine Sequence Flow, 3. Requirements & Traceability Matrix, 4. Work Breakdown Structure & Atomic Tasks, 5. Directory Structure & Key Files, 6. Testing Strategy & Synthetic Fixtures, 7. Quality Gates & Acceptance Criteria, Phase 12: Smart Culling State Machine, Room Migration & Quiet Luxury Studio UI (PLAN.md) (+8 more)
+
+### Community 473 - "CameraSyncStatus"
+Cohesion: 0.12
+Nodes (9): CameraSyncStatus, BUFFERED_LOCAL, CONFIRMED_CLOUD, CULLED_SKIPPED, DETECTED, FAILED, FORCE_UPLOAD_PENDING, PURGED_LOCAL (+1 more)
+
+### Community 474 - "FujiPtpConstants"
+Cohesion: 0.18
+Nodes (6): FujiPtpConstants, ByteArray, IntArray, PtpResponse, PtpEvent, PtpResponse
+
+### Community 475 - ".a"
+Cohesion: 0.30
+Nodes (10): AppComponentFactory, ContentProvider, g, Activity, Application, ApplicationInfo, ClassLoader, Intent (+2 more)
+
+### Community 476 - "AAS Code Review Report: Phase 05 — Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle"
+Cohesion: 0.12
+Nodes (15): 1. Executive Summary, 2. Review Scope & Files Audited, 3.1 PTP Handshake & Host Control Governance (`FUJI-01`), 3.2 Interrupt Event Ingestion Loop (`FUJI-02`), 3.3 Non-Cancellable 4-Step Clean Teardown (`FUJI-03`), 3.4 High-Performance Binary Header & Recipe Extraction (`FUJI-04`, `FUJI-05`), 3. Invariant & Safety Assessment, 4. Findings & Recommendations (+7 more)
+
+### Community 477 - "AAS Code Review Report: Phase 06 — Canon EOS Direct PTP Engine & Fast Preview Extraction"
+Cohesion: 0.12
+Nodes (15): 1. Executive Summary, 2. Review Scope & Files Audited, 3.1 Canon EOS Remote Mode & Continuous DIGIC Event Pump (`CANON-01`), 3.2 Sub-500ms `.CR3` ISO-BMFF Box Preview Extraction (`CANON-02`), 3.3 Two-Stage Stability-Verified `.CTG` Fallback (`CANON-03`), 3.4 Dual-Slot Storage ID Isolation (`CANON-04`), 3.5 Deterministic 4-Step Clean Teardown, 3. Invariant & Safety Assessment (+7 more)
+
+### Community 478 - "AAS Code Review Report: Phase 07 — Sony Alpha & Nikon Multi-Vendor Tether Adapters"
+Cohesion: 0.12
+Nodes (15): 1. Executive Summary, 2. Review Scope & Files Audited, 3.1 Sony Alpha SDIO Handshake & Volatile DRAM Safety (`SONY-01`), 3.2 Sony Multi-Packet Defragmenter & `.ARW` Preview Parser (`SONY-02`), 3.3 Nikon Vendor PTP Engine & Dual-Slot Storage Mapping (`NIKON-01`), 3.4 Adaptive Exponential Backoff Retry Policy (`NIKON-02`), 3. Invariant & Safety Assessment, 4. Findings & Recommendations (+7 more)
+
+### Community 479 - "Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (PLAN.md)"
+Cohesion: 0.12
+Nodes (15): 1. Executive Summary & Architectural Overview, 2. Architecture & Component Interaction, 3. Requirements & Traceability, 4. Work Breakdown Structure & Task List, 5. Directory Structure & Key Files, 6. Testing Strategy & Synthetic Fixtures, 7. Quality Gates & Acceptance Criteria, Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (PLAN.md) (+7 more)
+
+### Community 480 - "Phase 9: Production Hardening, Codebase Pruning & Comprehensive Audits (PLAN.md)"
+Cohesion: 0.12
+Nodes (15): 1. Executive Summary & Architectural Overview, 2. Architecture & Quality Gate Dependency Graph, 3. Requirements & Traceability, 4. Work Breakdown Structure & Task List, 5. Directory Structure & Key Files, 6. Testing Strategy & Synthetic Fuzz Fixtures, 7. Quality Gates & Acceptance Criteria, Fuzz Engine Test Matrix: (+7 more)
+
+### Community 482 - "CameraTetherAdapterFactoryTest"
+Cohesion: 0.13
+Nodes (6): CameraTetherAdapterFactory, CameraTetherAdapter, UsbDevice, UsbDeviceConnection, CameraTetherAdapterFactoryTest, UsbDeviceConnection
+
+### Community 483 - "NikonPreviewParser"
+Cohesion: 0.40
+Nodes (5): IfdScanResult, ByteArray, ByteOrder, NefPreviewInfo, NikonPreviewParser
+
+### Community 484 - "NEDialog"
+Cohesion: 0.19
+Nodes (5): Handler, Context, NEDialog, a, Context
+
+### Community 485 - "enum"
+Cohesion: 0.13
+Nodes (15): definitions, positiveInteger, positiveIntegerDefault0, simpleTypes, array, boolean, integer, null (+7 more)
+
+### Community 486 - "enum"
+Cohesion: 0.13
+Nodes (15): definitions, positiveInteger, positiveIntegerDefault0, simpleTypes, array, boolean, integer, null (+7 more)
+
+### Community 487 - "Phase 3 Visual UI Specification Contract — Live Shoot Dashboard & Gallery Polish"
+Cohesion: 0.13
+Nodes (14): 1. Executive Summary, 2.1 Live Session Hub (`SessionActiveScreen`), 2.2 Uploaded Gallery & Preview (`UploadedGalleryScreen`), 2.3 Session Summary Screen (`SessionSummaryScreen`), 2. Component & Screen Architecture, 3. RVM Design System Tokens, 4-Stat Metric Grid Design, 4. Verification Gate Checklist (DASHBOARD-01..02) (+6 more)
+
+### Community 488 - "Phase 3 Visual UI Specification Contract — Live Shoot Dashboard & Gallery Polish"
+Cohesion: 0.13
+Nodes (14): 1. Executive Summary, 2.1 Live Session Hub (`SessionActiveScreen`), 2.2 Uploaded Gallery & Preview (`UploadedGalleryScreen`), 2.3 Session Summary Screen (`SessionSummaryScreen`), 2. Component & Screen Architecture, 3. RVM Design System Tokens, 4-Stat Metric Grid Design, 4. Verification Gate Checklist (DASHBOARD-01..02) (+6 more)
+
+### Community 489 - "Detailed Task Breakdown"
+Cohesion: 0.13
+Nodes (14): 1. Mandatory Automated Verification, 2. Code Review Audit (`/gsd-code-review`), 3. Security Audit (`/gsd-secure-phase`), Architecture Dependency Graph, Artifacts Produced & Modified, Detailed Task Breakdown, Phase 4 Plan: Zero-Leak Hardware Core & Resource Lifecycle, Quality Gates & Verification Plan (+6 more)
+
+### Community 490 - "v3.0 Requirements"
+Cohesion: 0.13
+Nodes (14): 1. Hardware Lifecycle & Zero-Leak Core (CORE), 2. Fujifilm Native Wired Tether Engine (FUJI), 3. Canon EOS Direct PTP & CTG Fallback Engine (CANON), 4. Sony Alpha & Nikon Tethering Adapters (SONY / NIKON), 5. 5-Stage Cloud Sync & Storage Management (SYNC), 6. Production Quality, UI & Security Rigor (QUAL), AI Culling & Batch Presets, Out of Scope (+6 more)
+
+### Community 491 - "CameraPictureProfile"
+Cohesion: 0.15
+Nodes (13): CameraPictureProfile, CANON_MONOCHROME, CANON_PORTRAIT, CUSTOM, FUJI_ACROS, FUJI_CLASSIC_CHROME, FUJI_MONOCHROME, FUJI_VELVIA (+5 more)
+
+### Community 492 - "NikonPtpAdapterTest"
+Cohesion: 0.21
+Nodes (6): ByteArray, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface, NikonPtpAdapterTest
+
+### Community 494 - "_slicedToArray"
+Cohesion: 0.16
+Nodes (14): _arrayLikeToArray(), _arrayWithHoles(), _arrayWithoutHoles(), _createForOfIteratorHelper(), getResourceType(), _iterableToArray(), _iterableToArrayLimit(), matchList() (+6 more)
+
+### Community 495 - ".sendEvent"
+Cohesion: 0.23
+Nodes (4): ClickCollector(), PerfCollector(), PvCollector(), StaticResourceCollector()
+
+### Community 496 - "_slicedToArray"
+Cohesion: 0.16
+Nodes (14): _arrayLikeToArray(), _arrayWithHoles(), _arrayWithoutHoles(), _createForOfIteratorHelper(), getResourceType(), _iterableToArray(), _iterableToArrayLimit(), matchList() (+6 more)
+
+### Community 497 - ".sendEvent"
+Cohesion: 0.23
+Nodes (4): ClickCollector(), PerfCollector(), PvCollector(), StaticResourceCollector()
+
+### Community 498 - "3. Core Component Specifications"
+Cohesion: 0.14
+Nodes (13): 1. Visual Design Architecture & Brand Identity, 2. Typography & Microcopy System, 3.1 `RvmHeaderBar` (Top Brand App Bar), 3.2 `RvmFooterBar` (Clickable Web Intent Footer), 3.3 `FluidDotNavigationBar` (Morphing Pager Nav Bar), 3.4 `DoppelrandCard` (Double-Bezel Container Component), 3.5 `KineticButton` (Tactile Press Button), 3. Core Component Specifications (+5 more)
+
+### Community 499 - "3. Core Component Specifications"
+Cohesion: 0.14
+Nodes (13): 1. Visual Design Architecture & Brand Identity, 2. Typography & Microcopy System, 3.1 `RvmHeaderBar` (Top Brand App Bar), 3.2 `RvmFooterBar` (Clickable Web Intent Footer), 3.3 `FluidDotNavigationBar` (Morphing Pager Nav Bar), 3.4 `DoppelrandCard` (Double-Bezel Container Component), 3.5 `KineticButton` (Tactile Press Button), 3. Core Component Specifications (+5 more)
+
+### Community 500 - "Phase 4 Verification Report: Zero-Leak Hardware Core & Resource Lifecycle"
+Cohesion: 0.14
+Nodes (13): 1. Executive Summary, 2. Success Criteria Verification Matrix, 3. Automated Test Suite Execution Results, 4.1 CORE-01: Deterministic Hardware Lifecycle & Atomic JNI IO Latch, 4.2 CORE-02: Zero Unmanaged Coroutines & usbfs FD Leaks, 4.3 CORE-03: Zero GC Churn via DirectByteBufferPool, 4.4 CORE-04: Android 14/15 Foreground Service Compliance, 4.5 CORE-05: Stream & File Descriptor Resource Hygiene (+5 more)
+
+### Community 501 - "Detailed Task Breakdown"
+Cohesion: 0.14
+Nodes (13): 1. Mandatory Automated Verification, 2. Code Review Audit (`/gsd-code-review`), 3. Security Audit (`/gsd-secure-phase`), Architecture Dependency Graph, Artifacts Produced & Modified, Detailed Task Breakdown, Phase 6 Plan: Canon EOS Direct PTP Engine & Fast Preview Extraction, Quality Gates & Verification Plan (+5 more)
+
+### Community 502 - "Phase 11: Persistent Multi-Vendor Thumbnail Pipeline & USB Synchronization (11-01-PLAN.md)"
+Cohesion: 0.14
+Nodes (13): 1. Executive Summary & Architectural Overview, 2. Architecture & Data Flow, 3. Requirements Traceability, 4. Work Breakdown Structure & Task List, 5. Quality Gates & Performance Verification Targets, 6. Implementation Sequence & Commit Strategy, Core Capabilities Delivered:, Phase 11: Persistent Multi-Vendor Thumbnail Pipeline & USB Synchronization (11-01-PLAN.md) (+5 more)
+
+### Community 503 - ".executePtpCommand"
+Cohesion: 0.26
+Nodes (4): ByteArray, IntArray, PtpResponse, Result
+
+### Community 504 - "NikonPtpTransport"
+Cohesion: 0.33
+Nodes (5): ByteArray, IntArray, NikonPtpEvent, NikonPtpResponse, NikonPtpTransport
+
+### Community 505 - "DoppelrandCard"
+Cohesion: 0.18
+Nodes (10): Modifier, UploadedGalleryScreen(), Modifier, Step1DriveFolder(), DoppelrandCard(), Color, Modifier, Dp (+2 more)
+
+### Community 506 - "ExposureSyntheticFixtures"
+Cohesion: 0.26
+Nodes (4): ExposureSyntheticFixtures, ByteArray, ByteBuffer, IntArray
+
+### Community 507 - "Phase 10: Zero-Allocation Exposure & Luminance Engine (10-01-PLAN.md)"
+Cohesion: 0.15
+Nodes (12): 1. Executive Summary & Architectural Overview, 2. Architecture & Data Flow, 3. Requirements Traceability, 4. Work Breakdown Structure & Task List, 5. Quality Gates & Microbenchmark Verification Targets, 6. Implementation Sequence & Commit Strategy, Core Capabilities Delivered:, Phase 10: Zero-Allocation Exposure & Luminance Engine (10-01-PLAN.md) (+4 more)
+
+### Community 508 - "Phase 13 Security & Threat Mitigation Review: Milestone v4.0 Hardening Audit"
+Cohesion: 0.15
+Nodes (12): 1. Executive Summary, 2. Threat Model Matrix (STRIDE & OWASP Mobile Top 10), 3.1 File System Containment & Storage Boundary Safety, 3.2 USB Transport Concurrency & Mutex Arbitration, 3.3 Database Migration & Transactional SQL Safety, 3.4 Image Decoding & Memory Boundary Safety, 3.5 Cryptographic Hashing & Cloud Token Lifecycles, 3. Detailed Security & Architectural Analysis (+4 more)
+
+### Community 509 - "Pillar-by-Pillar Detailed Audit"
+Cohesion: 0.15
+Nodes (12): Component Matrix Verification, Executive Summary, Final Certification, GSD UI & UX Design Audit: Phase 12 — Smart Culling State Machine & Quiet Luxury Studio UI, Minor Observations & Recommendations, Pillar 1: Color Tokens & Quiet Luxury Palette Harmony (Score: 20.0 / 20.0), Pillar 2: Typography Hierarchy & Brand Styling (Score: 19.5 / 20.0), Pillar 3: Concentric Geometry & Double-Bezel Architecture (Score: 20.0 / 20.0) (+4 more)
+
+### Community 510 - ".verifyAndEnforceSafety"
+Cohesion: 0.29
+Nodes (6): ByteArray, Remediated, Safe, SonyDramSafetyGuard, SonyDramSafetyStatus, Warning
+
+### Community 512 - "UsbHardwareSessionTest"
+Cohesion: 0.17
+Nodes (4): UsbDevice, UsbDeviceConnection, UsbInterface, UsbHardwareSessionTest
+
+### Community 514 - "_typeof"
+Cohesion: 0.18
+Nodes (12): ajax(), _assertThisInitialized(), _createClass(), _defineProperties(), _defineProperty(), formatParams(), hackFunction(), _possibleConstructorReturn() (+4 more)
+
+### Community 515 - "Proposed Changes"
+Cohesion: 0.17
+Nodes (11): Automated Verification, Manual Verification, [MODIFY] [PhotoWatcher.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/PhotoWatcher.kt), [MODIFY] [SessionViewModel.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModel.kt), [MODIFY] [SftpConnectionConfig.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/sftp/SftpConnectionConfig.kt), PhotoWatcher, Plan - Phase 7: Robust RAW+JPG Co-existence & Verification, Proposed Changes (+3 more)
+
+### Community 516 - "CameraTetherEvent"
+Cohesion: 0.18
+Nodes (8): Flow, Flow, CameraStatusChanged, CameraTetherEvent, DevicePropChanged, Error, ObjectAdded, ObjectRemoved
+
+### Community 517 - "NikonCameraInitializer"
+Cohesion: 0.27
+Nodes (3): UsbDevice, UsbDeviceConnection, NikonCameraInitializer
+
+### Community 518 - "SonyCameraInitializer"
+Cohesion: 0.27
+Nodes (3): UsbDevice, UsbDeviceConnection, SonyCameraInitializer
+
+### Community 519 - "SonyPtpTransport"
+Cohesion: 0.45
+Nodes (4): ByteArray, IntArray, SonyPtpResponse, SonyPtpTransport
+
+### Community 520 - "ExposureClassification"
+Cohesion: 0.20
+Nodes (7): ExposureClassification, OPTIMAL, OVEREXPOSED_BLOWN, UNDEREXPOSED_CRITICAL, compute(), ExposureMetrics, IntArray
+
+### Community 521 - "SmartUploadFilter"
+Cohesion: 0.25
+Nodes (3): FilterResult, FingerprintSource, SmartUploadFilter
+
+### Community 523 - "apk_unpacked/schema/draft-04.json"
+Cohesion: 0.18
+Nodes (10): default, dependencies, exclusiveMaximum, exclusiveMinimum, description, id, maximum, minimum (+2 more)
+
+### Community 524 - "unknown/schema/draft-04.json"
+Cohesion: 0.18
+Nodes (10): default, dependencies, exclusiveMaximum, exclusiveMinimum, description, id, maximum, minimum (+2 more)
+
+### Community 525 - "extracted/manifest.json"
+Cohesion: 0.18
+Nodes (10): icon, min_sdk_version, name, package_name, split_apks, target_sdk_version, total_size, version_code (+2 more)
+
+### Community 526 - "2. Technical Component Implementation Patterns"
+Cohesion: 0.18
+Nodes (10): 1. Codebase Architecture & File Mapping, 2.1 Double-Bezel Container (`DoppelrandCard.kt`), 2.2 Kinetic Button (`KineticButton.kt`), 2.3 Fluid Dynamic Dot Navigation Bar (`FluidDotNavigationBar.kt`), 2.4 Clickable Web Intent Footer (`RvmFooterBar.kt`), 2. Technical Component Implementation Patterns, 3. Verification & Build Constraints, Existing Theme Files (`app/src/main/java/com/rvmeur/transferin/ui/theme/`) (+2 more)
+
+### Community 527 - "2. Technical Component Implementation Patterns"
+Cohesion: 0.18
+Nodes (10): 1. Codebase Architecture & File Mapping, 2.1 Double-Bezel Container (`DoppelrandCard.kt`), 2.2 Kinetic Button (`KineticButton.kt`), 2.3 Fluid Dynamic Dot Navigation Bar (`FluidDotNavigationBar.kt`), 2.4 Clickable Web Intent Footer (`RvmFooterBar.kt`), 2. Technical Component Implementation Patterns, 3. Verification & Build Constraints, Existing Theme Files (`app/src/main/java/com/rvmeur/transferin/ui/theme/`) (+2 more)
+
+### Community 531 - "FluidWizardScreen"
+Cohesion: 0.20
+Nodes (7): FluidWizardScreen(), Modifier, Modifier, Step2CameraTether(), FluidDotNavigationBar(), Modifier, PagerState
+
+### Community 533 - "Forensic Report: Android Google OAuth Redirection & Client Type Misconfiguration"
+Cohesion: 0.20
+Nodes (9): 1. Executive Summary & Anomaly Investigation, 2. Evidence Gathering & Technical Root Cause Analysis, 3. Recommended Remediation Strategies, Evidence A: Client Type Mismatch (WEB Client vs Android Native Client), Evidence B: Android 12+ (API 31+) App Link Verification Behavior, Forensic Report: Android Google OAuth Redirection & Client Type Misconfiguration, Primary Symptom Reported, Solution 1: Create an Android OAuth Client ID in Google Cloud / Firebase Console (RECOMMENDED & CLEANEST) (+1 more)
+
+### Community 534 - "1. Accomplished Features"
+Cohesion: 0.20
+Nodes (9): 1.1 `FluidWizardScreen.kt` (Unified Pager Container), 1.2 `Step1DriveFolder.kt` (OAuth Status & 2-Column Card Grid Folder Browser), 1.3 `Step2CameraTether.kt` (Camera Tethering & Live Pulse Aura), 1.4 `Step3SessionRules.kt` (Session Preferences & Launch Action), 1.5 Navigation Architecture Wiring (`MainActivity.kt`), 1. Accomplished Features, 2. Verification Results, 3. Files Created & Modified (+1 more)
+
+### Community 535 - "1. Accomplished Features"
+Cohesion: 0.20
+Nodes (9): 1.1 `FluidWizardScreen.kt` (Unified Pager Container), 1.2 `Step1DriveFolder.kt` (OAuth Status & 2-Column Card Grid Folder Browser), 1.3 `Step2CameraTether.kt` (Camera Tethering & Live Pulse Aura), 1.4 `Step3SessionRules.kt` (Session Preferences & Launch Action), 1.5 Navigation Architecture Wiring (`MainActivity.kt`), 1. Accomplished Features, 2. Verification Results, 3. Files Created & Modified (+1 more)
+
+### Community 536 - "2. Technical Implementation & Compose Patterns"
+Cohesion: 0.20
+Nodes (9): 1. Existing Setup Architecture & Screen Consolidation, 2.1 Forward Swipe Lock Logic, 2.2 2-Column Card Grid Folder Browser, 2.3 Camera Live Status Pulse Aura Card, 2. Technical Implementation & Compose Patterns, 3. Build & Compilation Verification Strategy, Current Screen Structure (Legacy Separate Routes), Phase 2 Consolidated Architecture (`FluidWizardScreen.kt`) (+1 more)
+
+### Community 537 - "2. Technical Implementation & Compose Patterns"
+Cohesion: 0.20
+Nodes (9): 1. Existing Setup Architecture & Screen Consolidation, 2.1 Forward Swipe Lock Logic, 2.2 2-Column Card Grid Folder Browser, 2.3 Camera Live Status Pulse Aura Card, 2. Technical Implementation & Compose Patterns, 3. Build & Compilation Verification Strategy, Current Screen Structure (Legacy Separate Routes), Phase 2 Consolidated Architecture (`FluidWizardScreen.kt`) (+1 more)
+
+### Community 538 - "Assessment Scorecard (Scale 1-4)"
+Cohesion: 0.20
+Nodes (9): 1. Typography & Font Families, 2. Color Palette & Brand Consistency, 3. Spatial Rhythm & Layout, 4. Soft Depth & Elevation, 5. Responsive Layout, 6. Microinteractions & Touch Target States, Action Items, Assessment Scorecard (Scale 1-4) (+1 more)
+
+### Community 539 - "Implementation Decisions Locked"
+Cohesion: 0.20
+Nodes (9): 1. Luminance Calculation Math, 2. Flash Misfire & Underexposure Classification (`UNDEREXPOSED_CRITICAL`), 3. Highlight Blowout Classification (`OVEREXPOSED_BLOWN`), 4. Color Profile & Film Simulation Standardization, 5. Verification & Performance Gate (`QUAL-01`), Canonical References, Domain Boundary, Implementation Decisions Locked (+1 more)
+
+### Community 540 - "Implementation Decisions Locked"
+Cohesion: 0.20
+Nodes (9): 1. Storage Location & Lifecycle Policy, 2. Atomic Disk Commit & Zero-Byte Prevention, 3. USB Transport Mutex Priority Arbitration, 4. Coil Compose ImageLoader Architecture, 5. EXIF Orientation Normalization, Canonical References, Domain Boundary, Implementation Decisions Locked (+1 more)
+
+### Community 541 - "Implementation Decisions Locked"
+Cohesion: 0.20
+Nodes (9): 1. Database Schema & Migration Strategy, 2. Default Session Culling Policy, 3. Quiet Luxury Visual Badges on Media Cards, 4. 1-Tap Kinetic Force-Upload Override Interaction, 5. Full-Screen Dark Inspection Modal & Live Histogram, Canonical References, Domain Boundary, Implementation Decisions Locked (+1 more)
+
+### Community 542 - "3. Component Design Specifications"
+Cohesion: 0.20
+Nodes (9): 1. Visual Token Architecture, 2. Typography Hierarchy, 3. Component Design Specifications, 4. Accessibility & Microinteractions, A. Concentric `DoppelrandCard` Status Badges (`UI-01`), B. Responsive Gallery Filter Row (`UI-04`), C. 1-Tap Kinetic Force-Upload Override Button (`UI-02`), D. Full-Screen Dark Modal Inspection Viewer (`UI-03`) (+1 more)
+
+### Community 543 - "Implementation Decisions Locked"
+Cohesion: 0.20
+Nodes (9): 1. Multi-Vendor Stress Testing Standards, 2. Memory Leak Profiling & Allocation Budget, 3. Code Review Quality Gate (`QUAL-02`), 4. UI Contract & Design Review Gate (`QUAL-03`), 5. Final Release Protocol, Canonical References, Domain Boundary, Implementation Decisions Locked (+1 more)
+
+### Community 544 - "2. Work Packages & Plan Waves"
+Cohesion: 0.20
+Nodes (9): 1. Context & Architectural Insights (Forensic Lessons Learned), 2. Work Packages & Plan Waves, 3. Verification & Acceptance Criteria, Phase 14 Plan: Universal PTP Transport, Dual-Engine Storage, On-Device AI Culling & Resilient Pipeline, Wave 1: Direct USB PTP Transport & Hardware Buffer Drain (Priority 1), Wave 2: Dual-Engine Storage Architecture (PTP vs MSC Card Reader), Wave 3: Lossless Filename & Deduplication State Machine, Wave 4: On-Device AI Face/Eye Detection & Smart Culling Engine (+1 more)
+
+### Community 545 - "2. Key Accomplishments"
+Cohesion: 0.20
+Nodes (9): 1. Executive Summary, 2.1 Wave 1: Direct PTP Buffer Drain & Anti-Lockout Handshake, 2.2 Wave 2: Dual-Engine Storage & Recursive DCIM Discovery, 2.3 Wave 3: Exact Case-Preserving Filename Deduplication, 2.4 Wave 4: On-Device AI Face/Blink & Quality Culling Engine, 2.5 Wave 5: Background Keep-Alive & Android 14/15 Compliance, 2. Key Accomplishments, 3. Test & Verification Coverage (+1 more)
+
+### Community 546 - ".streamWithFallback"
+Cohesion: 0.33
+Nodes (7): DirectStreamingEngine, DirectStreamingResult, DirectSuccess, Failed, FallbackBuffered, bytesTransferred, totalBytes
+
+### Community 548 - "CameraTetherAdapter"
+Cohesion: 0.22
+Nodes (3): CameraTetherAdapter, AutoCloseable, ByteArray
+
+### Community 549 - "TetherState"
+Cohesion: 0.22
+Nodes (8): ActiveStreaming, CleanTerminated, Connecting, Disconnecting, Failed, Handshake, Idle, TetherState
+
+### Community 550 - "DuplicateVerdict"
+Cohesion: 0.22
+Nodes (6): CameraSyncDuplicateDetector, AlreadyConfirmed, DuplicateVerdict, FailedRetryable, InProgress, NewMedia
+
+### Community 551 - "CanonCameraInitializerTest"
+Cohesion: 0.22
+Nodes (5): CanonCameraInitializerTest, UsbDevice, UsbDeviceConnection, UsbEndpoint, UsbInterface
+
+### Community 552 - "InstrumentationProxy.java"
+Cohesion: 0.36
+Nodes (5): Instrumentation, InstrumentationProxy, Activity, Bundle, Override
+
+### Community 553 - "definitions"
+Cohesion: 0.22
+Nodes (9): $ref, additionalProperties, default, type, additionalProperties, default, type, definitions (+1 more)
+
+### Community 554 - "definitions"
+Cohesion: 0.22
+Nodes (9): $ref, additionalProperties, default, type, additionalProperties, default, type, definitions (+1 more)
+
+### Community 555 - "2. Root Cause Analysis: 3 Masalah Kritis TransferInFuji"
+Cohesion: 0.22
+Nodes (8): 1.1 Apa yang Sebenarnya Terbongkar vs Terproteksi, 1. Decompilation Authenticity & Limitations (Anti-Tamper / Packer Audit), 2. Root Cause Analysis: 3 Masalah Kritis TransferInFuji, 3. Rencana Perbaikan Sistematis (Remediation Roadmap), Bug 1: Gagal Membaca Data Existing dari Memori Kamera, Bug 2: Transformasi Nama File Menjadi Lowercase, Bug 3: Kamera Fuji Berkedip Setelah Jepretan Pertama & Gagal Dimatikan (Firmware Deadlock), Forensic Report: Decompilation Authenticity Assessment & Root Cause Analysis for TransferInFuji
+
+### Community 556 - "Locked Design Decisions"
+Cohesion: 0.22
+Nodes (8): 1. Header Brand Identity (`RvmHeaderBar`), 2. Clickable Elegant Footer (`RvmFooterBar`), 3. Fluid Dynamic Dot Navigation Bar (`FluidDotNavigationBar`), 4. Double-Bezel Container (`DoppelrandCard`), 5. Kinetic Button Physics (`KineticButton`), Locked Design Decisions, Phase 1 Context & Decisions — Design System & Motion Foundations, Technical Constraints & Guidelines
+
+### Community 557 - "Locked Design Decisions"
+Cohesion: 0.22
+Nodes (8): 1. Header Brand Identity (`RvmHeaderBar`), 2. Clickable Elegant Footer (`RvmFooterBar`), 3. Fluid Dynamic Dot Navigation Bar (`FluidDotNavigationBar`), 4. Double-Bezel Container (`DoppelrandCard`), 5. Kinetic Button Physics (`KineticButton`), Locked Design Decisions, Phase 1 Context & Decisions — Design System & Motion Foundations, Technical Constraints & Guidelines
+
+### Community 558 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 1 Execution Plan — Design System & Motion Foundations, Task 1: Refactor Brand Color Tokens & Typography System, Task 2: Build Double-Bezel Card & Kinetic Press Button, Task 3: Build Navigation & Branding Components, Task 4: Compilation & Quality Verification, Tasks, Verification Criteria
+
+### Community 559 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 1 Execution Plan — Design System & Motion Foundations, Task 1: Refactor Brand Color Tokens & Typography System, Task 2: Build Double-Bezel Card & Kinetic Press Button, Task 3: Build Navigation & Branding Components, Task 4: Compilation & Quality Verification, Tasks, Verification Criteria
+
+### Community 560 - "Locked Design Decisions"
+Cohesion: 0.22
+Nodes (8): 1. Wizard Layout & Navigation Architecture (`FluidWizardScreen`), 2. Step Validation & Gesture Rules, 3. Step 1: Google Drive Auth & Folder Card Grid Browser, 4. Step 2: Camera Tethering & Real-Time Discovery Card, 5. Step 3: Session Preferences & Kinetic Launch Action, Locked Design Decisions, Phase 2 Context & Decisions — Fluid Swipeable Setup Wizard, Technical Constraints & Guidelines
+
+### Community 561 - "Locked Design Decisions"
+Cohesion: 0.22
+Nodes (8): 1. Wizard Layout & Navigation Architecture (`FluidWizardScreen`), 2. Step Validation & Gesture Rules, 3. Step 1: Google Drive Auth & Folder Card Grid Browser, 4. Step 2: Camera Tethering & Real-Time Discovery Card, 5. Step 3: Session Preferences & Kinetic Launch Action, Locked Design Decisions, Phase 2 Context & Decisions — Fluid Swipeable Setup Wizard, Technical Constraints & Guidelines
+
+### Community 562 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 2 Execution Plan — Fluid Swipeable Setup Wizard, Task 1: Build Step 1 Components (OAuth Card & Card Grid Folder Browser), Task 2: Build Step 2 & Step 3 Wizard Screens, Task 3: Build Root `FluidWizardScreen` Container & Navigation Wiring, Task 4: Compilation & Quality Verification, Tasks, Verification Criteria
+
+### Community 563 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 2 Execution Plan — Fluid Swipeable Setup Wizard, Task 1: Build Step 1 Components (OAuth Card & Card Grid Folder Browser), Task 2: Build Step 2 & Step 3 Wizard Screens, Task 3: Build Root `FluidWizardScreen` Container & Navigation Wiring, Task 4: Compilation & Quality Verification, Tasks, Verification Criteria
+
+### Community 564 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 3 Execution Plan — Live Shoot Dashboard & Gallery Polish, Task 1: Refactor `SessionActiveScreen.kt` (Live Shoot Dashboard), Task 2: Refactor `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, Task 3: Refactor `SessionSummaryScreen.kt`, Task 4: Compilation Verification, Tasks, Verification Criteria
+
+### Community 565 - "1. Existing Session & Gallery Codebase Analysis"
+Cohesion: 0.22
+Nodes (8): 1.1 `SessionActiveScreen.kt`, 1.2 `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, 1.3 `SessionSummaryScreen.kt`, 1. Existing Session & Gallery Codebase Analysis, 2. Technical Implementation Details, 3. Build & Compilation Verification Strategy, 4-Stat Metric Grid Component Snippet, Phase 3 Technical Research — Live Shoot Dashboard & Gallery Polish
+
+### Community 566 - "Tasks"
+Cohesion: 0.22
+Nodes (8): Executive Summary, Phase 3 Execution Plan — Live Shoot Dashboard & Gallery Polish, Task 1: Refactor `SessionActiveScreen.kt` (Live Shoot Dashboard), Task 2: Refactor `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, Task 3: Refactor `SessionSummaryScreen.kt`, Task 4: Compilation Verification, Tasks, Verification Criteria
+
+### Community 567 - "1. Existing Session & Gallery Codebase Analysis"
+Cohesion: 0.22
+Nodes (8): 1.1 `SessionActiveScreen.kt`, 1.2 `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, 1.3 `SessionSummaryScreen.kt`, 1. Existing Session & Gallery Codebase Analysis, 2. Technical Implementation Details, 3. Build & Compilation Verification Strategy, 4-Stat Metric Grid Component Snippet, Phase 3 Technical Research — Live Shoot Dashboard & Gallery Polish
+
+### Community 568 - "Plan - Phase 6: Camera File Number Baseline Extraction"
+Cohesion: 0.22
+Nodes (8): Manual Verification, [MODIFY] [PhotoWatcher.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/PhotoWatcher.kt), [MODIFY] [SessionViewModel.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/feature/sessionactive/SessionViewModel.kt), PhotoWatcher, Plan - Phase 6: Camera File Number Baseline Extraction, Proposed Changes, Session Presentation, Verification Plan
+
+### Community 569 - "Work Accomplished"
+Cohesion: 0.22
+Nodes (8): 1. Room Database Schema Migration v10 $\to$ v11 (`CULL-05`), 2. Smart Culling Gate & Cloud Quota Protection (`CULL-05`), 3. Quiet Luxury Session Rules & Visual Badges (`UI-01`, `UI-04`), 4. 1-Tap Kinetic Force Upload Manual Override (`UI-02`), 5. Full-Screen Dark Inspection Modal & Live Histogram (`UI-03`), Phase 12 Summary: Smart Culling State Machine, Room Migration & Quiet Luxury Studio UI, Verification Results, Work Accomplished
+
+### Community 570 - "Security Audit & OAuth Session Governance — TransferInFuji"
+Cohesion: 0.22
+Nodes (8): 1.1 Persistent OAuth Credential Storage (STRIDE Analysis), 1.2 Hardcoded / Manual Credential Entry vs. Dynamic OAuth Browser Authorization, 1. Threat Model & Vulnerability Analysis, 2.1 Authenticated State (`isAuthenticated == true`), 2.2 Unauthenticated State (`isAuthenticated == false`), 2. UI/UX & Security Architecture for Step 1 (`01 google drive`), 3. Verification & Compliance Checklist, Security Audit & OAuth Session Governance — TransferInFuji
+
+### Community 571 - ".parseIfdForOrientation"
+Cohesion: 0.39
+Nodes (4): ExifOrientationHelper, ByteArray, ByteBuffer, ByteOrder
+
+### Community 572 - "CameraVendor"
+Cohesion: 0.29
+Nodes (7): CameraVendor, CANON, FUJIFILM, GENERIC, NIKON, SONY, fromVendorId()
+
+### Community 573 - "CullingPolicy"
+Cohesion: 0.25
+Nodes (6): CullingPolicy, AUTO_SKIP_UPLOAD, DISABLED, WARN_ONLY, Modifier, Step3SessionRules()
+
+### Community 574 - "SyncTier"
+Cohesion: 0.29
+Nodes (6): DualTierSyncRouter, SyncPlan, SyncTier, SINGLE_TIER_DIRECT, TIER_1_PREVIEW, TIER_2_ARCHIVE
+
+### Community 575 - ".processFrame"
+Cohesion: 0.43
+Nodes (7): BufferedLocal, CulledSkipped, Failed, FrameProcessingResult, ByteArray, ProceededWithoutUpload, Uploaded
+
+### Community 578 - ".a"
+Cohesion: 0.46
+Nodes (4): BufferedInputStream, c, ClassLoader, Context
+
+### Community 579 - "d"
+Cohesion: 0.32
+Nodes (5): c, DialogInterface, OnClickListener, d, Override
+
+### Community 580 - "Field"
+Cohesion: 0.39
+Nodes (5): Constructor, Field, b, Context, Method
+
+### Community 581 - "DebugProbesKt"
+Cohesion: 0.43
+Nodes (4): Continuation, Metadata, NotNull, DebugProbesKt
+
+### Community 582 - "apk_unpacked/assets/flutter_assets/packages/flutter_image_compress_web/assets/pica.min.js"
+Cohesion: 0.50
+Nodes (6): a(), b(), i(), n(), o(), r()
+
+### Community 583 - "WhiteScreenCollector"
+Cohesion: 0.43
+Nodes (5): Context(), delay(), fetchFinally(), _regeneratorRuntime(), WhiteScreenCollector()
+
+### Community 584 - "apktool_out/assets/flutter_assets/packages/flutter_image_compress_web/assets/pica.min.js"
+Cohesion: 0.50
+Nodes (6): a(), b(), i(), n(), o(), r()
+
+### Community 585 - "WhiteScreenCollector"
+Cohesion: 0.43
+Nodes (5): Context(), delay(), fetchFinally(), _regeneratorRuntime(), WhiteScreenCollector()
+
+### Community 586 - "Utils"
+Cohesion: 0.29
+Nodes (3): integer, Method, Utils
+
+### Community 587 - "1. Primary Findings & Anomaly Detection"
+Cohesion: 0.25
+Nodes (7): 1. Primary Findings & Anomaly Detection, 2. Complete Resolution Roadmap, Forensic Diagnostic Report: Google Chrome OAuth "Akses Diblokir / Access Blocked", Scientific Root Cause Analysis, Solution Option 1: Register `https://rvmeur.com/oauth2callback` in Web Client ID (Web OAuth Flow), Solution Option 2: Add Google Play Services Auth / Credential Manager (Native Android Dialog Flow - Best UX), Symptom
+
+### Community 588 - "Test Cases"
+Cohesion: 0.25
+Nodes (7): Phase 3 UAT: Google Drive Integration & NAS Replacement, Summary, Test Case 1: Database Credentials Adaptor, Test Case 2: Google Drive API Client implementation, Test Case 3: Connection Setup and Folder Resolution, Test Case 4: Complete Compilation, Test Cases
+
+### Community 589 - "1. Accomplished Features"
+Cohesion: 0.25
+Nodes (7): 1.1 `SessionActiveScreen.kt` (Live Shoot Dashboard), 1.2 `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, 1.3 `SessionSummaryScreen.kt` (End-of-Session Summary), 1. Accomplished Features, 2. Verification Results, 3. Files Modified, Phase 3 Summary — Live Shoot Dashboard & Gallery Polish
+
+### Community 590 - "1. Accomplished Features"
+Cohesion: 0.25
+Nodes (7): 1.1 `SessionActiveScreen.kt` (Live Shoot Dashboard), 1.2 `UploadedGalleryScreen.kt` & Full-Screen Image Viewer Modal, 1.3 `SessionSummaryScreen.kt` (End-of-Session Summary), 1. Accomplished Features, 2. Verification Results, 3. Files Modified, Phase 3 Summary — Live Shoot Dashboard & Gallery Polish
+
+### Community 591 - "Connection Layers"
+Cohesion: 0.25
+Nodes (7): Connection Layers, Manual Verification, [MODIFY] [CameraUnlockOrchestrator.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/CameraUnlockOrchestrator.kt), [MODIFY] [UsbHelper.kt](file:///Users/chiio/VSCode/TransferIn/app/src/main/java/com/reflection/transferin/data/usb/UsbHelper.kt), Plan - Phase 8: Canon and Fuji Connection Polish, Proposed Changes, Verification Plan
+
+### Community 592 - "Phase 5 Verification Report: Fujifilm Native Wired Tether Engine"
+Cohesion: 0.25
+Nodes (7): 1. Executive Summary, 2. Success Criteria Verification Matrix, 3. Automated Test Suite Execution Results, 4. Protocol Simulation & Binary Parsing Integrity Verification, 5. Verification Conclusion & Sign-Off, Phase 5 Verification Report: Fujifilm Native Wired Tether Engine, Test Breakdown
+
+### Community 593 - "Phase 6 Verification Report: Canon EOS Direct PTP & Fast Preview Engine"
+Cohesion: 0.25
+Nodes (7): 1. Executive Summary, 2. Success Criteria Verification Matrix, 3. Automated Test Suite Execution Results, 4. Protocol Simulation & Binary Parsing Integrity Verification, 5. Verification Conclusion & Sign-Off, Phase 6 Verification Report: Canon EOS Direct PTP & Fast Preview Engine, Test Breakdown
+
+### Community 594 - "Phase 7 Verification Report: Sony Alpha & Nikon Tether Adapters"
+Cohesion: 0.25
+Nodes (7): 1. Executive Summary, 2. Success Criteria Verification Matrix, 3. Automated Test Suite Execution Results, 4. Protocol Simulation & Binary Parsing Integrity Verification, 5. Verification Conclusion & Sign-Off, Phase 7 Verification Report: Sony Alpha & Nikon Tether Adapters, Test Breakdown
+
+### Community 595 - "Phase 9 Code Review: Production Hardening, Codebase Pruning & Memory Safety Audit"
+Cohesion: 0.25
+Nodes (7): 1. Executive Summary, 2. Checkpoint Verification Matrix, 3.1 Concurrency & Mutex Discipline, 3.2 File Descriptor & Stream Management, 3. Detailed Architectural Findings, 4. Final Sign-off, Phase 9 Code Review: Production Hardening, Codebase Pruning & Memory Safety Audit
+
+### Community 596 - "Phase 9 UI & Design System Audit: Quiet Luxury Visual & Performance Verification"
+Cohesion: 0.25
+Nodes (7): 1. Executive Summary, 2. Design Token & Visual Language Compliance, 3.1 Live Session HUD & Gallery (`SessionActiveScreen.kt`), 3.2 Cloud Sync & Transit Storage Indicators (`CameraSyncTracker.kt`), 3. Screen-Level Audit Results, 4. Final Sign-off, Phase 9 UI & Design System Audit: Quiet Luxury Visual & Performance Verification
+
+### Community 597 - "Work Accomplished"
+Cohesion: 0.25
+Nodes (7): 1. Zero-Allocation Integer Fixed-Point Luminance Math (`CULL-01`), 2. Multi-Feature Exposure Classification (`CULL-02`, `CULL-03`), 3. Camera Picture Profile & Dynamic Calibration (`CULL-04`), 4. Verification Suite (`QUAL-01`), Phase 10 Summary: Zero-Allocation Exposure & Luminance Engine, Verification Results, Work Accomplished
+
+### Community 598 - "Work Accomplished"
+Cohesion: 0.25
+Nodes (7): 1. Multi-Vendor Preview Extraction & Orientation Preservation (`THUMB-01`), 2. Atomic Disk Persistence & Lifecycle Pruning (`THUMB-02`), 3. Two-Tier Priority USB Mutex (`THUMB-03`), 4. Coil ImageLoader & Deterministic Caching (`THUMB-04`), Phase 11 Summary: Persistent Multi-Vendor Thumbnail Pipeline & USB Synchronization, Verification Results, Work Accomplished
+
+### Community 599 - "additionalProperties"
+Cohesion: 0.29
+Nodes (7): anyOf, default, additionalProperties, type, type, additionalProperties, dependencies
+
+### Community 600 - ".a"
+Cohesion: 0.52
+Nodes (4): f, ApplicationInfo, ClassLoader, ZipFile
+
+### Community 602 - "Phases Shipped"
+Cohesion: 0.29
+Nodes (6): Accomplishments, Milestone v2.0: Fluid Wizard & Agency-Grade UI/UX Overhaul (Archived), Phase 1: Design System & Motion Foundations, Phase 2: Fluid Swipeable Setup Wizard, Phase 3: Live Shoot Dashboard & Gallery Polish, Phases Shipped
+
+### Community 603 - "Test Cases"
+Cohesion: 0.29
+Nodes (6): Phase 1 UAT: Rebranding & Package Rename, Summary, Test Case 1: Package Directory Structure, Test Case 2: Codebase Package References, Test Case 3: Compilation and Build, Test Cases
+
+### Community 604 - "Test Cases"
+Cohesion: 0.29
+Nodes (6): Phase 2 UAT: UI Style Refactoring (rvmeur.com Design), Summary, Test Case 1: Color Token Refactoring, Test Case 2: Typography Style & Custom Fonts, Test Case 3: Compilation Check, Test Cases
+
+### Community 605 - "Phase 3 Research: Google Drive Integration & NAS Replacement"
+Cohesion: 0.29
+Nodes (6): 1. Google Drive OAuth2 flow:, 2. Google Drive Multipart Upload REST API:, Codebase Modification Impact, Context & Objective, Phase 3 Research: Google Drive Integration & NAS Replacement, Technical Design & API Specification
+
+### Community 606 - "Phase 04 Summary: Zero-Leak Hardware Core & Resource Lifecycle"
+Cohesion: 0.29
+Nodes (6): 1. Executive Summary, 2. Artifacts Produced & Modified, 3. Verification Results, 4. Key Architectural Invariants Enforced, Phase 04 Summary: Zero-Leak Hardware Core & Resource Lifecycle, Unit Test Execution (`./gradlew test --rerun-tasks`)
+
+### Community 607 - "Phase 5 Summary: Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle"
+Cohesion: 0.29
+Nodes (6): 1. Overview & Architecture Delivery, 2. Automated Test Verification, 3. Git Changes, Delivered Components & Symbols:, Phase 5 Summary: Fujifilm Native Wired Tether Engine & Clean Disconnect Lifecycle, Test Suites:
+
+### Community 608 - "Quality Gates Passed"
+Cohesion: 0.29
+Nodes (6): 1. Mandatory Code Review (`QUAL-02`), 2. Mandatory UI & Design Review (`QUAL-03`), 3. Mandatory Security & Threat Mitigation Audit, Final Verification Result, Phase 13 Summary: Production Hardening, Code Review & Quiet Luxury UI Verification, Quality Gates Passed
+
+### Community 609 - "SEED-001: On-Device AI Exposure & Automated Culling Engine"
+Cohesion: 0.29
+Nodes (6): Breadcrumbs, Quality & Review Gates, Scope Estimate, SEED-001: On-Device AI Exposure & Automated Culling Engine, When to Surface, Why This Matters
+
+### Community 610 - "Subagent Summoning & Spawning Protocol (No Generic 'self')"
+Cohesion: 0.33
+Nodes (5): 1. Strict Prohibition on Generic `self` Spawning, 2. Mandatory Pre-Planning & Milestone Research Subagents, 3. Subagent Definition & Invocation Protocol, 4. Mandatory Quality Gate & Lifecycle Skill Injections, Subagent Summoning & Spawning Protocol (No Generic 'self')
+
+### Community 612 - ".initialize"
+Cohesion: 0.33
+Nodes (4): CameraSessionInitializer, MtpDevice, UsbDevice, UsbDeviceConnection
+
+### Community 613 - "ThumbnailImageLoaderProvider"
+Cohesion: 0.60
+Nodes (3): Context, ThumbnailImageLoaderProvider, ImageLoader
+
+### Community 616 - "stringArray"
+Cohesion: 0.33
+Nodes (6): stringArray, type, items, minItems, type, uniqueItems
+
+### Community 617 - "stringArray"
+Cohesion: 0.33
+Nodes (6): stringArray, type, items, minItems, type, uniqueItems
+
+### Community 619 - "c"
+Cohesion: 0.47
+Nodes (3): c, Context, Override
+
+### Community 624 - "Completed Phases"
+Cohesion: 0.33
+Nodes (5): Completed Phases, Milestone v1.0 Archive — Rebranding & Google Drive Migration, Phase 1: Rebranding & Package Rename, Phase 2: UI Style Refactoring (rvmeur.com Design), Phase 3: Google Drive Integration & NAS Replacement
+
+### Community 625 - "Phase 6 Research - Camera File Number Baseline Extraction"
+Cohesion: 0.33
+Nodes (5): 1. Directory Traversal & Storage Structure, 2. Filename Number Extraction, 3. Reset Prevention Anchors, 4. DB Query for Highest File Number, Phase 6 Research - Camera File Number Baseline Extraction
+
+### Community 626 - "Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (SUMMARY.md)"
+Cohesion: 0.33
+Nodes (5): 1. Summary of Accomplishments, 2. Verification & Testing Evidence, 3. Artifact Map & Key Files, Implemented Capabilities, Phase 8: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming (SUMMARY.md)
+
+### Community 627 - "Phase 9 Security & Privacy Audit: Android 14/15 Security & Credential Protection"
+Cohesion: 0.33
+Nodes (5): 1. Executive Summary, 2. Security Checkpoint Matrix, 3. Threat Model & Data Flow Verification, 4. Final Sign-off, Phase 9 Security & Privacy Audit: Android 14/15 Security & Credential Protection
+
+### Community 630 - "thumbnailCompoundKey"
+Cohesion: 0.50
+Nodes (3): ThumbnailCacheKey, thumbnailCompoundKey(), ImageRequest
+
+### Community 632 - "Project Handoff: Milestone v3.0 Shipped"
+Cohesion: 0.40
+Nodes (4): Infrastructure State, Milestone v3.0 Shipped Capabilities:, Project Handoff: Milestone v3.0 Shipped, Required Reading (in order)
+
+### Community 633 - "schemaArray"
+Cohesion: 0.40
+Nodes (5): schemaArray, $ref, items, minItems, type
+
+### Community 634 - "dependencies"
+Cohesion: 0.40
+Nodes (5): anyOf, additionalProperties, type, type, dependencies
+
+### Community 635 - "schemaArray"
+Cohesion: 0.40
+Nodes (5): schemaArray, $ref, items, minItems, type
+
+### Community 637 - "Phase 1 Research: Rebranding & Package Rename"
+Cohesion: 0.40
+Nodes (4): Codebase Analysis & Occurrences of "Reflection", Context & Objective, Migration Strategy, Phase 1 Research: Rebranding & Package Rename
+
+### Community 638 - "Phase 2 Research: UI Style Refactoring (rvmeur.com Design)"
+Cohesion: 0.40
+Nodes (4): Context & Objective, Extracted Design Tokens, Implementation Plan, Phase 2 Research: UI Style Refactoring (rvmeur.com Design)
+
+### Community 639 - "Milestone v3.0 Audit: Multi-Vendor Production Engine & Zero-Leak Tether Core"
+Cohesion: 0.40
+Nodes (4): 1. Requirements Traceability Matrix (25 / 25 Satisfied), 2. Cross-Phase Integration & Multi-Vendor E2E Verification, 3. Test Suite Audit, Milestone v3.0 Audit: Multi-Vendor Production Engine & Zero-Leak Tether Core
+
+### Community 640 - "Phase 6 Summary: Canon EOS Direct PTP Engine & Fast Preview Extraction"
+Cohesion: 0.40
+Nodes (4): 1. Overview & Objectives Delivered, 2. Artifacts Created & Modified, 3. Verification & Test Results, Phase 6 Summary: Canon EOS Direct PTP Engine & Fast Preview Extraction
+
+### Community 641 - "Phase 7 Summary: Sony Alpha & Nikon Multi-Vendor Tether Adapters"
+Cohesion: 0.40
+Nodes (4): 1. Executive Summary, 2. Requirements Verification Matrix, 3. Test Suite Results, Phase 7 Summary: Sony Alpha & Nikon Multi-Vendor Tether Adapters
+
+### Community 645 - "enum"
+Cohesion: 0.50
+Nodes (4): minItems, type, uniqueItems, enum
+
+### Community 646 - "multipleOf"
+Cohesion: 0.50
+Nodes (4): exclusiveMinimum, minimum, type, multipleOf
+
+### Community 647 - "getPathByURL"
+Cohesion: 0.50
+Nodes (4): fixRelativeUrl(), getHashPath(), getPathByURL(), getResourceName()
+
+### Community 648 - "enum"
+Cohesion: 0.50
+Nodes (4): minItems, type, uniqueItems, enum
+
+### Community 649 - "multipleOf"
+Cohesion: 0.50
+Nodes (4): exclusiveMinimum, minimum, type, multipleOf
+
+### Community 651 - "Session Handoff: Tethered Fuji RAF Gallery Thumbnailing & Live Sync"
+Cohesion: 0.50
+Nodes (3): Infrastructure State, Required Reading (in order), Session Handoff: Tethered Fuji RAF Gallery Thumbnailing & Live Sync
+
+### Community 652 - "app/src/main/java/com/reflection/transferin/data/local/db/DatabaseProvider.kt"
+Cohesion: 0.50
+Nodes (4): app/src/main/java/com/reflection/transferin/data/local/db/DatabaseProvider.kt, ast_hash, mtime, semantic_hash
+
+### Community 653 - "app/src/main/java/com/reflection/transferin/domain/session/SourceWatcher.kt"
+Cohesion: 0.50
+Nodes (4): app/src/main/java/com/reflection/transferin/domain/session/SourceWatcher.kt, ast_hash, mtime, semantic_hash
+
+### Community 654 - "app/schemas/com.rvmeur.transferin.data.local.db.TransferInDatabase/8.json"
+Cohesion: 0.50
+Nodes (4): app/schemas/com.rvmeur.transferin.data.local.db.TransferInDatabase/8.json, ast_hash, mtime, semantic_hash
+
+### Community 655 - "app/src/main/java/com/rvmeur/transferin/domain/session/ImportCameraEngine.kt"
+Cohesion: 0.50
+Nodes (4): app/src/main/java/com/rvmeur/transferin/domain/session/ImportCameraEngine.kt, ast_hash, mtime, semantic_hash
+
+### Community 656 - "Phase 1 Summary — Design System & Motion Foundations"
+Cohesion: 0.50
+Nodes (3): Deliverables Completed, Phase 1 Summary — Design System & Motion Foundations, Verification
+
+### Community 657 - "Phase 1 Summary — Design System & Motion Foundations"
+Cohesion: 0.50
+Nodes (3): Deliverables Completed, Phase 1 Summary — Design System & Motion Foundations, Verification
+
+### Community 658 - "Phase 6 Context - Camera File Number Baseline Extraction"
+Cohesion: 0.50
+Nodes (3): Decisions, Open Questions, Phase 6 Context - Camera File Number Baseline Extraction
+
+### Community 659 - "Phase 6 Summary - Camera File Number Baseline Extraction"
+Cohesion: 0.50
+Nodes (3): Accomplishments, Phase 6 Summary - Camera File Number Baseline Extraction, Verification Results
+
+### Community 660 - "Phase 7 Context - Robust RAW+JPG Co-existence & Verification"
+Cohesion: 0.50
+Nodes (3): Decisions, Open Questions, Phase 7 Context - Robust RAW+JPG Co-existence & Verification
+
+### Community 661 - "Phase 7 Research - Robust RAW+JPG Co-existence & Verification"
+Cohesion: 0.50
+Nodes (3): 1. Parallel Upload Feasibility & SFTP Pool Capacity, 2. Filename-Level Verification for Reconnection, Phase 7 Research - Robust RAW+JPG Co-existence & Verification
+
+### Community 662 - "Phase 7 Summary - Robust RAW+JPG Co-existence & Verification"
+Cohesion: 0.50
+Nodes (3): Accomplishments, Phase 7 Summary - Robust RAW+JPG Co-existence & Verification, Verification Results
+
+### Community 663 - "Phase 8 Context - Canon and Fuji Connection Polish"
+Cohesion: 0.50
+Nodes (3): Decisions, Open Questions, Phase 8 Context - Canon and Fuji Connection Polish
+
+### Community 664 - "Phase 8 Research - Canon and Fuji Connection Polish"
+Cohesion: 0.50
+Nodes (3): 1. Close Session Order on Android MTP, 2. Syncing Override States to UsbHelper, Phase 8 Research - Canon and Fuji Connection Polish
+
+### Community 665 - "Phase 4: Zero-Leak Hardware Core & Resource Lifecycle - Context"
+Cohesion: 0.50
+Nodes (3): Implementation Decisions, Phase 4: Zero-Leak Hardware Core & Resource Lifecycle - Context, Phase Boundary
+
+### Community 666 - "Phase 8 Context: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming"
+Cohesion: 0.50
+Nodes (3): Key Architectural Decisions, Phase 8 Context: 5-Stage Camera-to-Cloud Sync & Direct USB Streaming, Purpose & Scope
+
+### Community 667 - "Phase 9 Context: Production Hardening, Codebase Pruning & Comprehensive Audits"
+Cohesion: 0.50
+Nodes (3): Key Tasks & Objectives, Phase 9 Context: Production Hardening, Codebase Pruning & Comprehensive Audits, Purpose & Scope
+
+### Community 668 - "Phase 9: Production Hardening, Codebase Pruning & Comprehensive Audits (SUMMARY.md)"
+Cohesion: 0.50
+Nodes (3): 1. Summary of Accomplishments, 2. Test Execution Evidence, Phase 9: Production Hardening, Codebase Pruning & Comprehensive Audits (SUMMARY.md)
+
+### Community 669 - "Phase 14 Verification: Universal PTP Transport, Storage & AI Culling Pipeline"
+Cohesion: 0.50
+Nodes (3): 1. Verification Checklist & Outcomes, 2. Quality Gate Verification, Phase 14 Verification: Universal PTP Transport, Storage & AI Culling Pipeline
+
+### Community 670 - "Milestone v4.0 Audit: On-Device AI Exposure Analysis, Smart Culling & Reliable Thumbnailing Engine"
+Cohesion: 0.50
+Nodes (3): 1. Requirements Traceability Matrix, 2. Overall Milestone Verdict, Milestone v4.0 Audit: On-Device AI Exposure Analysis, Smart Culling & Reliable Thumbnailing Engine
+
+### Community 671 - "addErrorHandlerIfEventEmitter"
+Cohesion: 1.00
+Nodes (3): addErrorHandlerIfEventEmitter(), eventTargetAgnosticAddListener(), once()
+
+### Community 672 - "additionalItems"
+Cohesion: 0.67
+Nodes (3): anyOf, default, additionalItems
+
+### Community 673 - "exclusiveMaximum"
+Cohesion: 0.67
+Nodes (3): default, type, exclusiveMaximum
+
+### Community 674 - "exclusiveMinimum"
+Cohesion: 0.67
+Nodes (3): default, type, exclusiveMinimum
+
+### Community 675 - "items"
+Cohesion: 0.67
+Nodes (3): anyOf, default, items
+
+### Community 676 - "pattern"
+Cohesion: 0.67
+Nodes (3): format, type, pattern
+
+### Community 677 - "uniqueItems"
+Cohesion: 0.67
+Nodes (3): uniqueItems, default, type
+
+### Community 678 - "getType"
+Cohesion: 1.00
+Nodes (3): getType(), toRegFormat(), transStrToReg()
+
+### Community 679 - "additionalItems"
+Cohesion: 0.67
+Nodes (3): anyOf, default, additionalItems
+
+### Community 680 - "exclusiveMaximum"
+Cohesion: 0.67
+Nodes (3): default, type, exclusiveMaximum
+
+### Community 681 - "exclusiveMinimum"
+Cohesion: 0.67
+Nodes (3): default, type, exclusiveMinimum
+
+### Community 682 - "items"
+Cohesion: 0.67
+Nodes (3): anyOf, default, items
+
+### Community 683 - "pattern"
+Cohesion: 0.67
+Nodes (3): format, type, pattern
+
+### Community 684 - "uniqueItems"
+Cohesion: 0.67
+Nodes (3): uniqueItems, default, type
+
 ## Knowledge Gaps
-- **1722 isolated node(s):** `mtime`, `ast_hash`, `semantic_hash`, `mtime`, `ast_hash` (+1717 more)
+- **3063 isolated node(s):** `mtime`, `ast_hash`, `semantic_hash`, `mtime`, `ast_hash` (+3058 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **38 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **105 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `UsbHelper` connect `UsbHelper` to `CameraGalleryViewModel`, `.requestPermission`, `.getAllObjectHandlesNoLock`, `Document Scanner`, `CanonCameraInitializer`, `TransferInApp`, `.buildMonitorState`, `UsbTetherService`, `CameraMedia`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `TransferInApp()` connect `TransferInApp` to `SessionRepositoryAdapter`, `Document Scanner`, `rvmeur/transferin/feature/gallery/CameraGalleryScreen.kt`, `DocumentFileScanner`, `.create`, `DiscoveredFile`, `ConnectCameraScreen`, `GalleryViewModel`, `SessionSummaryScreen`, `UsbHelper`, `DelegatingSftpClient`, `SelectFolderScreen`, `UsbSourceOrchestrator`, `GalleryViewModelFactory`, `CameraRuntimeState`, `CameraGalleryViewModel`, `ProjectSession`, `NasConnectionRepositoryImpl`, `.create`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `SessionRepositoryImpl` connect `SessionRepositoryImpl` to `SessionRepositoryAdapter`, `Document Scanner`, `SessionEntity`, `WatcherStatus`, `ConnectionMode`, `SessionState`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `UsbHelper` connect `UsbHelper` to `CameraGalleryViewModel`, `.requestPermission`, `.listMedia`, `.initialize`, `.getAllObjectHandlesNoLock`, `CanonCameraInitializer`, `.planning/codebase/STRUCTURE.md`, `TransferInApp`, `.buildMonitorState`, `DiscoveredFile`, `UsbTetherService`, `CameraMedia`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **Why does `TransferInApp()` connect `TransferInApp` to `CameraGalleryViewModel`, `SelectFolderScreen`, `SessionRepositoryAdapter`, `GalleryViewModel`, `ProjectSession`, `rvmeur/transferin/feature/gallery/CameraGalleryScreen.kt`, `SessionSummaryScreen`, `UsbHelper`, `DoppelrandCard`, `NasConnectionRepositoryImpl`, `DelegatingSftpClient`, `FluidWizardScreen`, `DocumentFileScanner`, `DiscoveredFile`, `.create`, `UsbSourceOrchestrator`, `CameraRuntimeState`, `ConnectCameraScreen`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `Step3SessionRules()` connect `CullingPolicy` to `DoppelrandCard`, `FluidWizardScreen`, `KineticButton`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **What connects `mtime`, `ast_hash`, `semantic_hash` to the rest of the system?**
-  _1722 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3063 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `USB Camera & MTP` be split into smaller, more focused modules?**
-  _Cohesion score 0.010309278350515464 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.005025125628140704 - nodes in this community are weakly interconnected._
 - **Should `SFTP & Remote Operations` be split into smaller, more focused modules?**
   _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._
-- **Should `CtgWatcher` be split into smaller, more focused modules?**
-  _Cohesion score 0.05961538461538462 - nodes in this community are weakly interconnected._
+- **Should `Document Scanner` be split into smaller, more focused modules?**
+  _Cohesion score 0.02040816326530612 - nodes in this community are weakly interconnected._

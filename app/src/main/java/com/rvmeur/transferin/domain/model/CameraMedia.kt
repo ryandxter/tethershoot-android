@@ -1,12 +1,12 @@
 package com.rvmeur.transferin.domain.model
 
 data class CameraMedia(
-    val storageId: Int,
+    val storageId: Int = 0,
     val handle: Int,
     val name: String,
-    val isFolder: Boolean,
-    val size: Long,
-    val parentHandle: Int,
-    val formatCode: Int,
+    val isFolder: Boolean = false,
+    val size: Long = 0L,
+    val parentHandle: Int = 0,
+    val formatCode: Int = 0,
     val modifiedTime: Long? = null
 )

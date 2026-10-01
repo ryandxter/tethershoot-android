@@ -243,4 +243,17 @@ class SonyPtpAdapterTest {
 
         verify(atLeast = 1) { connection.releaseInterface(usbInterface) }
     }
+
+    @Test
+    fun `streamMedia streams object data into output stream`() = runTest {
+        val testData = "Sony RAW Test Payload 123456789".toByteArray()
+        queueData(SonyPtpConstants.OC_GET_OBJECT, 1, testData)
+        queueResponse(SonyPtpConstants.RC_OK, 1)
+
+        val outputStream = java.io.ByteArrayOutputStream()
+        val result = adapter.streamMedia(handle = 555, sink = outputStream)
+
+        assertTrue("streamMedia must succeed", result.isSuccess)
+        assertEquals("Sony RAW Test Payload 123456789", outputStream.toString())
+    }
 }

@@ -36,7 +36,13 @@ data class MediaFingerprint(
     val sizeBytes: Long
 ) {
     /**
-     * Converts this fingerprint to a storage key string.
+     * Original file name preserving exact camera casing.
+     */
+    val originalFileName: String get() = filename
+
+    /**
+     * Converts this fingerprint to a normalized case-insensitive storage key string.
+     * Used ONLY as a unique key for Room/SQLite deduplication.
      *
      * Normalization steps:
      * 1. Trim whitespace from filename
@@ -52,6 +58,7 @@ data class MediaFingerprint(
     companion object {
         /**
          * Parses a storage key string back to a [MediaFingerprint].
+         * Preserves the exact filename casing present in [key] without additional mutation.
          *
          * @param key Storage key in format "{handle}|{name}|{size}"
          * @return [MediaFingerprint] if parsing succeeds, null otherwise

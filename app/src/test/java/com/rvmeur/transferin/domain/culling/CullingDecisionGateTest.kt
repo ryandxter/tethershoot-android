@@ -86,6 +86,54 @@ class CullingDecisionGateTest {
     }
 
     @Test
+    fun `closed eyes detected skips upload under AUTO_SKIP_UPLOAD`() {
+        assertEquals(
+            CullingAction.SKIP_UPLOAD_SAVING_QUOTA,
+            decisionGate.evaluate(CullingVerdict.CLOSED_EYES_DETECTED, CullingPolicy.AUTO_SKIP_UPLOAD)
+        )
+    }
+
+    @Test
+    fun `closed eyes detected flags warning only under WARN_ONLY`() {
+        assertEquals(
+            CullingAction.FLAG_WARNING_ONLY,
+            decisionGate.evaluate(CullingVerdict.CLOSED_EYES_DETECTED, CullingPolicy.WARN_ONLY)
+        )
+    }
+
+    @Test
+    fun `closed eyes detected proceeds upload under DISABLED`() {
+        assertEquals(
+            CullingAction.PROCEED_UPLOAD,
+            decisionGate.evaluate(CullingVerdict.CLOSED_EYES_DETECTED, CullingPolicy.DISABLED)
+        )
+    }
+
+    @Test
+    fun `blurred subject skips upload under AUTO_SKIP_UPLOAD`() {
+        assertEquals(
+            CullingAction.SKIP_UPLOAD_SAVING_QUOTA,
+            decisionGate.evaluate(CullingVerdict.BLURRED_SUBJECT, CullingPolicy.AUTO_SKIP_UPLOAD)
+        )
+    }
+
+    @Test
+    fun `blurred subject flags warning only under WARN_ONLY`() {
+        assertEquals(
+            CullingAction.FLAG_WARNING_ONLY,
+            decisionGate.evaluate(CullingVerdict.BLURRED_SUBJECT, CullingPolicy.WARN_ONLY)
+        )
+    }
+
+    @Test
+    fun `blurred subject proceeds upload under DISABLED`() {
+        assertEquals(
+            CullingAction.PROCEED_UPLOAD,
+            decisionGate.evaluate(CullingVerdict.BLURRED_SUBJECT, CullingPolicy.DISABLED)
+        )
+    }
+
+    @Test
     fun `manual override always proceeds upload regardless of verdict and policy`() {
         assertEquals(
             CullingAction.PROCEED_UPLOAD,
@@ -97,7 +145,30 @@ class CullingDecisionGateTest {
         )
         assertEquals(
             CullingAction.PROCEED_UPLOAD,
+            decisionGate.evaluate(CullingVerdict.CLOSED_EYES_DETECTED, CullingPolicy.AUTO_SKIP_UPLOAD, isManualOverride = true)
+        )
+        assertEquals(
+            CullingAction.PROCEED_UPLOAD,
+            decisionGate.evaluate(CullingVerdict.BLURRED_SUBJECT, CullingPolicy.AUTO_SKIP_UPLOAD, isManualOverride = true)
+        )
+        assertEquals(
+            CullingAction.PROCEED_UPLOAD,
             decisionGate.evaluate(CullingVerdict.UNDEREXPOSED_CRITICAL, CullingPolicy.WARN_ONLY, isManualOverride = true)
+        )
+    }
+
+    @Test
+    fun `overloaded evaluate handles combined exposure and face metrics correctly`() {
+        val blinkMetrics = AiFaceQualityMetrics(faceCount = 1, isBlinkDetected = true)
+        assertEquals(
+            CullingAction.SKIP_UPLOAD_SAVING_QUOTA,
+            decisionGate.evaluate(CullingVerdict.OPTIMAL, blinkMetrics, CullingPolicy.AUTO_SKIP_UPLOAD)
+        )
+
+        val sharpMetrics = AiFaceQualityMetrics(faceCount = 1, isBlinkDetected = false, subjectSharpnessScore = 0.9f)
+        assertEquals(
+            CullingAction.PROCEED_UPLOAD,
+            decisionGate.evaluate(CullingVerdict.OPTIMAL, sharpMetrics, CullingPolicy.AUTO_SKIP_UPLOAD)
         )
     }
 }

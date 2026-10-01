@@ -253,6 +253,31 @@ class SonyPtpAdapter(
         }
     }
 
+    /**
+     * Streams full object data directly to an OutputStream (e.g. transit cache file).
+     */
+    suspend fun streamMedia(
+        handle: Int,
+        sink: java.io.OutputStream,
+        onProgress: (Long, Long) -> Unit = { _, _ -> }
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val activeTransport = transport ?: throw IOException("Sony transport not initialized")
+            val objResp = activeTransport.transact(
+                operationCode = SonyPtpConstants.OC_GET_OBJECT,
+                transactionId = nextTxId(),
+                params = intArrayOf(handle)
+            )
+            if (objResp.responseCode != SonyPtpConstants.RC_OK || objResp.dataPayload == null) {
+                throw IOException("Sony GetObject failed with code: 0x${objResp.responseCode.toString(16)}")
+            }
+            val payload = objResp.dataPayload
+            sink.write(payload)
+            sink.flush()
+            onProgress(payload.size.toLong(), payload.size.toLong())
+        }
+    }
+
     override suspend fun closeSession() = withContext(Dispatchers.IO + NonCancellable) {
         if (!isSessionOpenFlag.compareAndSet(true, false)) {
             return@withContext

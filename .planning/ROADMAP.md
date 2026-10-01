@@ -209,14 +209,32 @@ Full details archived: `.planning/milestones/v1.0-rebranding-ROADMAP.md`
 
 ---
 
+## Milestone v5.0: Resilient Hardware Transport, Multi-Vendor PTP & On-Device AI
+
+### Phase 14: Universal PTP Transport, Dual-Engine Storage, On-Device AI Culling & Resilient Pipeline
+
+**Requirements:** `PTP-01`, `PTP-02`, `NAME-01`, `STORAGE-01`, `QUEUE-01`, `AI-01`, `AI-02`, `SYS-01`  
+**Focus:** Direct PTP stream draining on Fuji tethering without MTP deadlock, non-locking Canon tether handshake, strict case-preserving filename deduplication, recursive PTP DCIM folder tree enumeration, dual-engine MSC (`libaums`) card reader driver, on-device NCNN/MediaPipe face & blink culling, isolated failed queue state transitions, and background `mediaPlayback` keep-alive hardening.
+
+#### Scope & Architecture
+- Replace `downloadMtpFile()` in `SessionViewModel.kt` with `tetherAdapter.streamMedia()` directly over USB Bulk IN to eliminate Fuji DRAM buffer freezing and endless LED blinking.
+- Remove forced `EOS_OC_SET_REMOTE_MODE (0x9114 = 1)` in `CannonCameraInitializer.kt` to prevent camera physical UI and shutter button lockouts.
+- Separate case-insensitive deduplication keys from strict case-preserving original filenames across `Fingerprint.kt`, `NewShotDetector.kt`, and `UploadQueueManager.kt`.
+- Implement recursive PTP object handle enumeration in `UsbHelper.kt` to resolve the `parent = 0` root-only query bug and discover all existing photos inside `DCIM/` subdirectories.
+- Integrate low-level MSC block driver (`libaums`) for instant Card Reader / Mass Storage DCIM scanning.
+- Integrate lightweight on-device Face & Blink AI detector (Tencent NCNN YOLOv5-Face / MediaPipe) for sub-15ms automated culling without cloud cost.
+- Establish robust `WaitUpload` vs `FailUpload` status transitions to isolate I/O errors and prevent queue deadlocks.
+- Harden background execution via `mediaPlayback` foreground service and wake lock management.
+
+---
+
 ## Backlog
 
 ### Milestone v5.0 (Candidate Requirements)
-- **AI-01:** On-device NPU face and blink detection scoring via LiteRT/NNAPI.
 - **LUT-01:** Real-time 3D LUT `.cube` color grading shader preview on RAW files.
 - **WIFI-01:** Wireless tethering over Wi-Fi Direct and PTP/IP.
 - **REMOTE-01:** In-app live view streaming and remote shutter trigger from phone.
 
 ---
 
-*Roadmap generated: 2026-08-20 for Milestone v4.0*
+*Roadmap updated: 2026-10-01 for Milestone v5.0 (Phase 14)*
