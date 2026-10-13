@@ -32,8 +32,5 @@ google-services.json
 *.p12
 
 # Decompiled & Extracted APKs
-piufotodecode/extracted*
-piufotodecode/apk*
-piufotodecode/jadx*
-piufotodecode/*.xapk
-piufotodecode/*.apk
+piufotodecode/
+piufotodecode/**
