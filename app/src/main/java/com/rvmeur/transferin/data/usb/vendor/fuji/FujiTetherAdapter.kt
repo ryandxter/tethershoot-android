@@ -36,6 +36,9 @@ import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -55,6 +58,7 @@ class FujiTetherAdapter(
         private const val TAG = "FujiTetherAdapter"
         private const val DEFAULT_TIMEOUT_MS = 5000
         private const val PARTIAL_HEADER_SIZE = 131072L // 128 KB
+        private val PTP_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
     }
 
     override val vendor: CameraVendor = CameraVendor.FUJIFILM
@@ -203,13 +207,22 @@ class FujiTetherAdapter(
             FujiPtpConstants.EVT_OBJECT_ADDED,
             FujiPtpConstants.EVT_FUJI_OBJECT_ADDED -> {
                 val handle = if (event.params.isNotEmpty()) event.params[0] else 0
-                val tetherEvent = CameraTetherEvent.ObjectAdded(
-                    handle = handle,
-                    filename = "DSCF_${String.format("%04d", handle and 0xFFFF)}.RAF",
-                    formatCode = FujiPtpConstants.FMT_FUJI_RAF,
-                    captureTimestampMs = System.currentTimeMillis()
-                )
-                _events.tryEmit(tetherEvent)
+                sessionScope.launch {
+                    val objInfo = runCatching { fetchObjectInfo(handle) }.getOrNull()
+                    val realFilename = objInfo?.fileName?.takeIf { it.isNotBlank() }
+                        ?: "DSCF_${String.format("%04d", handle and 0xFFFF)}.RAF"
+                    val formatCode = objInfo?.objectFormat ?: FujiPtpConstants.FMT_FUJI_RAF
+                    val captureTs = objInfo?.captureDateEpochMillis ?: System.currentTimeMillis()
+
+                    val tetherEvent = CameraTetherEvent.ObjectAdded(
+                        handle = handle,
+                        filename = realFilename,
+                        formatCode = formatCode,
+                        captureTimestampMs = captureTs
+                    )
+                    Log.i(TAG, "Fuji ObjectAdded: handle=$handle, filename=$realFilename, formatCode=0x${formatCode.toString(16)}, size=${objInfo?.compressedSize}")
+                    _events.tryEmit(tetherEvent)
+                }
             }
             FujiPtpConstants.EVT_DEVICE_PROP_CHANGED -> {
                 val propCode = if (event.params.isNotEmpty()) event.params[0] else 0
@@ -308,16 +321,24 @@ class FujiTetherAdapter(
 
     override suspend fun getObjectMetadata(handle: Int): Result<CameraMediaMetadata> = withContext(Dispatchers.IO) {
         runCatching {
-            val headerBytes = fetchPartialObject(handle, offset = 0L, length = PARTIAL_HEADER_SIZE)
-            val previewResult = RafPreviewExtractor.extractPreviewResult(headerBytes).getOrNull()
+            val objInfo = runCatching { fetchObjectInfo(handle) }.getOrNull()
+            val headerBytes = runCatching { fetchPartialObject(handle, offset = 0L, length = PARTIAL_HEADER_SIZE) }.getOrNull() ?: ByteArray(0)
+            val previewResult = if (headerBytes.isNotEmpty()) RafPreviewExtractor.extractPreviewResult(headerBytes).getOrNull() else null
+
+            val realFilename = objInfo?.fileName?.takeIf { it.isNotBlank() }
+                ?: "DSCF_${String.format("%04d", handle and 0xFFFF)}.RAF"
+            val formatCode = objInfo?.objectFormat ?: FujiPtpConstants.FMT_FUJI_RAF
+            val sizeBytes = objInfo?.compressedSize ?: 0L
+            val width = objInfo?.imagePixWidth?.takeIf { it > 0 } ?: (previewResult?.width ?: 0)
+            val height = objInfo?.imagePixHeight?.takeIf { it > 0 } ?: (previewResult?.height ?: 0)
 
             CameraMediaMetadata(
                 handle = handle,
-                filename = "DSCF_${String.format("%04d", handle and 0xFFFF)}.RAF",
-                formatCode = FujiPtpConstants.FMT_FUJI_RAF,
-                sizeBytes = 0L,
-                width = previewResult?.width ?: 0,
-                height = previewResult?.height ?: 0,
+                filename = realFilename,
+                formatCode = formatCode,
+                sizeBytes = sizeBytes,
+                width = width,
+                height = height,
                 filmSimulation = previewResult?.filmSimulation
             )
         }
@@ -553,6 +574,201 @@ class FujiTetherAdapter(
         return null
     }
 
+    suspend fun getStorageIds(): List<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val (payload, resp) = executePtpCommandWithData(FujiPtpConstants.OC_GET_STORAGE_IDS)
+            if (resp.isOk) decodeUInt32Array(payload) else emptyList()
+        }.onFailure {
+            Log.e(TAG, "getStorageIds failed", it)
+        }.getOrDefault(emptyList())
+    }
+
+    suspend fun getObjectHandles(storageId: Int): List<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val (payload, resp) = executePtpCommandWithData(
+                FujiPtpConstants.OC_GET_OBJECT_HANDLES,
+                intArrayOf(storageId, 0, -1)
+            )
+            if (resp.isOk) decodeUInt32Array(payload) else emptyList()
+        }.onFailure {
+            Log.e(TAG, "getObjectHandles failed for storageId=$storageId", it)
+        }.getOrDefault(emptyList())
+    }
+
+    suspend fun fetchObjectInfo(handle: Int): FujiObjectInfo? = withContext(Dispatchers.IO) {
+        runCatching {
+            val (payload, resp) = executePtpCommandWithData(
+                FujiPtpConstants.OC_GET_OBJECT_INFO,
+                intArrayOf(handle)
+            )
+            if (resp.isOk && payload.size >= 52) {
+                parseObjectInfo(payload)
+            } else null
+        }.onFailure {
+            Log.e(TAG, "fetchObjectInfo failed for handle=$handle", it)
+        }.getOrNull()
+    }
+
+    private fun executePtpCommandWithData(
+        opCode: Int,
+        params: IntArray = intArrayOf(),
+        timeoutMs: Int = DEFAULT_TIMEOUT_MS
+    ): Pair<ByteArray, PtpResponse> {
+        val tm = transportManager ?: throw IllegalStateException("Transport not initialized")
+        val outEp = bulkOutEndpoint ?: throw IllegalStateException("Bulk OUT endpoint missing")
+        val inEp = bulkInEndpoint ?: throw IllegalStateException("Bulk IN endpoint missing")
+
+        val txId = nextTxId()
+        val cmdPacket = FujiPtpConstants.buildCommandPacket(opCode, txId, params)
+
+        val sent = tm.safeBulkTransfer(outEp, cmdPacket, cmdPacket.size, timeoutMs)
+        if (sent != cmdPacket.size) {
+            throw IllegalStateException("Bulk OUT command failed: sent=$sent expected=${cmdPacket.size}")
+        }
+
+        val initialBuffer = ByteArray(64 * 1024)
+        val initialRead = tm.safeBulkTransfer(inEp, initialBuffer, initialBuffer.size, timeoutMs)
+        if (initialRead < 12) {
+            throw IllegalStateException("Bulk IN initial response failed: received=$initialRead (minimum 12)")
+        }
+
+        val bb = ByteBuffer.wrap(initialBuffer, 0, initialRead).order(ByteOrder.LITTLE_ENDIAN)
+        val totalLength = bb.int.toLong() and 0xFFFFFFFFL
+        val containerType = bb.short.toInt() and 0xFFFF
+        val respCode = bb.short.toInt() and 0xFFFF
+        val respTxId = bb.int
+
+        if (containerType == FujiPtpConstants.CONTAINER_RESPONSE) {
+            val resp = FujiPtpConstants.parseResponsePacket(initialBuffer, initialRead)
+            return Pair(ByteArray(0), resp)
+        }
+
+        if (containerType != FujiPtpConstants.CONTAINER_DATA) {
+            throw IllegalStateException("Expected data container (2), got type $containerType")
+        }
+
+        val payloadLength = (totalLength - 12L).coerceAtLeast(0L).toInt()
+        val payload = ByteArray(payloadLength)
+        val initialChunk = (initialRead - 12).coerceAtMost(payloadLength)
+        if (initialChunk > 0) {
+            System.arraycopy(initialBuffer, 12, payload, 0, initialChunk)
+        }
+
+        var bytesRead = initialChunk
+        while (bytesRead < payloadLength) {
+            val remaining = payloadLength - bytesRead
+            val nextRead = tm.safeBulkTransfer(
+                inEp,
+                payload,
+                bytesRead,
+                remaining.coerceAtMost(64 * 1024),
+                timeoutMs
+            )
+            if (nextRead <= 0) break
+            bytesRead += nextRead
+        }
+
+        val respBuffer = ByteArray(512)
+        val respRead = tm.safeBulkTransfer(inEp, respBuffer, respBuffer.size, timeoutMs)
+        val resp = if (respRead >= 12) {
+            FujiPtpConstants.parseResponsePacket(respBuffer, respRead)
+        } else {
+            PtpResponse(FujiPtpConstants.RC_OK, txId)
+        }
+
+        return Pair(payload, resp)
+    }
+
+    private fun parseObjectInfo(payload: ByteArray): FujiObjectInfo? {
+        if (payload.size < 52) return null
+        val bb = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN)
+
+        val storageId = bb.int
+        val objectFormat = bb.short.toInt() and 0xFFFF
+        val protectionStatus = bb.short.toInt() and 0xFFFF
+        val compressedSize = bb.int.toLong() and 0xFFFFFFFFL
+        val thumbFormat = bb.short.toInt() and 0xFFFF
+        val thumbCompressedSize = bb.int.toLong() and 0xFFFFFFFFL
+        val thumbPixWidth = bb.int
+        val thumbPixHeight = bb.int
+        val imagePixWidth = bb.int
+        val imagePixHeight = bb.int
+        val imageBitDepth = bb.int
+        val parentObject = bb.int
+        val associationType = bb.short.toInt() and 0xFFFF
+        val associationDesc = bb.int
+        val sequenceNumber = bb.int
+
+        val fileName = readPtpString(bb)
+        val captureDate = readPtpString(bb)
+        val modificationDate = readPtpString(bb)
+        val keywords = readPtpString(bb)
+
+        return FujiObjectInfo(
+            storageId = storageId,
+            objectFormat = objectFormat,
+            compressedSize = compressedSize,
+            thumbFormat = thumbFormat,
+            thumbCompressedSize = thumbCompressedSize,
+            thumbPixWidth = thumbPixWidth,
+            thumbPixHeight = thumbPixHeight,
+            imagePixWidth = imagePixWidth,
+            imagePixHeight = imagePixHeight,
+            imageBitDepth = imageBitDepth,
+            parentObject = parentObject,
+            associationType = associationType,
+            associationDesc = associationDesc,
+            sequenceNumber = sequenceNumber,
+            fileName = fileName,
+            captureDateEpochMillis = parsePtpDate(captureDate),
+            modificationDateEpochMillis = parsePtpDate(modificationDate),
+            keywords = keywords
+        )
+    }
+
+    private fun readPtpString(bb: ByteBuffer): String {
+        if (!bb.hasRemaining()) return ""
+        val charCount = bb.get().toInt() and 0xFF
+        if (charCount == 0) return ""
+
+        val actualChars = (charCount - 1).coerceAtLeast(0)
+        val chars = CharArray(actualChars)
+
+        for (i in 0 until actualChars) {
+            if (bb.remaining() < 2) return chars.concatToString(0, i)
+            chars[i] = bb.short.toInt().toChar()
+        }
+
+        if (bb.remaining() >= 2) {
+            bb.short
+        }
+
+        return chars.concatToString().trimEnd('\u0000')
+    }
+
+    private fun parsePtpDate(value: String): Long? {
+        if (value.isBlank()) return null
+        return runCatching {
+            val cleaned = value.substringBefore('.').trim()
+            val localDateTime = LocalDateTime.parse(cleaned, PTP_DATE_FORMATTER)
+            localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }.getOrNull()
+    }
+
+    private fun decodeUInt32Array(payload: ByteArray): List<Int> {
+        if (payload.size < 4) return emptyList()
+        val bb = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN)
+        val count = bb.int
+        if (count <= 0) return emptyList()
+        val result = ArrayList<Int>(count)
+        repeat(count) {
+            if (bb.remaining() >= 4) {
+                result += bb.int
+            }
+        }
+        return result
+    }
+
     private fun nextTxId(): Int = txIdCounter.getAndIncrement()
 
     override fun close() {
@@ -562,3 +778,27 @@ class FujiTetherAdapter(
         }
     }
 }
+
+/**
+ * PTP ObjectInfo dataset parsed from ISO 15740 / Fujifilm 0x1008 GetObjectInfo.
+ */
+data class FujiObjectInfo(
+    val storageId: Int,
+    val objectFormat: Int,
+    val compressedSize: Long,
+    val thumbFormat: Int,
+    val thumbCompressedSize: Long,
+    val thumbPixWidth: Int,
+    val thumbPixHeight: Int,
+    val imagePixWidth: Int,
+    val imagePixHeight: Int,
+    val imageBitDepth: Int,
+    val parentObject: Int,
+    val associationType: Int,
+    val associationDesc: Int,
+    val sequenceNumber: Int,
+    val fileName: String,
+    val captureDateEpochMillis: Long? = null,
+    val modificationDateEpochMillis: Long? = null,
+    val keywords: String = ""
+)

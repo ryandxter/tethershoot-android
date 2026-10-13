@@ -7,6 +7,6 @@ import android.mtp.MtpDevice
 data class CameraInitContext(
     val device: UsbDevice,
     val connection: UsbDeviceConnection,
-    val mtpDevice: MtpDevice,
+    val mtpDevice: MtpDevice? = null,
     val usbHelper: UsbHelper
 )

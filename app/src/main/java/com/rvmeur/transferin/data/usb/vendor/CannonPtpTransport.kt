@@ -20,6 +20,7 @@ class CanonPtpTransport(
         const val OC_GET_STORAGE_IDS = 0x1004
         const val OC_GET_OBJECT_HANDLES = 0x1007
         const val OC_GET_OBJECT_INFO = 0x1008
+        const val OC_GET_OBJECT = 0x1009
 
         const val RC_OK = 0x2001
     }
@@ -61,8 +62,18 @@ class CanonPtpTransport(
                 CONTAINER_DATA -> {
                     val payloadLength = (length - 12).coerceAtLeast(0)
                     val payload = ByteArray(payloadLength)
-                    if (payloadLength > 0) {
-                        bb.get(payload, 0, minOf(payloadLength, bb.remaining()))
+                    val initialChunk = minOf(payloadLength, bb.remaining())
+                    if (initialChunk > 0) {
+                        bb.get(payload, 0, initialChunk)
+                    }
+                    var bytesRead = initialChunk
+                    while (bytesRead < payloadLength) {
+                        val remaining = payloadLength - bytesRead
+                        val temp = ByteArray(remaining.coerceAtMost(32 * 1024))
+                        val read = connection.bulkTransfer(inEndpoint, temp, temp.size, timeoutMs)
+                        if (read <= 0) break
+                        System.arraycopy(temp, 0, payload, bytesRead, read)
+                        bytesRead += read
                     }
                     dataPayload = payload
                 }
@@ -83,6 +94,62 @@ class CanonPtpTransport(
                 else -> error("Unexpected PTP container type=$type code=0x${code.toString(16)}")
             }
         }
+    }
+
+    fun streamObject(
+        handle: Int,
+        transactionId: Int,
+        sink: java.io.OutputStream,
+        onProgress: ((Long, Long) -> Unit)? = null
+    ): Boolean {
+        sendCommand(
+            operationCode = OC_GET_OBJECT,
+            transactionId = transactionId,
+            params = intArrayOf(handle)
+        )
+
+        val initialBuffer = ByteArray(64 * 1024)
+        val initialRead = connection.bulkTransfer(inEndpoint, initialBuffer, initialBuffer.size, timeoutMs)
+        if (initialRead < 12) return false
+
+        val bb = ByteBuffer.wrap(initialBuffer, 0, initialRead).order(ByteOrder.LITTLE_ENDIAN)
+        val containerLength = bb.int.toLong() and 0xFFFFFFFFL
+        val containerType = bb.short.toInt() and 0xFFFF
+        val code = bb.short.toInt() and 0xFFFF
+        val tx = bb.int
+
+        if (containerType != CONTAINER_DATA) return false
+
+        val totalPayload = (containerLength - 12L).coerceAtLeast(0L)
+        val initialChunk = (initialRead - 12).toLong().coerceAtMost(totalPayload)
+        if (initialChunk > 0) {
+            sink.write(initialBuffer, 12, initialChunk.toInt())
+        }
+        var totalWritten = initialChunk
+        onProgress?.invoke(totalWritten, totalPayload)
+
+        val chunkBuffer = ByteArray(64 * 1024)
+        while (totalWritten < totalPayload) {
+            val remaining = totalPayload - totalWritten
+            val toRead = remaining.coerceAtMost(chunkBuffer.size.toLong()).toInt()
+            val read = connection.bulkTransfer(inEndpoint, chunkBuffer, toRead, timeoutMs)
+            if (read <= 0) break
+            sink.write(chunkBuffer, 0, read)
+            totalWritten += read
+            onProgress?.invoke(totalWritten, totalPayload)
+        }
+        sink.flush()
+
+        val respBuffer = ByteArray(512)
+        val respRead = connection.bulkTransfer(inEndpoint, respBuffer, respBuffer.size, timeoutMs)
+        if (respRead >= 12) {
+            val rbb = ByteBuffer.wrap(respBuffer, 0, respRead).order(ByteOrder.LITTLE_ENDIAN)
+            rbb.int
+            val rType = rbb.short.toInt() and 0xFFFF
+            val rCode = rbb.short.toInt() and 0xFFFF
+            return rCode == RC_OK
+        }
+        return totalWritten == totalPayload
     }
 
     private fun sendCommand(

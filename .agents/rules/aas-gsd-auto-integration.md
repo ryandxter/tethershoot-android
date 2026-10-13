@@ -24,6 +24,7 @@ When executing any OpenGSD workflow (`/gsd`, `/gsd-next`, `/gsd-plan-phase`, `/g
    - **DevOps & Cloud:** Activate `agentic-bundle-aas-devops-cloud` & `agentic-bundle-aas-observability-ir` (`dockerfile-optimization`, `terraform-best-practices`, `ci-cd-pipelines`, `graceful-shutdown`).
    - **Data & Databases:** Activate `agentic-bundle-aas-data-analytics` & `agentic-bundle-aas-data-engineering-platform` (`sql-optimization`, `schema-migration`).
    - **QA & Testing:** Activate `agentic-bundle-aas-qa-test-automation` (`test-pyramid-strategy`, `playwright-e2e`, `tdd-workflow`, `falsify`, `spec-driven-loop`).
+   - **Dialectics & Debate:** Activate AAS Debater (`debate-review`, `crossframe-debate`, `anti-sycophancy`, `falsify`, `poka-yoke`, `clean-code-guard`) for `/gsd-debater`, `/gsd-capture --thoughts`, and post-execution thought extraction.
    - **SaaS & Revenue:** Activate `agentic-bundle-aas-saas-launch-revenue` & `agentic-bundle-aas-marketing-seo-growth` (`stripe-integration`, `seo-audit`).
    - **Mobile:** Activate `agentic-bundle-aas-mobile-app-builder` (`mobile-developer`, `mobile-design`).
 
@@ -31,6 +32,7 @@ When executing any OpenGSD workflow (`/gsd`, `/gsd-next`, `/gsd-plan-phase`, `/g
    - **Planning (`/gsd-plan-phase`):** Incorporate the appropriate AAS playbooks into `PLAN.md` tasks.
    - **AI Integration (`/gsd-ai-integration-phase`):** Enforce dynamic model exploration before framework and model selection.
    - **Execution (`/gsd-execute-phase`):** Execute implementation following AAS clean code and TDD patterns.
+   - **Debater & Thought Harvesting (`/gsd-debater`, `/gsd-capture --thoughts`):** Harvest agent thought streams, doubts, and trade-offs into structured debate records and micro-notes.
    - **UI Design (`/gsd-ui-phase`):** Apply AAS high-end visual design and accessibility guidelines.
    - **Security Audit (`/gsd-secure-phase`):** Evaluate security against AAS security engineer standards.
    - **Testing (`/gsd-add-tests`):** Use AAS QA playbooks for comprehensive test suites.

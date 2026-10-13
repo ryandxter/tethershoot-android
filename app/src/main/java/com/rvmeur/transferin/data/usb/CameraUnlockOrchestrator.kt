@@ -223,6 +223,7 @@ class CameraUnlockOrchestrator(
         )
 
         val isCanon = device.vendorId == 0x04A9
+        val isFuji = device.vendorId == 0x04CB
         val handshakeResult = if (isCanon) {
             runCatching {
                 vendorInitializer.initializeUnlocked(
@@ -232,15 +233,30 @@ class CameraUnlockOrchestrator(
             }.getOrElse {
                 CameraInitResult.fail("Handshake error: ${it.message}")
             }
+        } else if (isFuji) {
+            runCatching {
+                val fujiInit = usbHelper.getFujiInitializer()
+                val initRes = fujiInit?.initialize(
+                    CameraInitContext(
+                        device = device,
+                        connection = connection,
+                        mtpDevice = null,
+                        usbHelper = usbHelper
+                    )
+                )
+                initRes ?: CameraInitResult.ok("Fuji initialized")
+            }.getOrElse {
+                CameraInitResult.fail("Fuji handshake error: ${it.message}")
+            }
         } else {
-            Log.d(TAG, "Non-Canon device detected (Vendor ID: ${device.vendorId}). Bypassing Canon handshake.")
+            Log.d(TAG, "Other device detected (Vendor ID: ${device.vendorId}). Bypassing vendor-specific handshake.")
             CameraInitResult.ok("Bypassed vendor-specific handshake")
         }
 
         if (!handshakeResult.success) {
             runCatching { connection.close() }
             failUnlock(
-                message = handshakeResult.message ?: "Handshake Canon gagal",
+                message = handshakeResult.message ?: "Handshake gagal",
                 deviceLabel = buildDeviceLabel(device)
             )
             return false
@@ -251,8 +267,11 @@ class CameraUnlockOrchestrator(
         activeDevice = device
         activeDeviceName = device.deviceName
 
+        // Try opening MTP session, but do NOT fail if native PTP session is active
         val mtpOpened = openMtpSessionIfNeededNoLock()
-        if (!mtpOpened) {
+        val hasNativeSession = isCanon || isFuji || usbHelper.getActiveSonyAdapter() != null
+
+        if (!mtpOpened && !hasNativeSession) {
             failUnlock(
                 message = "Handshake berhasil, tetapi sesi MTP tidak bisa dibuka",
                 deviceLabel = buildDeviceLabel(device)
@@ -262,7 +281,15 @@ class CameraUnlockOrchestrator(
         }
 
         val storageIds = awaitStorageIdsNoLock()
-        if (storageIds.isEmpty()) {
+        val resolvedStorageIds = if (storageIds.isNotEmpty()) {
+            storageIds
+        } else if (hasNativeSession) {
+            usbHelper.getActiveStorageIds().ifEmpty { listOf(0x00010001) }
+        } else {
+            emptyList()
+        }
+
+        if (resolvedStorageIds.isEmpty()) {
             failUnlock(
                 message = "Handshake berhasil, tetapi storage kamera belum siap",
                 deviceLabel = buildDeviceLabel(device)
@@ -274,15 +301,15 @@ class CameraUnlockOrchestrator(
         _unlockState.value = CameraUnlockState(
             status = UnlockStatus.UNLOCK_SUCCESS,
             deviceLabel = buildDeviceLabel(device),
-            storageIds = storageIds,
-            storageCount = storageIds.size,
+            storageIds = resolvedStorageIds,
+            storageCount = resolvedStorageIds.size,
             errorMessage = null,
             isTetheredMode = true
         )
 
         Log.d(
             TAG,
-            ">>> Camera unlock success. device=${device.deviceName}, mtpOpened=true, storageIds=$storageIds"
+            ">>> Camera unlock success. device=${device.deviceName}, mtpOpened=$mtpOpened, storageIds=$resolvedStorageIds"
         )
         return true
     }

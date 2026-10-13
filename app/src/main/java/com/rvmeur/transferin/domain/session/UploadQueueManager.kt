@@ -18,10 +18,11 @@ import java.util.UUID
 
 class UploadQueueManager(
     private val context: Context,
-    private val transferQueueRepository: TransferQueueRepositoryImpl
+    private val transferQueueRepository: TransferQueueRepositoryImpl,
+    private val workSchedulerOverride: TransferUploadWorkScheduler? = null
 ) {
 
-    private val workScheduler = TransferUploadWorkScheduler(context.applicationContext)
+    private val workScheduler = workSchedulerOverride ?: TransferUploadWorkScheduler(context.applicationContext)
 
     suspend fun enqueueMediaJob(
         job: MediaJob,
@@ -46,23 +47,23 @@ class UploadQueueManager(
         // - Origin filename dari kamera datang di job.originalFileName.
         // - metadata.fileName (DISPLAY_NAME dari content resolver) bisa berbeda, tapi untuk nama di NAS
         //   kita utamakan originFileName supaya folder di NAS "mirip kamera".
-        val originFileName = job.originalFileName.takeIf { it.isNotBlank() }
+        val originFileName = job.originalFileName.trim().takeIf { it.isNotBlank() }
 
-        val fallbackFileName =
+        val rawFileName = if (originFileName != null) {
             originFileName
-                ?: metadata.fileName?.takeIf { it.isNotBlank() }
-                ?: File(job.localTempPath).name.takeIf { it.isNotBlank() }
-                ?: "unknown_file"
-
-        var cleanFileName = fallbackFileName
-        val prefixRegex = Regex("^\\d+_(.+)$")
-        val matchResult = prefixRegex.matchEntire(cleanFileName)
-        if (matchResult != null) {
-            cleanFileName = matchResult.groupValues[1]
+        } else {
+            val prefixRegex = Regex("^\\d+_(.+)$")
+            val fromMetadata = metadata.fileName?.trim()?.takeIf { it.isNotBlank() }
+            if (fromMetadata != null) {
+                prefixRegex.matchEntire(fromMetadata)?.groupValues?.get(1) ?: fromMetadata
+            } else {
+                val tempName = File(job.localTempPath).name.trim().takeIf { it.isNotBlank() } ?: "unknown_file"
+                prefixRegex.matchEntire(tempName)?.groupValues?.get(1) ?: tempName
+            }
         }
 
-        val fileName = sanitizeFileName(cleanFileName)
-        android.util.Log.d("UploadQueueManager", "enqueueMediaJob: job.originalFileName=${job.originalFileName}, metadata.fileName=${metadata.fileName}, fallbackFileName=$fallbackFileName, cleanFileName=$cleanFileName, final fileName=$fileName")
+        val fileName = sanitizeFileName(rawFileName)
+        android.util.Log.d("UploadQueueManager", "enqueueMediaJob: job.originalFileName=${job.originalFileName}, metadata.fileName=${metadata.fileName}, final fileName=$fileName")
         val mimeType = metadata.mimeType ?: detectMimeType(fileName)
         val fileType = detectFileType(mimeType)
         val fileSizeBytes = metadata.fileSizeBytes.coerceAtLeast(0L)
@@ -212,7 +213,7 @@ class UploadQueueManager(
 
     private fun detectMimeType(fileName: String): String {
         val extension = fileName.substringAfterLast('.', "").lowercase(Locale.ROOT)
-        val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+        val mime = runCatching { MimeTypeMap.getSingleton()?.getMimeTypeFromExtension(extension) }.getOrNull()
 
         return mime ?: when (extension) {
             "cr2", "cr3", "nef", "arw", "dng", "raf", "orf", "rw2" -> "image/x-raw"

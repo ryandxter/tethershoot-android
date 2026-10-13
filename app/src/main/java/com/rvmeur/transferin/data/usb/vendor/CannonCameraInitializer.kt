@@ -160,6 +160,21 @@ class CanonCameraInitializer(
         return isSessionOpen && lastDeviceName != null && lastDeviceName == deviceName
     }
 
+    fun streamMedia(
+        handle: Int,
+        sink: java.io.OutputStream,
+        onProgress: (Long, Long) -> Unit = { _, _ -> }
+    ): Boolean {
+        val session = getActivePtpSession() ?: return false
+        val transport = CanonPtpTransport(
+            connection = session.connection,
+            outEndpoint = session.outEndpoint,
+            inEndpoint = session.inEndpoint
+        )
+        val txId = nextTransactionIdSeed++
+        return transport.streamObject(handle, txId, sink, onProgress)
+    }
+
     fun closeSession(
         device: UsbDevice,
         connection: UsbDeviceConnection

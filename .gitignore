@@ -34,3 +34,7 @@ google-services.json
 # Decompiled & Extracted APKs
 piufotodecode/
 piufotodecode/**
+
+# Local agent artifacts
+.claude/
+

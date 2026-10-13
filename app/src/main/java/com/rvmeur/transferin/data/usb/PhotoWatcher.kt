@@ -235,9 +235,9 @@ class PhotoWatcher(
                     maxCardNumber = num
                 }
 
-                // If uploadedFilenames is empty (new session), we add all existing files to seenHandles
-                // If uploadedFilenames is not empty (reconnect), we only add files that have already been uploaded successfully
-                if (uploadedFilenames.isEmpty() || uploadedFilenames.contains(name)) {
+                // Only mark files that have ALREADY been uploaded as seen.
+                // Unuploaded photos on the camera card will remain unseen and stream to upload queue.
+                if (uploadedFilenames.contains(name)) {
                     seenHandles.add(handle)
                 }
 
@@ -260,7 +260,7 @@ class PhotoWatcher(
         }
 
         val mostLatestImageNumber = latestPhoto?.let { extractFileNumber(it.fileName) } ?: 0
-        baselineFileNumber = maxOf(maxCardNumber, mostLatestImageNumber, highestDbNumber)
+        baselineFileNumber = highestDbNumber
 
         Log.d(
             TAG,
@@ -329,12 +329,7 @@ class PhotoWatcher(
             if (CTG_PATTERNS.any { upperName.contains(it) }) continue
             if (ext !in PHOTO_EXTENSIONS) continue
 
-            // Ensure photo number is valid against baseline (only filter if card wasn't formatted)
             val num = extractFileNumber(name)
-            if (num < baselineFileNumber && seenHandles.size > 1) {
-                Log.d(TAG, "checkForNewPhoto: file $name has number $num < baseline $baselineFileNumber, skipping")
-                continue
-            }
 
             Log.i(
                 TAG,

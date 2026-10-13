@@ -562,6 +562,82 @@ class CanonPtpAdapter(
     }
 
     /**
+     * Streams media binary data directly into sink OutputStream in chunks using 0x1009 GetObject.
+     */
+    suspend fun streamMedia(
+        handle: Int,
+        sink: java.io.OutputStream,
+        onProgress: (Long, Long) -> Unit = { _, _ -> }
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            session.transportManager.ioMutex.withLock {
+                val txId = nextTransactionId()
+                val cmdLen = 16
+                val cmdPacket = ByteBuffer.allocate(cmdLen).order(ByteOrder.LITTLE_ENDIAN).apply {
+                    putInt(cmdLen)
+                    putShort(CanonPtpConstants.CONTAINER_COMMAND.toShort())
+                    putShort(CanonPtpConstants.OC_GET_OBJECT.toShort())
+                    putInt(txId)
+                    putInt(handle)
+                }.array()
+
+                val sent = session.transportManager.safeBulkTransfer(outEndpoint, cmdPacket, cmdPacket.size, CanonPtpConstants.DEFAULT_TIMEOUT_MS)
+                if (sent != cmdPacket.size) {
+                    throw UsbTransportClosedException("Failed sending GetObject command handle=$handle")
+                }
+
+                val initialBuffer = ByteArray(64 * 1024)
+                val initialRead = session.transportManager.safeBulkTransfer(inEndpoint, initialBuffer, initialBuffer.size, CanonPtpConstants.DEFAULT_TIMEOUT_MS)
+                if (initialRead < 12) {
+                    throw IllegalStateException("Invalid data response for GetObject: read=$initialRead")
+                }
+
+                val bb = ByteBuffer.wrap(initialBuffer, 0, initialRead).order(ByteOrder.LITTLE_ENDIAN)
+                val containerLength = bb.int.toLong() and 0xFFFFFFFFL
+                val containerType = bb.short.toInt() and 0xFFFF
+                val code = bb.short.toInt() and 0xFFFF
+                val rxTxId = bb.int
+
+                if (containerType != CanonPtpConstants.CONTAINER_DATA) {
+                    throw IllegalStateException("Expected data container (2), got type $containerType")
+                }
+
+                val totalPayload = (containerLength - 12L).coerceAtLeast(0L)
+                val initialChunk = (initialRead - 12).toLong().coerceAtMost(totalPayload)
+                if (initialChunk > 0) {
+                    sink.write(initialBuffer, 12, initialChunk.toInt())
+                }
+                var totalWritten = initialChunk
+                onProgress(totalWritten, totalPayload)
+
+                val chunkBuffer = ByteArray(64 * 1024)
+                while (totalWritten < totalPayload) {
+                    val remaining = totalPayload - totalWritten
+                    val toRead = remaining.coerceAtMost(chunkBuffer.size.toLong()).toInt()
+                    val read = session.transportManager.safeBulkTransfer(inEndpoint, chunkBuffer, toRead, CanonPtpConstants.DEFAULT_TIMEOUT_MS)
+                    if (read <= 0) break
+                    sink.write(chunkBuffer, 0, read)
+                    totalWritten += read
+                    onProgress(totalWritten, totalPayload)
+                }
+                sink.flush()
+
+                val respBuffer = ByteArray(512)
+                val respRead = session.transportManager.safeBulkTransfer(inEndpoint, respBuffer, respBuffer.size, CanonPtpConstants.DEFAULT_TIMEOUT_MS)
+                if (respRead >= 12) {
+                    val rbb = ByteBuffer.wrap(respBuffer, 0, respRead).order(ByteOrder.LITTLE_ENDIAN)
+                    rbb.int
+                    val rType = rbb.short.toInt() and 0xFFFF
+                    val rCode = rbb.short.toInt() and 0xFFFF
+                    if (rCode != CanonPtpConstants.RC_OK) {
+                        Log.w(TAG, "GetObject returned response code 0x${rCode.toString(16)}")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Executes a thread-safe atomic PTP transaction over USB bulk pipes guarded by [SafeUsbTransportManager.ioMutex].
      */
     suspend fun transact(

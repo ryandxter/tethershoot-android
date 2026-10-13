@@ -336,4 +336,90 @@ class FujiTetherAdapterTest {
         assertTrue(result.isFailure)
         assertTrue(adapter.connectionState.value is TetherState.Failed)
     }
+
+    @Test
+    fun `fetchObjectInfo parses ISO 15740 UTF-16LE filename and metadata 1 to 1`() = runTest {
+        adapter.initialize(device, connection)
+
+        val fileName = "DSCF0001.JPG"
+        val fileNameBytes = ByteBuffer.allocate(1 + (fileName.length + 1) * 2).order(ByteOrder.LITTLE_ENDIAN).apply {
+            put((fileName.length + 1).toByte())
+            for (ch in fileName) {
+                putShort(ch.code.toShort())
+            }
+            putShort(0)
+        }.array()
+
+        val headerBytes = ByteBuffer.allocate(52).order(ByteOrder.LITTLE_ENDIAN).apply {
+            putInt(0x00010001) // storageId
+            putShort(0x3801.toShort()) // objectFormat EXIF/JPEG
+            putShort(0) // protectionStatus
+            putInt(12345678) // compressedSize
+            putShort(0x3801.toShort()) // thumbFormat
+            putInt(2048) // thumbCompressedSize
+            putInt(160) // thumbPixWidth
+            putInt(120) // thumbPixHeight
+            putInt(6240) // imagePixWidth
+            putInt(4160) // imagePixHeight
+            putInt(24) // imageBitDepth
+            putInt(0) // parentObject
+            putShort(0) // associationType
+            putInt(0) // associationDesc
+            putInt(0) // sequenceNumber
+        }.array()
+
+        // 52 bytes header + filename + 3 empty PTP strings (1 byte 0 each)
+        val payload = headerBytes + fileNameBytes + byteArrayOf(0, 0, 0)
+
+        var step = 0
+        every {
+            transportManager.safeBulkTransfer(
+                bulkInEndpoint,
+                any<ByteArray>(),
+                any<Int>(),
+                any<Int>()
+            )
+        } answers {
+            val buffer = secondArg<ByteArray>()
+            val bb = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN)
+            val lastCmd = sentCommands.lastOrNull()
+            val txId = lastCmd?.txId ?: 1
+
+            if (lastCmd?.opCode == FujiPtpConstants.OC_GET_OBJECT_INFO) {
+                if (step == 0) {
+                    step++
+                    // Data container (ContainerType = 2)
+                    bb.putInt(12 + payload.size)
+                    bb.putShort(FujiPtpConstants.CONTAINER_DATA.toShort())
+                    bb.putShort(FujiPtpConstants.OC_GET_OBJECT_INFO.toShort())
+                    bb.putInt(txId)
+                    bb.put(payload)
+                    12 + payload.size
+                } else {
+                    // Response container (ContainerType = 3)
+                    bb.putInt(12)
+                    bb.putShort(FujiPtpConstants.CONTAINER_RESPONSE.toShort())
+                    bb.putShort(FujiPtpConstants.RC_OK.toShort())
+                    bb.putInt(txId)
+                    12
+                }
+            } else {
+                bb.putInt(12)
+                bb.putShort(FujiPtpConstants.CONTAINER_RESPONSE.toShort())
+                bb.putShort(FujiPtpConstants.RC_OK.toShort())
+                bb.putInt(txId)
+                12
+            }
+        }
+
+        val info = adapter.fetchObjectInfo(42)
+        org.junit.Assert.assertNotNull(info)
+        assertEquals("DSCF0001.JPG", info!!.fileName)
+        assertEquals(0x00010001, info.storageId)
+        assertEquals(0x3801, info.objectFormat)
+        assertEquals(12345678L, info.compressedSize)
+        assertEquals(6240, info.imagePixWidth)
+        assertEquals(4160, info.imagePixHeight)
+    }
 }
+

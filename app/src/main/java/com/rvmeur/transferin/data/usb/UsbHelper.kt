@@ -273,11 +273,36 @@ class UsbHelper(
         }
     }
 
-    fun isSessionOpen(): Boolean = (currentSessionState.isOpen || activeMtpDeviceOverride != null) && activeMtp != null
+    fun isSessionOpen(): Boolean = (currentSessionState.isOpen || activeMtpDeviceOverride != null) &&
+            (activeMtp != null || hasActiveCanonNativeSession() || getActiveFujiAdapter() != null || getActiveSonyAdapter()?.isSessionOpen == true)
 
-    fun getActiveStorageIds(): List<Int> = activeMtpDeviceOverride?.storageIds?.toList() ?: currentSessionState.storageIds
+    fun getActiveStorageIds(): List<Int> {
+        val mtpIds = activeMtpDeviceOverride?.storageIds?.toList() ?: currentSessionState.storageIds
+        if (mtpIds.isNotEmpty()) return mtpIds
 
-    fun getFirstStorageId(): Int = activeMtpDeviceOverride?.storageIds?.firstOrNull() ?: currentSessionState.storageIds.firstOrNull() ?: 0
+        val canonSession = getCanonInitializer()?.getActivePtpSession()
+        if (canonSession != null) {
+            val canonIds = runCatching { CanonPtpEnumerator(canonSession).getStorageIds() }.getOrNull().orEmpty()
+            if (canonIds.isNotEmpty()) return canonIds
+        }
+
+        val fujiAdapter = getFujiInitializer()?.getActiveAdapter()
+        if (fujiAdapter != null) {
+            val fujiIds: List<Int> = runCatching { kotlinx.coroutines.runBlocking { fujiAdapter.getStorageIds() } }.getOrNull() ?: emptyList()
+            if (fujiIds.isNotEmpty()) return fujiIds
+            return listOf(0x00010001)
+        }
+
+        val sonyAdapter = getSonyInitializer()?.getActiveAdapter()
+        if (sonyAdapter != null && sonyAdapter.isSessionOpen) {
+            val sonyIds: List<Int> = runCatching { kotlinx.coroutines.runBlocking { sonyAdapter.getStorageIds() } }.getOrNull() ?: emptyList()
+            if (sonyIds.isNotEmpty()) return sonyIds
+        }
+
+        return emptyList()
+    }
+
+    fun getFirstStorageId(): Int = getActiveStorageIds().firstOrNull() ?: 0
 
     suspend fun getTotalObjectCount(storageId: Int): Int = sessionMutex.withLock {
         val handles = getAllObjectHandlesNoLock(storageId)
@@ -443,6 +468,50 @@ class UsbHelper(
             }
         }
 
+        // 3. Fuji Native Adapter Fallback
+        val fujiAdapter = getFujiInitializer()?.getActiveAdapter()
+        if (fujiAdapter != null) {
+            return withContext(Dispatchers.IO) {
+                runCatching {
+                    val mergedHandles = linkedSetOf<Int>()
+                    val nativeStorageIds = runCatching { fujiAdapter.getStorageIds() }
+                        .onFailure { Log.e(TAG, "Fuji native getStorageIds failed", it) }
+                        .getOrDefault(emptyList())
+
+                    val candidateStorageIds = buildList {
+                        if (storageId != 0) add(storageId)
+                        nativeStorageIds.forEach { nativeId ->
+                            if (nativeId !in this) add(nativeId)
+                        }
+                        if (isEmpty()) add(0x00010001)
+                    }
+
+                    candidateStorageIds.forEach { candidateStorageId ->
+                        val handles = runCatching {
+                            fujiAdapter.getObjectHandles(candidateStorageId)
+                        }.onFailure {
+                            Log.e(
+                                TAG,
+                                "Fuji native getObjectHandles failed for candidateStorageId=$candidateStorageId",
+                                it
+                            )
+                        }.getOrDefault(emptyList())
+
+                        mergedHandles.addAll(handles)
+                    }
+
+                    val finalHandles = mergedHandles.toList()
+                    Log.d(
+                        TAG,
+                        "Fuji native merged handles for requestedStorageId=$storageId: count=${finalHandles.size}"
+                    )
+                    finalHandles
+                }.onFailure {
+                    Log.e(TAG, "Fuji native enumeration failed for storageId=$storageId", it)
+                }.getOrDefault(emptyList())
+            }
+        }
+
         return emptyList()
     }
     suspend fun getObjectMetadata(handle: Int): CameraMedia? = sessionMutex.withLock {
@@ -594,7 +663,24 @@ class UsbHelper(
             Log.w(TAG, "Sony native streamMedia failed for handle=${media.handle}, falling back...")
         }
 
-        // 3. Fallback to active MTP device if available
+        // 3. Check if Canon native tether session is active
+        val canonInitializer = getCanonInitializer()
+        if (hasActiveCanonNativeSession() || canonInitializer?.hasActiveSessionFor(currentSessionDeviceName) == true) {
+            Log.d(TAG, "downloadMediaToCache: Using Canon native tether stream for handle=${media.handle}")
+            val streamed = withContext(Dispatchers.IO) {
+                runCatching {
+                    targetFile.outputStream().use { outputStream ->
+                        canonInitializer?.streamMedia(media.handle, outputStream) ?: false
+                    }
+                }.getOrDefault(false)
+            }
+            if (streamed && targetFile.exists() && targetFile.length() > 0L) {
+                return@withLock targetFile
+            }
+            Log.w(TAG, "Canon native streamMedia failed for handle=${media.handle}, falling back...")
+        }
+
+        // 4. Fallback to active MTP device if available
         val mtpDevice = activeMtp
         if (mtpDevice != null) {
             val success = withContext(Dispatchers.IO) {

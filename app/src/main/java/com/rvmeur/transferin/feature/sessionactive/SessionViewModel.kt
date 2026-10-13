@@ -28,11 +28,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
 
 import com.rvmeur.transferin.data.local.db.DatabaseProvider
 import com.rvmeur.transferin.data.usb.CtgWatcher
+import com.rvmeur.transferin.domain.camera.CameraTetherEvent
 import com.rvmeur.transferin.domain.shoot.CtgDatabaseParser
 class SessionViewModel(
     private val application: Application,
@@ -352,6 +354,50 @@ class SessionViewModel(
                 }
             }
         }
+
+        // 3. Observe Fuji Native Tether Events
+        viewModelScope.launch {
+            while (isActive) {
+                val fujiAdapter = usbHelper.getActiveFujiAdapter()
+                if (fujiAdapter != null) {
+                    fujiAdapter.observeEvents().collect { event ->
+                        if (event is CameraTetherEvent.ObjectAdded) {
+                            Log.i(TAG, ">>> FUJI TETHER EVENT: ${event.filename}, handle=${event.handle}")
+                            val sessionId = activeSessionId ?: return@collect
+
+                            _tetherState.update {
+                                it.copy(
+                                    detectedCount = it.detectedCount + 1,
+                                    statusText = "📷 ${event.filename}"
+                                )
+                            }
+
+                            val localFile = downloadMtpFile(event.handle, event.filename)
+                            if (localFile == null) {
+                                Log.e(TAG, ">>> Failed to download Fuji photo ${event.filename}")
+                                return@collect
+                            }
+
+                            val job = MediaJob(
+                                id = UUID.randomUUID().toString(),
+                                projectId = sessionId,
+                                localTempPath = localFile.absolutePath,
+                                originalFileName = event.filename,
+                                sourceUri = Uri.fromFile(localFile).toString(),
+                                sourceFingerprint = "${event.handle}|${event.filename}|${localFile.length()}|${event.captureTimestampMs}",
+                                fileSizeBytes = localFile.length(),
+                                lastModifiedEpochMs = event.captureTimestampMs,
+                                createdAtEpochMs = System.currentTimeMillis(),
+                                uploadStatus = UploadStatus.QUEUED
+                            )
+
+                            handleIncomingMedia(job)
+                        }
+                    }
+                }
+                delay(1000)
+            }
+        }
     }
 
     private fun startPhotoWatching() {
@@ -361,7 +407,9 @@ class SessionViewModel(
             return
         }
 
-        val storageIds = cameraUnlockOrchestrator.getActiveStorageIds()
+        val storageIds = cameraUnlockOrchestrator.getActiveStorageIds().ifEmpty {
+            usbHelper.getActiveStorageIds()
+        }
         if (storageIds.isEmpty()) {
             Log.w(TAG, ">>> startPhotoWatching ignored because storageIds is empty")
             _tetherState.update {
