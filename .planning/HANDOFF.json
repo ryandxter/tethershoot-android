@@ -1,64 +1,46 @@
 {
   "version": "1.0",
-  "timestamp": "2026-08-29T14:00:00.000Z",
-  "milestone": "v4.0",
-  "milestone_name": "On-Device AI Exposure Analysis, Smart Culling & Reliable Thumbnailing Engine",
-  "phase": "13",
-  "phase_name": "Production Hardening, Code Review & Quiet Luxury UI Verification",
-  "phase_dir": ".planning/phases/13-production-hardening-audits",
+  "timestamp": "2026-10-13T12:48:42.208Z",
+  "phase": "14",
+  "phase_name": "universal-ptp-storage-and-pipeline-overhaul",
+  "phase_dir": ".planning/phases/14-universal-ptp-storage-and-pipeline-overhaul",
   "plan": 1,
-  "task": 3,
-  "total_tasks": 3,
-  "status": "completed",
+  "task": 1,
+  "total_tasks": 1,
+  "status": "paused",
   "completed_tasks": [
     {
       "id": 1,
-      "name": "Zero-Allocation Exposure & Luminance Engine (Phase 10)",
+      "name": "Universal PTP Streaming and 1:1 Memory Card Filename Preservation",
       "status": "done",
-      "commit": "e00c66a"
-    },
-    {
-      "id": 2,
-      "name": "Persistent Multi-Vendor Thumbnail Pipeline & USB Mutex (Phase 11)",
-      "status": "done",
-      "commit": "e00c66a"
-    },
-    {
-      "id": 3,
-      "name": "Smart Culling State Machine, Room Migration 11 & Quiet Luxury UI (Phase 12)",
-      "status": "done",
-      "commit": "e00c66a"
-    },
-    {
-      "id": 4,
-      "name": "Production Hardening, Multi-Vendor Integration Tests & Quality Gates (Phase 13)",
-      "status": "done",
-      "commit": "e00c66a"
-    },
-    {
-      "id": 5,
-      "name": "Tethered Mode Fujifilm RAF Fast Preview Extraction & Thumbnail Persistence",
-      "status": "done",
-      "commit": "7c91a05"
+      "commit": "9d2ccd4"
     }
   ],
   "remaining_tasks": [],
   "blockers": [],
   "async_jobs": [],
-  "human_actions_pending": [],
-  "decisions": [
+  "human_actions_pending": [
     {
-      "decision": "Direct seek embedded JPEG extraction in RafPreviewExtractor",
-      "rationale": "Allows instantaneous <2ms thumbnail generation without loading 30MB RAW files to heap",
-      "phase": "11"
-    },
-    {
-      "decision": "Dual-tier thumbnail persistence in UploadQueueManager into ThumbnailStorageManager",
-      "rationale": "Survives post-upload transit file deletion and ensures gallery always displays sharp thumbnails",
-      "phase": "11"
+      "action": "Connect physical camera (Fujifilm / Canon) via USB-C to verify live shoot & upload and 1:1 filename matching on Google Drive",
+      "context": "All unit tests pass and code is shipped to origin/main. Hardware validation is recommended on physical device.",
+      "blocking": false
     }
   ],
-  "uncommitted_files": [],
-  "next_action": "Run /gsd:resume-work or initialize next milestone with /gsd-new-milestone",
-  "context_notes": "Codebase is clean, tested, and fully verified on Xiaomi Pad (192.168.18.180:41687) with Fujifilm X-T3 tethering."
+  "decisions": [
+    {
+      "decision": "Bypass Android MtpDevice lockout by relying on native PTP streaming (0x1008 ObjectInfo & 0x1009 GetObject)",
+      "rationale": "Reverse engineering Piufoto confirmed that claiming USB interfaces locks Android MtpDevice.open(); native PTP adapters ensure plug-and-play across brands.",
+      "phase": "14"
+    },
+    {
+      "decision": "Preserve job.originalFileName 1:1 without stripping numeric prefixes",
+      "rationale": "Prevents camera filenames like 100_0001.JPG and 0001_0002.CR3 from being mangled on Google Drive and NAS.",
+      "phase": "14"
+    }
+  ],
+  "uncommitted_files": [
+    "M  .planning/STATE.md"
+  ],
+  "next_action": "Run /gsd-resume-work or test app build on physical hardware with /gradlew installDebug",
+  "context_notes": "Phase 14 and all requested improvements from Piufoto reverse engineering have been implemented, tested, verified, and shipped to origin/main."
 }
