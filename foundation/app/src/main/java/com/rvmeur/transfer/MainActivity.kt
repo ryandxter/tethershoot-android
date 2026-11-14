@@ -41,8 +41,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -121,7 +119,6 @@ class MainActivity : Activity() {
     private lateinit var btnPickFolder: Button
     private lateinit var btnExplorerNew: Button
     private lateinit var pickerStatusTextView: TextView
-    private var activePickerDialog: Dialog? = null
 
     // Komponen Galeri Tinjau Tahan Layar Penuh (Stage 4)
     private lateinit var btnReviewHeld: Button
@@ -309,11 +306,15 @@ class MainActivity : Activity() {
 
         FoundationLog.log("=== TransferIn Foundation MainActivity Siap (minSdk 31, targetSdk 35) ===")
 
-        // Tangani intent awal bila aplikasi dibuka karena URI OAuth redirect
+        // Tangani intent awal bila aplikasi dibuka karena URI hasil picker atau OAuth redirect
         intent?.data?.let { uri ->
-            val handled = driveAuth.handleRedirect(uri)
-            if (handled) {
-                FoundationLog.log("[AUTH] Redirect ditangani pada onCreate: $uri")
+            if (handlePickerResultRedirect(uri)) {
+                FoundationLog.log("[FOLDER] Redirect hasil picker ditangani pada onCreate: $uri")
+            } else {
+                val handled = driveAuth.handleRedirect(uri)
+                if (handled) {
+                    FoundationLog.log("[AUTH] Redirect ditangani pada onCreate: $uri")
+                }
             }
         }
 
@@ -339,12 +340,16 @@ class MainActivity : Activity() {
         if (intent != null) {
             setIntent(intent)
 
-            // Teruskan URI redirect OAuth2 ke DriveAuth
+            // Tangani URI redirect hasil picker atau teruskan redirect OAuth2 ke DriveAuth
             val uri = intent.data
             if (uri != null) {
-                val handled = driveAuth.handleRedirect(uri)
-                if (handled) {
-                    FoundationLog.log("[AUTH] Redirect ditangani di onNewIntent: $uri")
+                if (handlePickerResultRedirect(uri)) {
+                    FoundationLog.log("[FOLDER] Redirect hasil picker ditangani di onNewIntent: $uri")
+                } else {
+                    val handled = driveAuth.handleRedirect(uri)
+                    if (handled) {
+                        FoundationLog.log("[AUTH] Redirect ditangani di onNewIntent: $uri")
+                    }
                 }
             }
 
@@ -383,11 +388,6 @@ class MainActivity : Activity() {
         navRefreshHandler.removeCallbacks(navRefreshRunnable)
         headerRingAnimator?.cancel()
         headerRingAnimator = null
-        try {
-            activePickerDialog?.dismiss()
-        } catch (_: Exception) {
-        }
-        activePickerDialog = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 windowManager.removeCrossWindowBlurEnabledListener(crossWindowBlurListener)
@@ -1744,69 +1744,6 @@ class MainActivity : Activity() {
         }
     }
 
-    private inner class TetherBridge(private val dialog: Dialog) {
-        @JavascriptInterface
-        fun onPicked(id: String, name: String) {
-            runOnUiThread {
-                val cleanId = id.trim()
-                val cleanName = name.trim().ifEmpty { cleanId }
-                if (cleanId.isNotEmpty()) {
-                    driveFolders.saveSelectedFolder(cleanId, cleanName)
-                }
-                try {
-                    if (dialog.isShowing) {
-                        dialog.dismiss()
-                    }
-                } catch (_: Exception) {
-                }
-                renderFolderUi(orchestrator.state)
-                if (::pickerStatusTextView.isInitialized) {
-                    pickerStatusTextView.text = ""
-                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
-                }
-                val valid = step1Valid()
-                if (valid && ::warningPill.isInitialized) {
-                    warningPill.visibility = View.GONE
-                }
-                refreshNavBackground()
-            }
-        }
-
-        @JavascriptInterface
-        fun onCancelled() {
-            runOnUiThread {
-                try {
-                    if (dialog.isShowing) {
-                        dialog.dismiss()
-                    }
-                } catch (_: Exception) {
-                }
-                if (::pickerStatusTextView.isInitialized) {
-                    pickerStatusTextView.text = "pemilihan folder dibatalkan."
-                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
-                }
-                refreshNavBackground()
-            }
-        }
-
-        @JavascriptInterface
-        fun onError(message: String) {
-            runOnUiThread {
-                try {
-                    if (dialog.isShowing) {
-                        dialog.dismiss()
-                    }
-                } catch (_: Exception) {
-                }
-                if (::pickerStatusTextView.isInitialized) {
-                    pickerStatusTextView.text = "pemilih folder gagal: " + message
-                    pickerStatusTextView.setTextColor(COLOR_ERROR)
-                }
-                refreshNavBackground()
-            }
-        }
-    }
-
     private fun isSessionLocked(state: SessionOrchestrator.State = orchestrator.state): Boolean {
         return lockedFolderId != null ||
             state == SessionOrchestrator.State.CONNECTING ||
@@ -1840,65 +1777,89 @@ class MainActivity : Activity() {
                     refreshNavBackground()
                     return@runOnUiThread
                 }
-                showPickerWebViewDialog(token)
+
+                try {
+                    val pickerUri = Uri.parse("https://rvmeur.com/tether-picker.html#at=" + Uri.encode(token))
+                    val intent = Intent(Intent.ACTION_VIEW, pickerUri).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+
+                    var isChromeAvailable = false
+                    try {
+                        packageManager.getPackageInfo("com.android.chrome", 0)
+                        isChromeAvailable = true
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        isChromeAvailable = false
+                    } catch (t: Throwable) {
+                        isChromeAvailable = false
+                    }
+
+                    if (isChromeAvailable) {
+                        intent.setPackage("com.android.chrome")
+                        intent.putExtra("android.support.customtabs.extra.SESSION", Bundle())
+                        FoundationLog.log("[FOLDER] Membuka browser untuk pemilih folder (chrome-customtab)")
+                    } else {
+                        FoundationLog.log("[FOLDER] Membuka browser untuk pemilih folder (browser-umum)")
+                    }
+
+                    startActivity(intent)
+                    pickerStatusTextView.text = "pemilih folder dibuka di browser — pilih folder, kamu akan kembali ke sini."
+                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                    refreshNavBackground()
+                } catch (t: Throwable) {
+                    FoundationLog.error("[FOLDER] Gagal membuka browser untuk pemilih folder", t)
+                    pickerStatusTextView.text = "pemilih folder gagal: tidak dapat membuka browser."
+                    pickerStatusTextView.setTextColor(COLOR_ERROR)
+                    refreshNavBackground()
+                }
             }
         }, "drive-picker-token").start()
     }
 
-    private fun showPickerWebViewDialog(token: String) {
-        try {
-            activePickerDialog?.dismiss()
-        } catch (_: Exception) {
+    private fun handlePickerResultRedirect(uri: Uri): Boolean {
+        val scheme = uri.scheme ?: ""
+        val host = uri.host ?: ""
+        val path = uri.path ?: ""
+        val uriStr = uri.toString()
+
+        val isPickerRedirect = (scheme == "com.rvmeur.transfer") &&
+            (path == "/picker-result" || host == "picker-result" || uriStr.startsWith("com.rvmeur.transfer:/picker-result"))
+        if (!isPickerRedirect) {
+            return false
         }
 
-        val dialog = Dialog(this, android.R.style.Theme_DeviceDefault_NoActionBar)
-        dialog.setCancelable(true)
-
-        val webView = WebView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            isFocusable = true
-            isFocusableInTouchMode = true
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            addJavascriptInterface(TetherBridge(dialog), "TetherBridge")
-        }
-
-        dialog.setContentView(
-            webView,
-            ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
-        dialog.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        dialog.window?.clearFlags(
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
-        )
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-
-        dialog.setOnDismissListener {
-            if (activePickerDialog === dialog) {
-                activePickerDialog = null
+        val folderId = uri.getQueryParameter("folder_id") ?: ""
+        val isValidFolderId = folderId.length in 10..80 &&
+            folderId.all { ch ->
+                ch in 'A'..'Z' || ch in 'a'..'z' || ch in '0'..'9' || ch == '_' || ch == '-'
             }
-            try {
-                webView.stopLoading()
-                webView.removeJavascriptInterface("TetherBridge")
-                webView.destroy()
-            } catch (_: Exception) {
+
+        if (isValidFolderId) {
+            val rawName = uri.getQueryParameter("folder_name")?.trim().orEmpty()
+            val clippedName = if (rawName.length > 120) rawName.substring(0, 120).trim() else rawName
+            val folderName = clippedName.ifEmpty { folderId }
+
+            driveFolders.saveSelectedFolder(folderId, folderName)
+            renderFolderUi(orchestrator.state)
+            if (::pickerStatusTextView.isInitialized) {
+                pickerStatusTextView.text = "folder tujuan: $folderName"
+                pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
             }
+            val valid = step1Valid()
+            if (valid && ::warningPill.isInitialized) {
+                warningPill.visibility = View.GONE
+            }
+            refreshNavBackground()
+        } else {
+            FoundationLog.error("[FOLDER] Hasil pemilih folder tidak valid pada redirect: $uri")
+            if (::pickerStatusTextView.isInitialized) {
+                pickerStatusTextView.text = "hasil pemilih folder tidak valid — coba lagi."
+                pickerStatusTextView.setTextColor(COLOR_ERROR)
+            }
+            refreshNavBackground()
         }
 
-        activePickerDialog = dialog
-        dialog.show()
-        webView.requestFocus()
-        webView.loadUrl("https://rvmeur.com/tether-picker.html#at=" + Uri.encode(token))
+        return true
     }
 
     private fun promptCreateFolder() {
