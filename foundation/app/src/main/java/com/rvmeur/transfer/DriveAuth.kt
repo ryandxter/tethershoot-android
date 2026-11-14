@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.app.Activity
 import android.content.Context
@@ -41,7 +41,7 @@ class DriveAuth(
     companion object {
         // Android Native Client ID dari konfigurasi Google Cloud Console
         const val ANDROID_CLIENT_ID = "343575435197-ug3en8ich4l1grgae2m6kbpcub0glu77.apps.googleusercontent.com"
-        const val ANDROID_REDIRECT_URI = "com.rvmeur.transferin:/oauth2redirect"
+        const val ANDROID_REDIRECT_URI = "com.rvmeur.transfer:/oauth2redirect"
         const val SCOPE = "https://www.googleapis.com/auth/drive.file"
 
         private const val AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -248,8 +248,8 @@ class DriveAuth(
         val path = uri.path ?: ""
         val uriStr = uri.toString()
 
-        val isOurRedirect = (scheme == "com.rvmeur.transferin") &&
-                (host == "oauth2redirect" || path == "/oauth2redirect" || uriStr.startsWith("com.rvmeur.transferin:/oauth2redirect"))
+        val isOurRedirect = (scheme == "com.rvmeur.transfer") &&
+                (host == "oauth2redirect" || path == "/oauth2redirect" || uriStr.startsWith("com.rvmeur.transfer:/oauth2redirect"))
         if (!isOurRedirect) {
             return false
         }

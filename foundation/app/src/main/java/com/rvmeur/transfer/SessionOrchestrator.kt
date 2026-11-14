@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.content.Context
 import android.hardware.usb.UsbDevice

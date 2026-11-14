@@ -28,15 +28,16 @@ echo "[2/5] d8 -> classes.dex"
 "$BT/d8" --lib "$PLATFORM" --output "$OUT/dex" "$OUT/classes.jar"
 
 echo "[3/5] aapt2 compile + link"
-sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rvmeur.transferin">|' \
+sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rvmeur.transfer">|' \
   "$PROJ/app/src/main/AndroidManifest.xml" > "$OUT/AndroidManifest.xml"
 "$BT/aapt2" compile --dir "$PROJ/app/src/main/res" -o "$OUT/res.zip"
 "$BT/aapt2" link -o "$OUT/app-unsigned.apk" \
   -I "$PLATFORM" \
   --manifest "$OUT/AndroidManifest.xml" \
   --min-sdk-version 31 --target-sdk-version 35 \
-  --version-code 23 --version-name "1.0.0" \
-  "$OUT/res.zip"
+  --version-code 1 --version-name "1.0.0" \
+  "$OUT/res.zip" \
+  -A "$PROJ/app/src/main/assets"
 
 echo "[4/5] Sisipkan classes.dex + zipalign + tanda tangan debug"
 (cd "$OUT/dex" && zip -q "$OUT/app-unsigned.apk" classes.dex)
@@ -47,10 +48,10 @@ if [ ! -f "$PROJ/debug.keystore" ]; then
     -dname "CN=Android Debug,O=Android,C=US" >/dev/null 2>&1
 fi
 "$BT/apksigner" sign --ks "$PROJ/debug.keystore" --ks-pass pass:android --key-pass pass:android \
-  --out "$OUT/TransferIn-Foundation-v1.0.0.apk" "$OUT/app-aligned.apk"
+  --out "$OUT/Transfer-v1.0.0.apk" "$OUT/app-aligned.apk"
 
 echo "[5/5] Verifikasi"
-"$BT/apksigner" verify --print-certs "$OUT/TransferIn-Foundation-v1.0.0.apk" | head -n 3
-unzip -l "$OUT/TransferIn-Foundation-v1.0.0.apk" | grep -E "classes.dex" || true
-ls -la "$OUT/TransferIn-Foundation-v1.0.0.apk"
-echo "BUILD OK: $OUT/TransferIn-Foundation-v1.0.0.apk"
+"$BT/apksigner" verify --print-certs "$OUT/Transfer-v1.0.0.apk" | head -n 3
+unzip -l "$OUT/Transfer-v1.0.0.apk" | grep -E "classes.dex" || true
+ls -la "$OUT/Transfer-v1.0.0.apk"
+echo "BUILD OK: $OUT/Transfer-v1.0.0.apk"

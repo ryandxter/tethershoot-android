@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.app.Notification
 import android.app.NotificationChannel

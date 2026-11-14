@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -253,6 +253,72 @@ class DriveFolders(
                 try { conn?.disconnect() } catch (_: Exception) {}
             }
         }, "drive-folders-list").start()
+    }
+
+    /**
+     * Membuat subfolder baru bernama [name] di bawah [parentId] melalui Google Drive API v3.
+     * Menggunakan thread latar terdedikasi dan memanggil [onDone] di thread UI (MainLooper).
+     */
+    fun createFolder(
+        name: String,
+        parentId: String,
+        onDone: (Boolean, String?) -> Unit
+    ) {
+        FoundationLog.log("[FOLDER] Membuat folder baru '$name' di bawah parentId=$parentId di thread latar...")
+        Thread({
+            var conn: HttpURLConnection? = null
+            try {
+                val token = driveAuth.getAccessToken()
+                if (token == null) {
+                    val err = "Token akses Google Drive belum tersedia. Hubungkan akun terlebih dahulu."
+                    FoundationLog.error("[FOLDER] $err")
+                    mainHandler.post { onDone(false, err) }
+                    return@Thread
+                }
+
+                val payload = JSONObject().apply {
+                    put("name", name)
+                    put("mimeType", FOLDER_MIME_TYPE)
+                    put("parents", JSONArray().put(parentId))
+                }
+                val bodyBytes = payload.toString().toByteArray(Charsets.UTF_8)
+
+                val url = URL(DRIVE_API_FILES)
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15_000
+                    readTimeout = 15_000
+                    doOutput = true
+                    setRequestProperty("Authorization", "Bearer $token")
+                    setRequestProperty("Content-Type", "application/json")
+                }
+
+                conn.outputStream.use { out ->
+                    out.write(bodyBytes)
+                    out.flush()
+                }
+
+                val code = conn.responseCode
+                if (code == 200 || code == 201) {
+                    val body = readStreamSafely(conn.inputStream)
+                    val json = JSONObject(body)
+                    val id = json.optString("id", "").ifEmpty { null }
+                    FoundationLog.log("[FOLDER] Berhasil membuat folder '$name' (id=$id) di bawah parentId=$parentId")
+                    mainHandler.post { onDone(true, id) }
+                } else {
+                    val errBody = readStreamSafely(conn.errorStream)
+                    val err = "Google Drive mengembalikan HTTP $code: $errBody"
+                    FoundationLog.error("[FOLDER] $err")
+                    mainHandler.post { onDone(false, err) }
+                }
+            } catch (t: Throwable) {
+                val err = "Gangguan jaringan saat membuat folder: ${t.javaClass.simpleName} - ${t.message}"
+                FoundationLog.error("[FOLDER] $err", t)
+                mainHandler.post { onDone(false, err) }
+            } finally {
+                try { conn?.disconnect() } catch (_: Exception) {}
+            }
+        }, "drive-folders-create").start()
     }
 
     private fun readStreamSafely(stream: InputStream?): String {

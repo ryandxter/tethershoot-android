@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.content.ContentValues
 import android.content.Context

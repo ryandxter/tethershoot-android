@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.graphics.Bitmap
 import java.io.File
@@ -8,18 +8,18 @@ import java.io.RandomAccessFile
 /* =============================================================================
  * HASIL AUDIT PANEN DARI APLIKASI LAMA:
  *
- * 1. LuminanceHistogram.kt (asal: com.rvmeur.transferin.domain.exposure.LuminanceHistogram):
+ * 1. LuminanceHistogram.kt (asal: com.rvmeur.transfer.domain.exposure.LuminanceHistogram):
  *    - Audit: 100% algoritma murni tanpa ketergantungan library/framework.
  *    - Port: Diadopsi utuh dengan representasi 256 bin nol alokasi heap di hot-loop.
  *
- * 2. ExposureMetrics.kt & ExposureAnalyzer.kt (asal: com.rvmeur.transferin.domain.exposure):
+ * 2. ExposureMetrics.kt & ExposureAnalyzer.kt (asal: com.rvmeur.transfer.domain.exposure):
  *    - Audit: Logika komputasi luminans ITU-R BT.601 integer bit-shift ((77*R + 150*G + 29*B) >> 8)
  *      dan kalkulasi statistik histogram (meanLuminance, blackFloorDensity, shadowClippingPercent,
  *      highlightSaturationPercent, shannonEntropy) murni dan terbukti stabil.
  *    - Port: Diadopsi dengan melepaskan ketergantungan enum CameraPictureProfile lama agar
  *      mandiri di fondasi, dengan performa tinggi untuk pratinjau bitmap.
  *
- * 3. RafPreviewExtractor.kt (asal: com.rvmeur.transferin.data.usb.vendor.fuji.RafPreviewExtractor):
+ * 3. RafPreviewExtractor.kt (asal: com.rvmeur.transfer.data.usb.vendor.fuji.RafPreviewExtractor):
  *    - Audit: Kode lama memiliki ketergantungan pada model ExifOrientationHelper, EmbeddedPreviewResult,
  *      dan parser MakerNote film simulation. Namun struktur inti kontainer Fujifilm RAF (magic
  *      "FUJIFILMCCD-RAW ", offset JPEG pada bita 84, panjang pada bita 88, marker SOI 0xFFD8)
@@ -32,7 +32,7 @@ import java.io.RandomAccessFile
 /**
  * Kontainer histogram luminans 256-bin berkinerja tinggi.
  *
- * Asal: com.rvmeur.transferin.domain.exposure.LuminanceHistogram
+ * Asal: com.rvmeur.transfer.domain.exposure.LuminanceHistogram
  */
 class LuminanceHistogram(
     val bins: IntArray = IntArray(BIN_COUNT)
@@ -88,7 +88,7 @@ class LuminanceHistogram(
 /**
  * Metrik statistik keterpaparan (exposure) yang dihitung dari LuminanceHistogram.
  *
- * Asal: com.rvmeur.transferin.domain.exposure.ExposureMetrics
+ * Asal: com.rvmeur.transfer.domain.exposure.ExposureMetrics
  */
 data class ExposureMetrics(
     val meanLuminance: Float,
@@ -172,7 +172,7 @@ data class ExposureMetrics(
 /**
  * Mesin analisis pencahayaan berbasis ITU-R BT.601 integer math.
  *
- * Asal: com.rvmeur.transferin.domain.exposure.ExposureAnalyzer
+ * Asal: com.rvmeur.transfer.domain.exposure.ExposureAnalyzer
  */
 object ExposureAnalyzer {
 
@@ -227,7 +227,7 @@ object ExposureAnalyzer {
 /**
  * Pengekstrak pratinjau JPEG tertanam dari kontainer Fujifilm .RAF.
  *
- * Asal: com.rvmeur.transferin.data.usb.vendor.fuji.RafPreviewExtractor
+ * Asal: com.rvmeur.transfer.data.usb.vendor.fuji.RafPreviewExtractor
  * Ditulis ulang minimal dari prinsip struktur biner RAF tanpa dependensi eksternal.
  */
 object RafPreviewExtractor {

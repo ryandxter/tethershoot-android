@@ -1,4 +1,4 @@
-package com.rvmeur.transferin
+package com.rvmeur.transfer
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -9,7 +9,7 @@ import java.io.FileNotFoundException
 
 /**
  * Provider berkas mandiri (tanpa dependensi AndroidX) untuk membagikan berkas log foundation.
- * Authority: com.rvmeur.transferin.fileprovider
+ * Authority: com.rvmeur.transfer.fileprovider
  */
 class FoundationFileProvider : ContentProvider() {
 
@@ -46,7 +46,7 @@ class FoundationFileProvider : ContentProvider() {
     ): Int = 0
 
     companion object {
-        const val AUTHORITY = "com.rvmeur.transferin.fileprovider"
+        const val AUTHORITY = "com.rvmeur.transfer.fileprovider"
 
         fun logUri(): Uri = Uri.parse("content://$AUTHORITY/log")
     }

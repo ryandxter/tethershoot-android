@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.rvmeur.transferin">
+    package="com.rvmeur.transfer">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -18,7 +18,9 @@
 
     <application
         android:allowBackup="false"
-        android:label="TransferIn"
+        android:label="@rvmeur Tether"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
@@ -42,7 +44,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.rvmeur.transferin"
+                    android:scheme="com.rvmeur.transfer"
                     android:pathPrefix="/oauth2redirect" />
             </intent-filter>
 
@@ -51,7 +53,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="com.rvmeur.transferin"
+                    android:scheme="com.rvmeur.transfer"
                     android:host="oauth2redirect" />
             </intent-filter>
 
@@ -62,7 +64,7 @@
 
         <provider
             android:name=".FoundationFileProvider"
-            android:authorities="com.rvmeur.transferin.fileprovider"
+            android:authorities="com.rvmeur.transfer.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true" />
 
