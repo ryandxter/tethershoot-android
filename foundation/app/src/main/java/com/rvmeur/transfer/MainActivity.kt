@@ -6,6 +6,8 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -256,6 +258,7 @@ class MainActivity : Activity() {
         }
 
         Engines.init(applicationContext)
+        FcmSupport.fetchTokenAsync()
 
         driveAuth.onAuthStatusChanged = { connected, email ->
             runOnUiThread {
@@ -1002,6 +1005,37 @@ class MainActivity : Activity() {
             }
         }
         cardAInner.addView(btnShareLogWizard)
+
+        val btnCopyFcmToken = monoLabel("salin token fcm.").apply {
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(6), 0, 0)
+            setOnClickListener {
+                try {
+                    FcmSupport.requestToken { token ->
+                        try {
+                            if (token != null) {
+                                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                val clip = ClipData.newPlainText("fcm token", token)
+                                clipboard?.setPrimaryClip(clip)
+                                updateStatusTextView.text = "token fcm tersalin ke clipboard."
+                            } else {
+                                updateStatusTextView.text = "token fcm belum tersedia — periksa koneksi."
+                            }
+                        } catch (t: Throwable) {
+                            try {
+                                updateStatusTextView.text = "token fcm belum tersedia — periksa koneksi."
+                            } catch (_: Throwable) {}
+                        }
+                    }
+                } catch (t: Throwable) {
+                    try {
+                        updateStatusTextView.text = "token fcm belum tersedia — periksa koneksi."
+                    } catch (_: Throwable) {}
+                }
+            }
+        }
+        cardAInner.addView(btnCopyFcmToken)
 
         val (verName, verCode) = getInstalledVersionInfo()
         updateVersionTextView = monoLabel("versi terpasang: $verName ($verCode)").apply {

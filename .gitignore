@@ -26,6 +26,7 @@ client_secret*.json
 **/client_secret*.json
 google-services.json
 **/google-services.json
+!foundation/app/google-services.json
 *.keystore
 *.jks
 *.pem
