@@ -42,7 +42,7 @@ class DriveAuth(
         // Android Native Client ID dari konfigurasi Google Cloud Console
         const val ANDROID_CLIENT_ID = "574131462713-rei4gea37is28ba2pld620dpu41pp0ge.apps.googleusercontent.com"
         const val ANDROID_REDIRECT_URI = "com.rvmeur.transfer:/oauth2redirect"
-        const val SCOPE = "https://www.googleapis.com/auth/drive.file"
+        const val SCOPE = "https://www.googleapis.com/auth/drive"
 
         private const val AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
         private const val TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
