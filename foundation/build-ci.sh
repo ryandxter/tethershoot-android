@@ -96,10 +96,17 @@ fi
 
 echo "==> Memulai Build TransferIn Foundation v${V_NAME} (code: ${V_CODE})"
 
+# Kumpulkan semua jar vendor (PERSIS build-foundation.sh)
+VENDOR_JARS=""
+for jar in "$PROJ/vendor/jars"/*.jar; do
+  [ -f "$jar" ] || continue
+  VENDOR_JARS="${VENDOR_JARS:+${VENDOR_JARS}:}$jar"
+done
+
 # [1/5] Kompilasi Kotlin -> classes.jar (PERSIS argumen build-foundation.sh)
 echo "[1/5] Kompilasi Kotlin -> classes.jar"
 java -cp "$KOTLIN_LIB/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
-  -cp "$PLATFORM" \
+  -cp "$PLATFORM:$VENDOR_JARS" \
   -include-runtime \
   -no-reflect \
   -d "$OUT/classes.jar" \
@@ -107,24 +114,39 @@ java -cp "$KOTLIN_LIB/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
 
 # [2/5] d8 -> classes.dex (PERSIS argumen build-foundation.sh)
 echo "[2/5] d8 -> classes.dex"
-"$BT/d8" --lib "$PLATFORM" --output "$OUT/dex" "$OUT/classes.jar"
+"$BT/d8" --lib "$PLATFORM" --output "$OUT/dex" "$OUT/classes.jar" "$PROJ/vendor/jars"/*.jar
 
 # [3/5] aapt2 compile + link (PERSIS argumen build-foundation.sh + manifest injection)
 echo "[3/5] aapt2 compile + link"
 sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rvmeur.transfer">|' \
   "$PROJ/app/src/main/AndroidManifest.xml" > "$OUT/AndroidManifest.xml"
 "$BT/aapt2" compile --dir "$PROJ/app/src/main/res" -o "$OUT/res.zip"
+
+VENDOR_RES_ZIPS=()
+if [ -d "$PROJ/vendor/res" ]; then
+  for res_dir in "$PROJ/vendor/res"/*; do
+    [ -d "$res_dir" ] || continue
+    if [ -n "$(find "$res_dir" -type f -print -quit 2>/dev/null)" ]; then
+      res_name="$(basename "$res_dir")"
+      zip_out="$OUT/vendor-res-$res_name.zip"
+      "$BT/aapt2" compile --dir "$res_dir" -o "$zip_out"
+      VENDOR_RES_ZIPS+=("$zip_out")
+    fi
+  done
+fi
+
 "$BT/aapt2" link -o "$OUT/app-unsigned.apk" \
   -I "$PLATFORM" \
   --manifest "$OUT/AndroidManifest.xml" \
   --min-sdk-version 31 --target-sdk-version 35 \
   --version-code "$V_CODE" --version-name "$V_NAME" \
   "$OUT/res.zip" \
+  ${VENDOR_RES_ZIPS[@]+"${VENDOR_RES_ZIPS[@]}"} \
   -A "$PROJ/app/src/main/assets"
 
 # [4/5] Sisipkan classes.dex + zipalign + tanda tangan (PERSIS argumen build-foundation.sh)
 echo "[4/5] Sisipkan classes.dex + zipalign + tanda tangan"
-(cd "$OUT/dex" && zip -q "$OUT/app-unsigned.apk" classes.dex)
+(cd "$OUT/dex" && zip -q "$OUT/app-unsigned.apk" classes*.dex)
 "$BT/zipalign" -f 4 "$OUT/app-unsigned.apk" "$OUT/app-aligned.apk"
 "$BT/apksigner" sign --ks "$KEYSTORE" --ks-pass pass:android --key-pass pass:android \
   --out "$OUT/Transfer-v${V_NAME}.apk" "$OUT/app-aligned.apk"

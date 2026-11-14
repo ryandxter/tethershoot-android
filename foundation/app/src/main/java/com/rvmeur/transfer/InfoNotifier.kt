@@ -23,6 +23,7 @@ object InfoNotifier {
     const val ID_UPLOADS_DONE = 4301
     const val ID_SESSION_DONE = 4302
     const val ID_UPDATE = 4303
+    const val ID_REMOTE = 4304
 
     @Volatile
     private var channelCreated = false
@@ -134,6 +135,16 @@ object InfoNotifier {
             title = "@rvmeur tether",
             text = "pembaruan tersedia: v$versionName — buka aplikasi untuk memasang.",
             iconRes = android.R.drawable.stat_sys_download_done
+        )
+    }
+
+    fun showRemote(context: Context, title: String, body: String) {
+        sendNotification(
+            context = context,
+            notificationId = ID_REMOTE,
+            title = title,
+            text = body,
+            iconRes = android.R.drawable.stat_notify_chat
         )
     }
 }
