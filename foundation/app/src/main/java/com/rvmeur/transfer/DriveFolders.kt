@@ -40,8 +40,8 @@ class DriveFolders(
     companion object {
         const val ROOT_ID = "root"
         const val ROOT_NAME = "Drive Saya"
-        private const val PREFS_NAME = "transferin_drive_folders"
-        private const val KEY_TRAIL_JSON = "folder_trail_json"
+        const val PREFS_NAME = "transferin_drive_folders"
+        const val KEY_TRAIL_JSON = "folder_trail_json"
         private const val DRIVE_API_FILES = "https://www.googleapis.com/drive/v3/files"
         private const val FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
     }
@@ -174,6 +174,43 @@ class DriveFolders(
             trail.add(DriveFolderItem(ROOT_ID, ROOT_NAME))
             saveTrailInternal()
             FoundationLog.log("[FOLDER] Navigasi di-reset ke root (${ROOT_NAME})")
+        }
+    }
+
+    /**
+     * Memeriksa apakah sudah ada folder tujuan yang dipilih (bukan sekadar placeholder root).
+     */
+    fun hasSelectedFolder(): Boolean {
+        synchronized(trail) {
+            val current = trail.lastOrNull() ?: return false
+            return current.id.isNotEmpty() && current.id != ROOT_ID
+        }
+    }
+
+    /**
+     * Menyimpan folder tujuan yang dipilih dari Google Picker atau hasil buat folder baru.
+     */
+    fun saveSelectedFolder(id: String, name: String) {
+        synchronized(trail) {
+            trail.clear()
+            trail.add(DriveFolderItem(ROOT_ID, ROOT_NAME))
+            if (id.isNotEmpty() && id != ROOT_ID) {
+                trail.add(DriveFolderItem(id, name))
+            }
+            saveTrailInternal()
+            FoundationLog.log("[FOLDER] Folder tujuan disimpan: '$name' (id=$id)")
+        }
+    }
+
+    /**
+     * Menghapus folder tujuan tersimpan dari memori dan SharedPreferences (saat logout).
+     */
+    fun clearSavedFolder() {
+        synchronized(trail) {
+            trail.clear()
+            trail.add(DriveFolderItem(ROOT_ID, ROOT_NAME))
+            prefs.edit().remove(KEY_TRAIL_JSON).apply()
+            FoundationLog.log("[FOLDER] Folder tujuan tersimpan dihapus dari preferensi ($KEY_TRAIL_JSON)")
         }
     }
 

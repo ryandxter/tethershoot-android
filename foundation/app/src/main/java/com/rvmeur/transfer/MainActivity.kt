@@ -41,6 +41,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -115,13 +117,11 @@ class MainActivity : Activity() {
     private lateinit var logScrollView: ScrollView
     private lateinit var logTextView: TextView
 
-    // Komponen Penjelajah Folder Sebaris (Halaman 1 Wizard)
-    private lateinit var explorerPathTextView: TextView
-    private lateinit var explorerStatusTextView: TextView
-    private lateinit var btnExplorerUp: Button
+    // Komponen Pemilih Folder Tujuan (Halaman 1 Wizard)
+    private lateinit var btnPickFolder: Button
     private lateinit var btnExplorerNew: Button
-    private lateinit var explorerListContainer: LinearLayout
-    private lateinit var explorerScrollView: ScrollView
+    private lateinit var pickerStatusTextView: TextView
+    private var activePickerDialog: Dialog? = null
 
     // Komponen Galeri Tinjau Tahan Layar Penuh (Stage 4)
     private lateinit var btnReviewHeld: Button
@@ -258,11 +258,10 @@ class MainActivity : Activity() {
                 renderDriveUi(connected, email)
                 renderUploadStats()
                 if (!connected) {
-                    closeFolderExplorer()
+                    handleDriveLogoutCleanup()
                 } else {
-                    refreshExplorerView()
+                    renderFolderUi(orchestrator.state)
                 }
-                renderFolderUi(orchestrator.state)
             }
         }
 
@@ -307,9 +306,6 @@ class MainActivity : Activity() {
         renderDriveUi(driveAuth.isConnected(), driveAuth.accountEmail())
         renderUploadStats()
         renderFolderUi(orchestrator.state)
-        if (driveAuth.isConnected()) {
-            refreshExplorerView()
-        }
 
         FoundationLog.log("=== TransferIn Foundation MainActivity Siap (minSdk 31, targetSdk 35) ===")
 
@@ -387,6 +383,11 @@ class MainActivity : Activity() {
         navRefreshHandler.removeCallbacks(navRefreshRunnable)
         headerRingAnimator?.cancel()
         headerRingAnimator = null
+        try {
+            activePickerDialog?.dismiss()
+        } catch (_: Exception) {
+        }
+        activePickerDialog = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 windowManager.removeCrossWindowBlurEnabledListener(crossWindowBlurListener)
@@ -846,6 +847,7 @@ class MainActivity : Activity() {
             }
             setOnClickListener {
                 driveAuth.disconnect()
+                handleDriveLogoutCleanup()
             }
         }
 
@@ -854,12 +856,12 @@ class MainActivity : Activity() {
         cardAInner.addView(rowDrive)
         page.addView(cardAOuter)
 
-        // Kartu B (doppelrand): folder tujuan. + penjelajah sebaris
+        // Kartu B (doppelrand): folder tujuan. (Google Picker + folder baru)
         val (cardBOuter, cardBInner) = doppelrandCard()
         cardBInner.addView(sectionTitle("folder tujuan."))
 
         folderDestinationTextView = TextView(this).apply {
-            text = "Folder tujuan: ${driveFolders.getCurrentPath()}"
+            text = if (driveFolders.hasSelectedFolder()) driveFolders.getCurrentFolder().name else "belum dipilih."
             typeface = fontDmSansMedium
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
             setTextColor(COLOR_INK)
@@ -867,103 +869,35 @@ class MainActivity : Activity() {
         }
         cardBInner.addView(folderDestinationTextView)
 
-        explorerPathTextView = monoLabel("Jejak: ${driveFolders.getCurrentPath()}").apply {
-            setPadding(0, 0, 0, dp(8))
-        }
-        cardBInner.addView(explorerPathTextView)
-
-        val explorerTopRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+        btnPickFolder = kineticButton("pilih folder tujuan.", primer = true).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                dp(52)
             ).apply {
                 bottomMargin = dp(8)
             }
-        }
-
-        btnExplorerUp = kineticButton("naik.", primer = false).apply {
-            minHeight = dp(38)
-            minimumHeight = dp(38)
-            setPadding(dp(16), 0, dp(16), 0)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(38)
-            ).apply {
-                marginEnd = dp(8)
-            }
             setOnClickListener {
-                if (driveFolders.canGoUp()) {
-                    driveFolders.goUp()
-                    refreshExplorerView()
-                    renderFolderUi(orchestrator.state)
-                }
+                pickFolderClicked()
             }
         }
+        cardBInner.addView(btnPickFolder)
 
         btnExplorerNew = kineticButton("folder baru.", primer = false).apply {
-            minHeight = dp(38)
-            minimumHeight = dp(38)
-            setPadding(dp(16), 0, dp(16), 0)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(38)
-            ).apply {
-                marginEnd = dp(10)
-            }
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(52)
+            )
             setOnClickListener {
                 promptCreateFolder()
             }
         }
+        cardBInner.addView(btnExplorerNew)
 
-        explorerStatusTextView = TextView(this).apply {
-            text = "memuat subfolder..."
-            typeface = fontDmSansRegular
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            setTextColor(COLOR_MUTED)
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        pickerStatusTextView = monoLabel("").apply {
+            setPadding(0, dp(8), 0, 0)
         }
+        cardBInner.addView(pickerStatusTextView)
 
-        explorerTopRow.addView(btnExplorerUp)
-        explorerTopRow.addView(btnExplorerNew)
-        explorerTopRow.addView(explorerStatusTextView)
-        cardBInner.addView(explorerTopRow)
-
-        explorerListContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        explorerScrollView = ScrollView(this).apply {
-            isFillViewport = true
-            isNestedScrollingEnabled = true
-            setPadding(dp(6), dp(6), dp(6), dp(6))
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(12).toFloat()
-                setColor(COLOR_GROUND)
-                setStroke(dp(1), COLOR_HAIRLINE)
-            }
-            addView(
-                explorerListContainer,
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(200)
-            )
-        }
-
-        cardBInner.addView(explorerScrollView)
         page.addView(cardBOuter)
 
         return page
@@ -1551,7 +1485,14 @@ class MainActivity : Activity() {
     }
 
     private fun step1Valid(): Boolean {
-        val folderValid = ::folderDestinationTextView.isInitialized && folderDestinationTextView.text.isNotBlank()
+        val label = if (::folderDestinationTextView.isInitialized) {
+            folderDestinationTextView.text.toString().trim()
+        } else {
+            ""
+        }
+        val folderValid = driveFolders.hasSelectedFolder() &&
+            label.isNotBlank() &&
+            label != "belum dipilih."
         return lastDriveConnected && folderValid
     }
 
@@ -1623,7 +1564,8 @@ class MainActivity : Activity() {
                         val done = counts[ItemStatus.DONE] ?: 0
                         val failed = counts[ItemStatus.FAILED_FINAL] ?: 0
                         val held = counts[ItemStatus.CULLING_HOLD] ?: 0
-                        val folderPath = lockedFolderPath ?: driveFolders.getCurrentPath()
+                        val folderPath = lockedFolderPath
+                            ?: if (driveFolders.hasSelectedFolder()) driveFolders.getCurrentFolder().name else "belum dipilih."
                         summaryTextView.text = String.format(
                             Locale.US,
                             "folder tujuan: %s\ngrup selesai diunduh: %d\nberkas diunduh: %d (%.2f MB)\nkecepatan terakhir: %.2f MB/s\nunggahan selesai: %d · gagal: %d · tahan: %d",
@@ -1802,27 +1744,174 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun exploreFoldersClicked() {
-        // Penjelajah kini sebaris di halaman 1 wizard; bila terhubung, segarkan daftar subfolder.
-        if (driveAuth.isConnected()) {
-            refreshExplorerView()
+    private inner class TetherBridge(private val dialog: Dialog) {
+        @JavascriptInterface
+        fun onPicked(id: String, name: String) {
+            runOnUiThread {
+                val cleanId = id.trim()
+                val cleanName = name.trim().ifEmpty { cleanId }
+                if (cleanId.isNotEmpty()) {
+                    driveFolders.saveSelectedFolder(cleanId, cleanName)
+                }
+                try {
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
+                } catch (_: Exception) {
+                }
+                renderFolderUi(orchestrator.state)
+                if (::pickerStatusTextView.isInitialized) {
+                    pickerStatusTextView.text = ""
+                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                }
+                val valid = step1Valid()
+                if (valid && ::warningPill.isInitialized) {
+                    warningPill.visibility = View.GONE
+                }
+                refreshNavBackground()
+            }
+        }
+
+        @JavascriptInterface
+        fun onCancelled() {
+            runOnUiThread {
+                try {
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
+                } catch (_: Exception) {
+                }
+                if (::pickerStatusTextView.isInitialized) {
+                    pickerStatusTextView.text = "pemilihan folder dibatalkan."
+                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                }
+                refreshNavBackground()
+            }
+        }
+
+        @JavascriptInterface
+        fun onError(message: String) {
+            runOnUiThread {
+                try {
+                    if (dialog.isShowing) {
+                        dialog.dismiss()
+                    }
+                } catch (_: Exception) {
+                }
+                if (::pickerStatusTextView.isInitialized) {
+                    pickerStatusTextView.text = "pemilih folder gagal: " + message
+                    pickerStatusTextView.setTextColor(COLOR_ERROR)
+                }
+                refreshNavBackground()
+            }
         }
     }
 
-    private fun openFolderExplorer() {
-        refreshExplorerView()
+    private fun isSessionLocked(state: SessionOrchestrator.State = orchestrator.state): Boolean {
+        return lockedFolderId != null ||
+            state == SessionOrchestrator.State.CONNECTING ||
+            state == SessionOrchestrator.State.BASELINE ||
+            state == SessionOrchestrator.State.MONITORING ||
+            state == SessionOrchestrator.State.CLOSING ||
+            state == SessionOrchestrator.State.ERROR
     }
 
-    private fun closeFolderExplorer() {
-        renderFolderUi(orchestrator.state)
+    private fun pickFolderClicked() {
+        if (!driveAuth.isConnected()) {
+            pickerStatusTextView.text = "hubungkan google drive dulu."
+            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+            refreshNavBackground()
+            return
+        }
+        if (isSessionLocked()) {
+            pickerStatusTextView.text = "folder terkunci selama sesi."
+            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+            refreshNavBackground()
+            return
+        }
+
+        Thread({
+            val token = driveAuth.getAccessToken()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (token.isNullOrEmpty()) {
+                    pickerStatusTextView.text = "pemilih folder gagal: token akses tidak tersedia."
+                    pickerStatusTextView.setTextColor(COLOR_ERROR)
+                    refreshNavBackground()
+                    return@runOnUiThread
+                }
+                showPickerWebViewDialog(token)
+            }
+        }, "drive-picker-token").start()
+    }
+
+    private fun showPickerWebViewDialog(token: String) {
+        try {
+            activePickerDialog?.dismiss()
+        } catch (_: Exception) {
+        }
+
+        val dialog = Dialog(this, android.R.style.Theme_DeviceDefault_NoActionBar)
+        dialog.setCancelable(true)
+
+        val webView = WebView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            isFocusable = true
+            isFocusableInTouchMode = true
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            addJavascriptInterface(TetherBridge(dialog), "TetherBridge")
+        }
+
+        dialog.setContentView(
+            webView,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+        dialog.window?.clearFlags(
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+        )
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        dialog.setOnDismissListener {
+            if (activePickerDialog === dialog) {
+                activePickerDialog = null
+            }
+            try {
+                webView.stopLoading()
+                webView.removeJavascriptInterface("TetherBridge")
+                webView.destroy()
+            } catch (_: Exception) {
+            }
+        }
+
+        activePickerDialog = dialog
+        dialog.show()
+        webView.requestFocus()
+        webView.loadUrl("https://rvmeur.com/tether-picker.html#at=" + Uri.encode(token))
     }
 
     private fun promptCreateFolder() {
-        val state = orchestrator.state
-        if (state != SessionOrchestrator.State.IDLE && state != SessionOrchestrator.State.CLOSED) {
-            explorerStatusTextView.text = "folder terkunci selama sesi."
-            explorerStatusTextView.setTextColor(COLOR_MUTED)
-            explorerStatusTextView.visibility = View.VISIBLE
+        if (isSessionLocked()) {
+            pickerStatusTextView.text = "folder terkunci selama sesi."
+            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+            refreshNavBackground()
+            return
+        }
+        if (!driveFolders.hasSelectedFolder()) {
+            pickerStatusTextView.text = "pilih folder tujuan dulu."
+            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+            refreshNavBackground()
             return
         }
 
@@ -1837,16 +1926,21 @@ class MainActivity : Activity() {
                 val nama = input.text?.toString()?.trim().orEmpty()
                 if (nama.isNotEmpty()) {
                     val parentId = driveFolders.getCurrentFolder().id
-                    driveFolders.createFolder(nama, parentId) { success, _ ->
-                        if (success) {
-                            refreshExplorerView()
-                            explorerStatusTextView.text = "folder '$nama' dibuat."
-                            explorerStatusTextView.setTextColor(COLOR_MUTED)
-                            explorerStatusTextView.visibility = View.VISIBLE
+                    driveFolders.createFolder(nama, parentId) { success, newFolderId ->
+                        if (success && !newFolderId.isNullOrEmpty()) {
+                            driveFolders.saveSelectedFolder(newFolderId, nama)
+                            renderFolderUi(orchestrator.state)
+                            pickerStatusTextView.text = "folder baru jadi tujuan: $nama"
+                            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                            val valid = step1Valid()
+                            if (valid && ::warningPill.isInitialized) {
+                                warningPill.visibility = View.GONE
+                            }
+                            refreshNavBackground()
                         } else {
-                            explorerStatusTextView.text = "gagal membuat folder."
-                            explorerStatusTextView.setTextColor(COLOR_ERROR)
-                            explorerStatusTextView.visibility = View.VISIBLE
+                            pickerStatusTextView.text = "gagal membuat folder."
+                            pickerStatusTextView.setTextColor(COLOR_ERROR)
+                            refreshNavBackground()
                         }
                     }
                 }
@@ -1857,70 +1951,25 @@ class MainActivity : Activity() {
         dialog.show()
     }
 
-    private fun refreshExplorerView() {
-        if (!::explorerPathTextView.isInitialized) return
-        val current = driveFolders.getCurrentFolder()
-        val path = driveFolders.getCurrentPath()
-        explorerPathTextView.text = "Jejak: $path"
-        val canUp = driveFolders.canGoUp()
-        btnExplorerUp.isEnabled = canUp
-        btnExplorerUp.alpha = if (canUp) 1.0f else 0.4f
-
-        explorerStatusTextView.text = "Memuat subfolder '${current.name}'..."
-        explorerStatusTextView.setTextColor(COLOR_MUTED)
-        explorerStatusTextView.visibility = View.VISIBLE
-        explorerListContainer.removeAllViews()
-
-        driveFolders.listSubfolders(current.id) { subfolders, errorMsg ->
-            if (!::explorerListContainer.isInitialized) return@listSubfolders
-
-            if (errorMsg != null) {
-                explorerStatusTextView.text = "Gagal memuat: $errorMsg"
-                explorerStatusTextView.setTextColor(COLOR_ERROR)
-                explorerStatusTextView.visibility = View.VISIBLE
-            } else if (subfolders.isNullOrEmpty()) {
-                explorerStatusTextView.text = "(Tidak ada subfolder di dalam folder ini)"
-                explorerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
-                explorerStatusTextView.visibility = View.VISIBLE
-            } else {
-                if (!explorerStatusTextView.text.toString().startsWith("folder '")) {
-                    explorerStatusTextView.visibility = View.GONE
-                }
-                populateSubfolders(subfolders)
-            }
+    private fun handleDriveLogoutCleanup() {
+        driveFolders.clearSavedFolder()
+        getSharedPreferences(DriveFolders.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(DriveFolders.KEY_TRAIL_JSON)
+            .apply()
+        if (::folderDestinationTextView.isInitialized) {
+            folderDestinationTextView.text = "belum dipilih."
         }
-    }
-
-    private fun populateSubfolders(subfolders: List<DriveFolderItem>) {
-        explorerListContainer.removeAllViews()
-        for (folder in subfolders) {
-            val tv = TextView(this).apply {
-                text = "📁  ${folder.name}"
-                setTextColor(COLOR_INK)
-                typeface = fontDmSansRegular
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-                setPadding(dp(16), dp(14), dp(16), dp(14))
-                isClickable = true
-                isFocusable = true
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = dp(10).toFloat()
-                    setColor(COLOR_SHELL)
-                }
-                setOnClickListener {
-                    driveFolders.enterFolder(folder)
-                    refreshExplorerView()
-                    renderFolderUi(orchestrator.state)
-                }
-            }
-            val params = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dp(4)
-            }
-            explorerListContainer.addView(tv, params)
+        if (::pickerStatusTextView.isInitialized) {
+            pickerStatusTextView.text = ""
+            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
         }
+        renderFolderUi(orchestrator.state)
+        val valid = step1Valid()
+        if (!valid && currentPage > 0) {
+            goToPage(0)
+        }
+        refreshNavBackground()
     }
 
     private fun renderFolderUi(state: SessionOrchestrator.State = orchestrator.state) {
@@ -1933,12 +1982,17 @@ class MainActivity : Activity() {
             state == SessionOrchestrator.State.ERROR)
 
         if (isSessionActive) {
-            val currentLocked = lockedFolderPath ?: driveFolders.getCurrentPath()
-            folderDestinationTextView.text = "Folder tujuan: $currentLocked (terkunci oleh sesi berjalan)"
+            val currentLocked = lockedFolderPath
+                ?: if (driveFolders.hasSelectedFolder()) driveFolders.getCurrentFolder().name else "belum dipilih."
+            folderDestinationTextView.text = "$currentLocked (terkunci oleh sesi berjalan)"
         } else {
             lockedFolderId = null
             lockedFolderPath = null
-            folderDestinationTextView.text = "Folder tujuan: ${driveFolders.getCurrentPath()}"
+            folderDestinationTextView.text = if (driveFolders.hasSelectedFolder()) {
+                driveFolders.getCurrentFolder().name
+            } else {
+                "belum dipilih."
+            }
         }
     }
 
@@ -1988,7 +2042,7 @@ class MainActivity : Activity() {
         }
 
         val activeFolder = driveFolders.getCurrentFolder()
-        val activePath = driveFolders.getCurrentPath()
+        val activePath = if (driveFolders.hasSelectedFolder()) activeFolder.name else driveFolders.getCurrentPath()
         lockedFolderId = activeFolder.id
         lockedFolderPath = activePath
         orchestrator.targetDriveFolderId = activeFolder.id
