@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "574131462713",
+    "firebase_url": "https://happyfamily-ryndxtr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "happyfamily-ryndxtr",
+    "storage_bucket": "happyfamily-ryndxtr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574131462713:android:cac9de4e9414f4478c63e8",
+        "android_client_info": {
+          "package_name": "com.rvmeur.transfer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "574131462713-deqlmk9dp578c304cfafu5i2o3lik83v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAefPFuLJOoWagZhkOV3Le_DAQ3aS_0N88"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "574131462713-deqlmk9dp578c304cfafu5i2o3lik83v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "574131462713-gf79dgq0cr77fcmmlnk8g8h32tlb3tea.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ryandxter.happyfamily"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574131462713:android:e3903e7610a4f9358c63e8",
+        "android_client_info": {
+          "package_name": "com.rvmeur.transferin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "574131462713-deqlmk9dp578c304cfafu5i2o3lik83v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAefPFuLJOoWagZhkOV3Le_DAQ3aS_0N88"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "574131462713-deqlmk9dp578c304cfafu5i2o3lik83v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "574131462713-gf79dgq0cr77fcmmlnk8g8h32tlb3tea.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ryandxter.happyfamily"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
