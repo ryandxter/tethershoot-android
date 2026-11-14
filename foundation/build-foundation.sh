@@ -35,7 +35,7 @@ sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<ma
   -I "$PLATFORM" \
   --manifest "$OUT/AndroidManifest.xml" \
   --min-sdk-version 31 --target-sdk-version 35 \
-  --version-code 1 --version-name "1.0.0" \
+  --version-code 5 --version-name "1.1.1" \
   "$OUT/res.zip" \
   -A "$PROJ/app/src/main/assets"
 
@@ -48,10 +48,10 @@ if [ ! -f "$PROJ/debug.keystore" ]; then
     -dname "CN=Android Debug,O=Android,C=US" >/dev/null 2>&1
 fi
 "$BT/apksigner" sign --ks "$PROJ/debug.keystore" --ks-pass pass:android --key-pass pass:android \
-  --out "$OUT/Transfer-v1.0.0.apk" "$OUT/app-aligned.apk"
+  --out "$OUT/Transfer-v1.1.1.apk" "$OUT/app-aligned.apk"
 
 echo "[5/5] Verifikasi"
-"$BT/apksigner" verify --print-certs "$OUT/Transfer-v1.0.0.apk" | head -n 3
-unzip -l "$OUT/Transfer-v1.0.0.apk" | grep -E "classes.dex" || true
-ls -la "$OUT/Transfer-v1.0.0.apk"
-echo "BUILD OK: $OUT/Transfer-v1.0.0.apk"
+"$BT/apksigner" verify --print-certs "$OUT/Transfer-v1.1.1.apk" | head -n 3
+unzip -l "$OUT/Transfer-v1.1.1.apk" | grep -E "classes.dex" || true
+ls -la "$OUT/Transfer-v1.1.1.apk"
+echo "BUILD OK: $OUT/Transfer-v1.1.1.apk"
