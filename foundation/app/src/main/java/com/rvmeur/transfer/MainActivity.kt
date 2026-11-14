@@ -3,6 +3,7 @@ package com.rvmeur.transfer
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -11,7 +12,12 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.hardware.usb.UsbDevice
@@ -26,6 +32,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -35,7 +43,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 import kotlin.math.abs
 
 /**
@@ -115,7 +126,9 @@ class MainActivity : Activity() {
     // Komponen Galeri Tinjau Tahan Layar Penuh (Stage 4)
     private lateinit var btnReviewHeld: Button
     private lateinit var btnBuangSisa: Button
-    private lateinit var reviewOverlay: LinearLayout
+    private lateinit var reviewOverlay: FrameLayout
+    private lateinit var reviewBgImageView: ImageView
+    private lateinit var reviewTintView: View
     private lateinit var reviewTitleTextView: TextView
     private lateinit var reviewStatusTextView: TextView
     private lateinit var btnReviewClose: Button
@@ -144,12 +157,30 @@ class MainActivity : Activity() {
     private lateinit var usbHintTextView: TextView
     private lateinit var summaryTextView: TextView
     private lateinit var btnBackToSetup: Button
-    private lateinit var dotNavBar: LinearLayout
+    private lateinit var dotNavBar: FrameLayout
+    private lateinit var navBgImageView: ImageView
+    private lateinit var navTintView: View
     private lateinit var navDots: List<View>
     private lateinit var stepTitleText: TextView
+    private val navRefreshHandler = Handler(Looper.getMainLooper())
+    private val navRefreshRunnable = Runnable { refreshNavBackground() }
     private var lastDriveConnected: Boolean = false
     private var wasSessionActive: Boolean = false
     private var headerRingAnimator: ValueAnimator? = null
+
+    // Field Baru Hibrida Kaca (G1: Kartu Hero Foto + Blur Jendela Dialog)
+    private lateinit var heroCard: FrameLayout
+    private lateinit var heroImageView: ImageView
+    private lateinit var heroPanel: LinearLayout
+    private lateinit var heroTitleTextView: TextView
+    private lateinit var heroSpeedTextView: TextView
+    private lateinit var heroMetaTextView: TextView
+    private val heroExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var lastHeroBerkasSelesai: Int = 0
+    private var crossWindowBlurEnabled: Boolean = false
+    private val crossWindowBlurListener = Consumer<Boolean> { enabled ->
+        crossWindowBlurEnabled = enabled
+    }
 
     private val hideWarningPillRunnable = Runnable {
         if (::warningPill.isInitialized) {
@@ -237,6 +268,11 @@ class MainActivity : Activity() {
 
         usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            crossWindowBlurEnabled = windowManager.isCrossWindowBlurEnabled
+            windowManager.addCrossWindowBlurEnabledListener(mainExecutor, crossWindowBlurListener)
+        }
+
         orchestrator.listener = object : SessionOrchestrator.Listener {
             override fun onStateChanged(state: SessionOrchestrator.State) {
                 runOnUiThread {
@@ -255,9 +291,11 @@ class MainActivity : Activity() {
         }
 
         // 4. Bangun Tampilan UI dari Kode (Tanpa AndroidX)
-        setContentView(buildRootLayout())
+        val rootView = buildRootLayout()
+        setContentView(rootView)
         showScreen(SCREEN_WIZARD)
         goToPage(0)
+        rootView.post { refreshNavBackground() }
         startHeaderPulseAnimation()
 
         // 5. Daftarkan Receiver USB
@@ -346,8 +384,15 @@ class MainActivity : Activity() {
         isForeground = false
         uiHandler.removeCallbacks(uploadStatsPollRunnable)
         uiHandler.removeCallbacks(hideWarningPillRunnable)
+        navRefreshHandler.removeCallbacks(navRefreshRunnable)
         headerRingAnimator?.cancel()
         headerRingAnimator = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                windowManager.removeCrossWindowBlurEnabledListener(crossWindowBlurListener)
+            } catch (_: Exception) {
+            }
+        }
         try {
             unregisterReceiver(usbReceiver)
         } catch (_: Exception) {
@@ -584,7 +629,7 @@ class MainActivity : Activity() {
 
         rootLL.addView(headerBar)
 
-        // 2) screenHost FrameLayout (weight 1) berisi TIGA layar (wizardScreen, sessionScreen, summaryScreen)
+        // 2) screenHost FrameLayout (weight 1) berisi TIGA layar (wizardScreen, sessionScreen, summaryScreen) + dotNavBar melayang
         val screenHost = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -596,16 +641,14 @@ class MainActivity : Activity() {
         wizardScreen = buildWizardScreen()
         sessionScreen = buildSessionScreen()
         summaryScreen = buildSummaryScreen()
+        dotNavBar = buildDotNavBar()
 
         screenHost.addView(wizardScreen)
         screenHost.addView(sessionScreen)
         screenHost.addView(summaryScreen)
+        screenHost.addView(dotNavBar)
 
         rootLL.addView(screenHost)
-
-        // 3) dotNavBar kapsul terpusat (bg SHELL alpha, border HAIRLINE, sudut kapsul, tinggi 52dp, lebar maks 340dp)
-        dotNavBar = buildDotNavBar()
-        rootLL.addView(dotNavBar)
 
         // 4) footerBar 44dp terpusat, klik membuka https://rvmeur.com
         val footerBar = LinearLayout(this).apply {
@@ -653,9 +696,15 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setOnScrollChangeListener { _, _, _, _, _ ->
+                navRefreshHandler.removeCallbacks(navRefreshRunnable)
+                navRefreshHandler.postDelayed(navRefreshRunnable, 120L)
+            }
         }
 
-        val content = createResponsiveContentContainer()
+        val content = createResponsiveContentContainer().apply {
+            setPadding(dp(20), dp(20), dp(20), dp(88))
+        }
 
         var touchDownX = 0f
         var touchDownY = 0f
@@ -1025,6 +1074,79 @@ class MainActivity : Activity() {
 
         val content = createResponsiveContentContainer()
 
+        // 0. Kartu hero status sesi (paling atas sebelum kartu kamera)
+        heroCard = FrameLayout(this).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(24).toFloat()
+                setColor(COLOR_SHELL)
+            }
+            outlineProvider = ViewOutlineProvider.BACKGROUND
+            clipToOutline = true
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(190)
+            ).apply {
+                bottomMargin = dp(16)
+            }
+        }
+
+        heroImageView = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageDrawable(null)
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        heroCard.addView(heroImageView)
+
+        heroTitleTextView = TextView(this).apply {
+            text = "menunggu jepretan pertama."
+            typeface = fontDmSansMedium
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(COLOR_INK)
+            setPadding(0, 0, 0, dp(4))
+        }
+
+        heroSpeedTextView = TextView(this).apply {
+            text = ""
+            typeface = Typeface.create(fontJetBrainsMono, Typeface.BOLD)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
+            setTextColor(COLOR_INK)
+            setPadding(0, 0, 0, dp(4))
+        }
+
+        heroMetaTextView = TextView(this).apply {
+            text = "foto terakhir tampil di sini sebagai latar kaca."
+            typeface = Typeface.MONOSPACE
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            setTextColor(COLOR_MUTED)
+        }
+
+        heroPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(18).toFloat()
+                setColor(0xB8FAF8F3.toInt())
+                setStroke(dp(1), 0x8CFFFFFF.toInt())
+            }
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
+            ).apply {
+                setMargins(dp(12), dp(12), dp(12), dp(12))
+            }
+        }
+        heroPanel.addView(heroTitleTextView)
+        heroPanel.addView(heroSpeedTextView)
+        heroPanel.addView(heroMetaTextView)
+        heroCard.addView(heroPanel)
+        content.addView(heroCard)
+
         // 1. Kartu kamera
         val (camOuter, camInner) = doppelrandCard()
         camInner.addView(sectionTitle("sesi aktif."))
@@ -1246,10 +1368,20 @@ class MainActivity : Activity() {
         return scroll
     }
 
-    // 3) dotNavBar kapsul terpusat (bg SHELL alpha, border HAIRLINE, sudut kapsul, tinggi 52dp, lebar maks 340dp)
-    private fun buildDotNavBar(): LinearLayout {
+    // 3) dotNavBar kapsul melayang berkaca (bg SHELL alpha, border HAIRLINE, sudut kapsul, tinggi 52dp, lebar maks 340dp)
+    private fun buildDotNavBar(): FrameLayout {
         val maxWidthPx = dp(340)
-        val bar = object : LinearLayout(this) {
+        val contentRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(10), 0, dp(18), 0)
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val bar = object : FrameLayout(this) {
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                 val measuredWidth = MeasureSpec.getSize(widthMeasureSpec)
                 val spec = if (measuredWidth > maxWidthPx) {
@@ -1257,12 +1389,15 @@ class MainActivity : Activity() {
                 } else {
                     widthMeasureSpec
                 }
-                super.onMeasure(spec, heightMeasureSpec)
+                contentRow.measure(spec, heightMeasureSpec)
+                val targetW = contentRow.measuredWidth.coerceIn(1, maxWidthPx)
+                val targetH = MeasureSpec.getSize(heightMeasureSpec).coerceAtLeast(dp(52))
+                super.onMeasure(
+                    MeasureSpec.makeMeasureSpec(targetW, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(targetH, MeasureSpec.EXACTLY)
+                )
             }
         }.apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(10), 0, dp(18), 0)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = dp(999).toFloat()
@@ -1276,15 +1411,42 @@ class MainActivity : Activity() {
                 )
                 setStroke(dp(1), COLOR_HAIRLINE)
             }
-            layoutParams = LinearLayout.LayoutParams(
+            outlineProvider = ViewOutlineProvider.BACKGROUND
+            clipToOutline = true
+            layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                dp(52)
+                dp(52),
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             ).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                topMargin = dp(4)
-                bottomMargin = dp(4)
+                bottomMargin = dp(14)
             }
         }
+
+        navBgImageView = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setRenderEffect(RenderEffect.createBlurEffect(24f, 24f, Shader.TileMode.CLAMP))
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        bar.addView(navBgImageView)
+
+        navTintView = View(this).apply {
+            setBackgroundColor(
+                Color.argb(
+                    102,
+                    Color.red(COLOR_GROUND),
+                    Color.green(COLOR_GROUND),
+                    Color.blue(COLOR_GROUND)
+                )
+            )
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        bar.addView(navTintView)
 
         val dots = mutableListOf<View>()
         for (idx in 0 until 3) {
@@ -1309,7 +1471,7 @@ class MainActivity : Activity() {
                 }
             }
             touchBox.addView(dotView)
-            bar.addView(touchBox)
+            contentRow.addView(touchBox)
             dots.add(dotView)
         }
         navDots = dots
@@ -1321,9 +1483,45 @@ class MainActivity : Activity() {
             setTextColor(COLOR_INK)
             setPadding(dp(6), 0, 0, 0)
         }
-        bar.addView(stepTitleText)
+        contentRow.addView(stepTitleText)
+        bar.addView(contentRow)
 
         return bar
+    }
+
+    private fun refreshNavBackground() {
+        if (!::dotNavBar.isInitialized || !::wizardScreen.isInitialized || !::navBgImageView.isInitialized) return
+        if (dotNavBar.visibility != View.VISIBLE) return
+        try {
+            val pillW = dotNavBar.width
+            val pillH = dotNavBar.height
+            if (pillW <= 0 || pillH <= 0) return
+            val contentView = wizardScreen.getChildAt(0) ?: return
+            if (contentView.width <= 0 || contentView.height <= 0) return
+
+            val pillLoc = IntArray(2)
+            val scrollLoc = IntArray(2)
+            dotNavBar.getLocationInWindow(pillLoc)
+            wizardScreen.getLocationInWindow(scrollLoc)
+
+            val offsetX = (pillLoc[0] - scrollLoc[0] + wizardScreen.scrollX - contentView.left).toFloat()
+            val offsetY = (pillLoc[1] - scrollLoc[1] + wizardScreen.scrollY - contentView.top).toFloat()
+
+            val scale = 0.25f
+            val bmpW = (pillW * scale).toInt().coerceAtLeast(1)
+            val bmpH = (pillH * scale).toInt().coerceAtLeast(1)
+            val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            canvas.scale(scale, scale)
+            canvas.translate(-offsetX, -offsetY)
+            canvas.drawColor(COLOR_GROUND)
+            contentView.draw(canvas)
+            navBgImageView.setImageBitmap(bmp)
+        } catch (_: Throwable) {
+            if (::navBgImageView.isInitialized) {
+                navBgImageView.setImageDrawable(null)
+            }
+        }
     }
 
     private fun startHeaderPulseAnimation() {
@@ -1349,6 +1547,7 @@ class MainActivity : Activity() {
         sessionScreen.visibility = if (which == SCREEN_SESSION) View.VISIBLE else View.GONE
         summaryScreen.visibility = if (which == SCREEN_SUMMARY) View.VISIBLE else View.GONE
         dotNavBar.visibility = if (which == SCREEN_WIZARD) View.VISIBLE else View.GONE
+        refreshNavBackground()
     }
 
     private fun step1Valid(): Boolean {
@@ -1393,6 +1592,7 @@ class MainActivity : Activity() {
             val stepTitles = listOf("01 google drive", "02 camera tethering", "03 session rules")
             stepTitleText.text = stepTitles.getOrElse(i) { "" }
         }
+        refreshNavBackground()
     }
 
     private fun showScreenForState(
@@ -1502,6 +1702,104 @@ class MainActivity : Activity() {
 
         renderFolderUi(state)
         showScreenForState(state, stats)
+
+        if (::heroSpeedTextView.isInitialized) {
+            heroSpeedTextView.text = String.format(Locale.US, "%.1f MB/s", stats.lastDownloadMbPerSec).replace('.', ',')
+        }
+        if (::heroMetaTextView.isInitialized) {
+            heroMetaTextView.text = String.format(
+                Locale.US,
+                "grup selesai %d · berkas %d · slot %d/12",
+                stats.grupSelesai,
+                stats.berkasSelesai,
+                stats.slotRuangTunggu
+            )
+        }
+        if (stats.berkasSelesai < lastHeroBerkasSelesai &&
+            state != SessionOrchestrator.State.CLOSED &&
+            state != SessionOrchestrator.State.IDLE
+        ) {
+            lastHeroBerkasSelesai = 0
+        }
+        if (stats.berkasSelesai > lastHeroBerkasSelesai) {
+            lastHeroBerkasSelesai = stats.berkasSelesai
+            refreshHeroPhoto()
+        }
+    }
+
+    private fun refreshHeroPhoto() {
+        if (!Engines.initialized) return
+        val sessionId = orchestrator.currentSessionId ?: return
+        heroExecutor.execute {
+            try {
+                val statuses = listOf(
+                    ItemStatus.CULLING_PENDING,
+                    ItemStatus.QUEUED,
+                    ItemStatus.UPLOADING,
+                    ItemStatus.DONE
+                )
+                val allItems = mutableListOf<TransferItem>()
+                for (st in statuses) {
+                    allItems.addAll(db.getItemsBySessionAndStatus(sessionId, st))
+                }
+                val candidates = allItems.filter { item ->
+                    val isJpg = item.filename.endsWith(".jpg", ignoreCase = true) ||
+                        item.filename.endsWith(".jpeg", ignoreCase = true)
+                    if (isJpg) {
+                        true
+                    } else {
+                        val localFile = File(item.localPath)
+                        val previewFile = File(localFile.parentFile, "${localFile.nameWithoutExtension}.preview.jpg")
+                        previewFile.exists() && previewFile.length() > 0L
+                    }
+                }
+                val chosen = candidates.maxWithOrNull(
+                    compareBy<TransferItem> { it.captureDate ?: "" }
+                        .thenBy { it.createdAt }
+                        .thenBy { it.id }
+                        .thenBy {
+                            if (it.filename.endsWith(".jpg", ignoreCase = true) ||
+                                it.filename.endsWith(".jpeg", ignoreCase = true)
+                            ) 1 else 0
+                        }
+                ) ?: return@execute
+
+                val decoded = decodeGroupThumbnail(listOf(chosen), 480) ?: return@execute
+                val targetW = (decoded.width / 4).coerceAtLeast(1)
+                val targetH = (decoded.height / 4).coerceAtLeast(1)
+                val scaled = Bitmap.createScaledBitmap(decoded, targetW, targetH, true)
+                if (scaled !== decoded) {
+                    decoded.recycle()
+                }
+
+                val blurEffect = RenderEffect.createBlurEffect(26f, 26f, Shader.TileMode.CLAMP)
+                val saturationMatrix = ColorMatrix().apply { setSaturation(1.2f) }
+                val colorFilterEffect = RenderEffect.createColorFilterEffect(
+                    ColorMatrixColorFilter(saturationMatrix)
+                )
+                val chainEffect = RenderEffect.createChainEffect(blurEffect, colorFilterEffect)
+                val displayName = chosen.driveName?.takeIf { it.isNotEmpty() }
+                    ?: File(chosen.localPath).name.ifEmpty { chosen.filename }
+
+                runOnUiThread {
+                    if (::heroImageView.isInitialized) {
+                        heroImageView.setImageBitmap(scaled)
+                        heroImageView.setRenderEffect(chainEffect)
+                    }
+                    if (::heroTitleTextView.isInitialized) {
+                        heroTitleTextView.text = displayName
+                    }
+                }
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
+    private fun applyGlassToDialog(dialog: Dialog) {
+        if (crossWindowBlurEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dialog.window?.setBackgroundBlurRadius(80)
+            dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        }
     }
 
     private fun exploreFoldersClicked() {
@@ -1532,7 +1830,7 @@ class MainActivity : Activity() {
             hint = "nama folder"
             isSingleLine = true
         }
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("folder baru.")
             .setView(input)
             .setPositiveButton("buat.") { _, _ ->
@@ -1554,7 +1852,9 @@ class MainActivity : Activity() {
                 }
             }
             .setNegativeButton("batal.", null)
-            .show()
+            .create()
+        applyGlassToDialog(dialog)
+        dialog.show()
     }
 
     private fun refreshExplorerView() {
@@ -1783,17 +2083,50 @@ class MainActivity : Activity() {
      * Galeri Tinjau Tahan (Stage 4 Gelombang 2)
      * ========================================================================= */
 
-    private fun buildReviewOverlay(): LinearLayout {
-        val overlay = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+    private fun buildReviewOverlay(): FrameLayout {
+        val overlay = FrameLayout(this).apply {
             setBackgroundColor(COLOR_GROUND)
-            setPadding(dp(20), dp(20), dp(20), dp(20))
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             isClickable = true
             isFocusable = true
+        }
+
+        reviewBgImageView = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setRenderEffect(RenderEffect.createBlurEffect(30f, 30f, Shader.TileMode.CLAMP))
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        overlay.addView(reviewBgImageView)
+
+        reviewTintView = View(this).apply {
+            setBackgroundColor(
+                Color.argb(
+                    224,
+                    Color.red(COLOR_GROUND),
+                    Color.green(COLOR_GROUND),
+                    Color.blue(COLOR_GROUND)
+                )
+            )
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        overlay.addView(reviewTintView)
+
+        val contentContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(20), dp(20), dp(20))
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
         }
 
         // Header: sectionTitle "tinjau tahan." + reviewTitleTextView + btnReviewClose
@@ -1840,7 +2173,7 @@ class MainActivity : Activity() {
             }
         }
         headerRow.addView(btnReviewClose)
-        overlay.addView(headerRow)
+        contentContainer.addView(headerRow)
 
         // Status pesan / ringkasan (mono 11sp MUTED)
         reviewStatusTextView = TextView(this).apply {
@@ -1850,7 +2183,7 @@ class MainActivity : Activity() {
             setTextColor(COLOR_MUTED)
             setPadding(0, dp(2), 0, dp(10))
         }
-        overlay.addView(reviewStatusTextView)
+        contentContainer.addView(reviewStatusTextView)
 
         // Kontainer daftar grup yang dapat digulir
         reviewListContainer = LinearLayout(this).apply {
@@ -1862,7 +2195,7 @@ class MainActivity : Activity() {
         }
 
         reviewScrollView = ScrollView(this).apply {
-            setBackgroundColor(COLOR_GROUND)
+            setBackgroundColor(Color.TRANSPARENT)
             isFillViewport = true
             addView(
                 reviewListContainer,
@@ -1873,7 +2206,7 @@ class MainActivity : Activity() {
             )
         }
 
-        overlay.addView(
+        contentContainer.addView(
             reviewScrollView,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1882,10 +2215,46 @@ class MainActivity : Activity() {
             )
         )
 
+        overlay.addView(contentContainer)
+
         return overlay
     }
 
+    private fun refreshReviewBackground() {
+        if (!::sessionScreen.isInitialized || !::reviewBgImageView.isInitialized) return
+        try {
+            val viewW = sessionScreen.width
+            val viewH = sessionScreen.height
+            if (viewW <= 0 || viewH <= 0) {
+                reviewBgImageView.setImageDrawable(null)
+                return
+            }
+            val contentView = sessionScreen.getChildAt(0) ?: run {
+                reviewBgImageView.setImageDrawable(null)
+                return
+            }
+            val scale = 0.125f
+            val bmpW = (viewW * scale).toInt().coerceAtLeast(1)
+            val bmpH = (viewH * scale).toInt().coerceAtLeast(1)
+            val bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            canvas.scale(scale, scale)
+            canvas.translate(
+                (contentView.left - sessionScreen.scrollX).toFloat(),
+                (contentView.top - sessionScreen.scrollY).toFloat()
+            )
+            canvas.drawColor(COLOR_GROUND)
+            contentView.draw(canvas)
+            reviewBgImageView.setImageBitmap(bmp)
+        } catch (_: Throwable) {
+            if (::reviewBgImageView.isInitialized) {
+                reviewBgImageView.setImageDrawable(null)
+            }
+        }
+    }
+
     private fun openReviewOverlay() {
+        refreshReviewBackground()
         reviewOverlay.visibility = View.VISIBLE
         refreshReviewOverlay()
     }
