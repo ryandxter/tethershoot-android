@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify Tag matches Version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          FILE_VERSION=$(grep -E '^versionName=' foundation/version.txt | head -n1 | cut -d'=' -f2 | tr -d ' \r\n')
+          echo "Tag Version       : $TAG_VERSION"
+          echo "version.txt Version: $FILE_VERSION"
+          if [ "$TAG_VERSION" != "$FILE_VERSION" ]; then
+            echo "::error::Tag ($TAG_VERSION) tidak sama dengan versionName di foundation/version.txt ($FILE_VERSION)!"
+            exit 1
+          fi
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.TETHER_KEYSTORE_B64 }}
+        run: |
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/tether.keystore"
+
+      - name: Run CI Build
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/tether.keystore
+        run: |
+          chmod +x foundation/build-ci.sh
+          ./foundation/build-ci.sh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Transfer-v*.apk
+            dist/version.json
+          generate_release_notes: true
+
+      - name: Clean up keystore
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/tether.keystore"

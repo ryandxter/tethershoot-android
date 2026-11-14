@@ -13,6 +13,19 @@ BT="$SDK/build-tools/35.0.0"
 KOTLIN_LIB="$TOOLS/kotlinc/lib"
 OUT="$PROJ/build-manual"
 
+VERSION_FILE="$PROJ/version.txt"
+if [ ! -f "$VERSION_FILE" ]; then
+  echo "Error: Berkas versi $VERSION_FILE tidak ditemukan!" >&2
+  exit 1
+fi
+V_CODE="$(grep -E '^versionCode=' "$VERSION_FILE" | head -n1 | cut -d'=' -f2 | tr -d ' \r\n')"
+V_NAME="$(grep -E '^versionName=' "$VERSION_FILE" | head -n1 | cut -d'=' -f2 | tr -d ' \r\n')"
+
+if [ -z "$V_CODE" ] || [ -z "$V_NAME" ]; then
+  echo "Error: versionCode atau versionName tidak terdefinisi di $VERSION_FILE!" >&2
+  exit 1
+fi
+
 rm -rf "$OUT"
 mkdir -p "$OUT/dex"
 
@@ -35,7 +48,7 @@ sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<ma
   -I "$PLATFORM" \
   --manifest "$OUT/AndroidManifest.xml" \
   --min-sdk-version 31 --target-sdk-version 35 \
-  --version-code 11 --version-name "1.2.4" \
+  --version-code "$V_CODE" --version-name "$V_NAME" \
   "$OUT/res.zip" \
   -A "$PROJ/app/src/main/assets"
 
@@ -48,10 +61,10 @@ if [ ! -f "$PROJ/debug.keystore" ]; then
     -dname "CN=Android Debug,O=Android,C=US" >/dev/null 2>&1
 fi
 "$BT/apksigner" sign --ks "$PROJ/debug.keystore" --ks-pass pass:android --key-pass pass:android \
-  --out "$OUT/Transfer-v1.2.4.apk" "$OUT/app-aligned.apk"
+  --out "$OUT/Transfer-v${V_NAME}.apk" "$OUT/app-aligned.apk"
 
 echo "[5/5] Verifikasi"
-"$BT/apksigner" verify --print-certs "$OUT/Transfer-v1.2.4.apk" | head -n 3
-unzip -l "$OUT/Transfer-v1.2.4.apk" | grep -E "classes.dex" || true
-ls -la "$OUT/Transfer-v1.2.4.apk"
-echo "BUILD OK: $OUT/Transfer-v1.2.4.apk"
+"$BT/apksigner" verify --print-certs "$OUT/Transfer-v${V_NAME}.apk" | head -n 3
+unzip -l "$OUT/Transfer-v${V_NAME}.apk" | grep -E "classes.dex" || true
+ls -la "$OUT/Transfer-v${V_NAME}.apk"
+echo "BUILD OK: $OUT/Transfer-v${V_NAME}.apk"

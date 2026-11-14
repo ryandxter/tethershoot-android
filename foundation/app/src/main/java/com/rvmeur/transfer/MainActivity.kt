@@ -140,6 +140,13 @@ class MainActivity : Activity() {
     private lateinit var btnShareLog: Button
     private lateinit var btnClearLog: Button
 
+    // Komponen UI Pembaruan OTA (Tahap 8)
+    private lateinit var updateVersionTextView: TextView
+    private lateinit var btnCheckUpdate: TextView
+    private lateinit var updateStatusTextView: TextView
+    private lateinit var btnInstallUpdate: Button
+    private var pendingUpdate: UpdateChecker.UpdateInfo? = null
+
     // Field Baru Wizard & Navigasi Legacy
     private lateinit var headerDot: View
     private lateinit var headerRing: View
@@ -330,11 +337,22 @@ class MainActivity : Activity() {
         // Melanjutkan pekerjaan tertunda saat aplikasi dibuka
         Engines.syncService(this)
 
-        // Permintaan izin notifikasi Android 13+ (API 33)
+        // Permintaan izin notifikasi Android 13+ (API 33) sekali seumur pemasangan
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
-            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7331)
+            val updatePrefs = getSharedPreferences("transferin_update", Context.MODE_PRIVATE)
+            if (!updatePrefs.getBoolean("notif_asked", false)) {
+                updatePrefs.edit().putBoolean("notif_asked", true).apply()
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7701)
+            }
+        }
+
+        // Cek otomatis rilis baru setelah render pertama bila waktu cek telah jatuh tempo (> 6 jam)
+        rootView.post {
+            if (UpdateChecker.shouldAutoCheck(this)) {
+                checkUpdate(manual = false)
+            }
         }
     }
 
@@ -984,6 +1002,52 @@ class MainActivity : Activity() {
             }
         }
         cardAInner.addView(btnShareLogWizard)
+
+        val (verName, verCode) = getInstalledVersionInfo()
+        updateVersionTextView = monoLabel("versi terpasang: $verName ($verCode)").apply {
+            setPadding(0, dp(12), 0, 0)
+        }
+        cardAInner.addView(updateVersionTextView)
+
+        btnCheckUpdate = monoLabel("cek pembaruan.").apply {
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(6), 0, 0)
+            setOnClickListener {
+                checkUpdate(manual = true)
+            }
+        }
+        cardAInner.addView(btnCheckUpdate)
+
+        updateStatusTextView = monoLabel("").apply {
+            setPadding(0, dp(4), 0, 0)
+        }
+        cardAInner.addView(updateStatusTextView)
+
+        btnInstallUpdate = kineticButton("unduh & pasang.", primer = false).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(44)
+            ).apply {
+                topMargin = dp(8)
+            }
+            setOnClickListener {
+                if (isCameraSessionActive()) {
+                    updateStatusTextView.text = "pembaruan ditunda sampai sesi selesai."
+                    return@setOnClickListener
+                }
+                pendingUpdate?.let { info ->
+                    updateStatusTextView.text = "mengunduh pembaruan…"
+                    UpdateChecker.downloadAndInstall(this@MainActivity, info) { msg ->
+                        runOnUiThread {
+                            updateStatusTextView.text = msg
+                        }
+                    }
+                }
+            }
+        }
+        cardAInner.addView(btnInstallUpdate)
 
         page.addView(cardAOuter)
 
@@ -2578,6 +2642,85 @@ class MainActivity : Activity() {
             BitmapFactory.decodeFile(file.absolutePath, opts)
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    private fun isCameraSessionActive(): Boolean {
+        return try {
+            Engines.initialized &&
+                orchestrator.state != SessionOrchestrator.State.IDLE &&
+                orchestrator.state != SessionOrchestrator.State.CLOSED
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun getInstalledVersionInfo(): Pair<String, Int> {
+        return try {
+            val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+            val vName = pInfo.versionName ?: "1.0.0"
+            val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pInfo.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode
+            }
+            Pair(vName, vCode)
+        } catch (_: Throwable) {
+            Pair("1.0.0", 1)
+        }
+    }
+
+    private fun checkUpdate(manual: Boolean) {
+        if (isCameraSessionActive()) {
+            if (::updateStatusTextView.isInitialized) {
+                updateStatusTextView.text = "pembaruan ditunda sampai sesi selesai."
+            }
+            return
+        }
+
+        if (::updateStatusTextView.isInitialized) {
+            updateStatusTextView.text = "memeriksa pembaruan…"
+        }
+        val (verName, verCode) = getInstalledVersionInfo()
+        UpdateChecker.checkLatest(verCode, verName) { result ->
+            runOnUiThread {
+                UpdateChecker.markChecked(this)
+                when (result) {
+                    is UpdateChecker.CheckResult.UpdateAvailable -> {
+                        val info = result.info
+                        pendingUpdate = info
+                        if (::updateStatusTextView.isInitialized) {
+                            updateStatusTextView.text = "pembaruan tersedia: v${info.versionName}"
+                        }
+                        if (::btnInstallUpdate.isInitialized) {
+                            btnInstallUpdate.visibility = View.VISIBLE
+                        }
+                        if (!manual) {
+                            InfoNotifier.notifyUpdateAvailable(this, info.versionName)
+                        }
+                    }
+                    is UpdateChecker.CheckResult.UpToDate -> {
+                        pendingUpdate = null
+                        if (::updateStatusTextView.isInitialized) {
+                            updateStatusTextView.text = "kamu memakai versi terbaru."
+                        }
+                        if (::btnInstallUpdate.isInitialized) {
+                            btnInstallUpdate.visibility = View.GONE
+                        }
+                    }
+                    is UpdateChecker.CheckResult.Failure -> {
+                        if (::updateStatusTextView.isInitialized) {
+                            updateStatusTextView.text = "gagal memeriksa pembaruan — periksa koneksi, lalu coba lagi."
+                        }
+                    }
+                }
+            }
         }
     }
 

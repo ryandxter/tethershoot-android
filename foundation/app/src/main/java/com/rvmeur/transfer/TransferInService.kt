@@ -33,6 +33,9 @@ class TransferInService : Service() {
     @Volatile
     private var latestStartId: Int = 0
 
+    private var sawWork = false
+    private var sessionWasActive = false
+
     override fun onCreate() {
         super.onCreate()
 
@@ -99,7 +102,41 @@ class TransferInService : Service() {
                     }
                     if (!isPolling) break
 
-                    if (!Engines.shouldServiceRun()) {
+                    val shouldRun = Engines.shouldServiceRun()
+                    if (shouldRun) {
+                        sawWork = true
+                        val isSessionActive = try {
+                            Engines.initialized &&
+                                Engines.orchestrator.state != SessionOrchestrator.State.IDLE &&
+                                Engines.orchestrator.state != SessionOrchestrator.State.CLOSED
+                        } catch (_: Throwable) {
+                            false
+                        }
+                        if (isSessionActive) {
+                            sessionWasActive = true
+                        }
+
+                        val currentText = resolveNotificationText()
+                        if (currentText != lastNotificationText) {
+                            lastNotificationText = currentText
+                            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                            nm?.notify(NOTIFICATION_ID, buildNotification(currentText))
+                        }
+                    } else {
+                        if (sawWork) {
+                            try {
+                                if (sessionWasActive) {
+                                    InfoNotifier.notifySessionDone(applicationContext)
+                                } else {
+                                    InfoNotifier.notifyUploadsDone(applicationContext)
+                                }
+                            } catch (t: Throwable) {
+                                FoundationLog.error("[LAYANAN] Gagal memicu notifikasi penyelesaian", t)
+                            }
+                            sawWork = false
+                            sessionWasActive = false
+                        }
+
                         if (stopSelfResult(latestStartId)) {
                             FoundationLog.log("[LAYANAN] Semua pekerjaan tuntas — layanan berhenti")
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -112,13 +149,6 @@ class TransferInService : Service() {
                             break
                         } else {
                             // start yang lebih baru tiba — layanan tetap hidup; lanjutkan polling
-                        }
-                    } else {
-                        val currentText = resolveNotificationText()
-                        if (currentText != lastNotificationText) {
-                            lastNotificationText = currentText
-                            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                            nm?.notify(NOTIFICATION_ID, buildNotification(currentText))
                         }
                     }
                 }
