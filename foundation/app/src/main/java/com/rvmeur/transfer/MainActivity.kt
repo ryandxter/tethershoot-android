@@ -1752,9 +1752,32 @@ class MainActivity : Activity() {
     }
 
     private fun applyGlassToDialog(dialog: Dialog) {
-        if (crossWindowBlurEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            dialog.window?.setBackgroundBlurRadius(80)
-            dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        if (!crossWindowBlurEnabled || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return
+        }
+        try {
+            val applyBlur = Runnable {
+                try {
+                    dialog.window?.setBackgroundBlurRadius(80)
+                    dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                } catch (t: Throwable) {
+                    FoundationLog.error("[KACA] Gagal menerapkan blur latar dialog (diabaikan)", t)
+                }
+            }
+
+            if (dialog.isShowing) {
+                dialog.window?.decorView?.post(applyBlur)
+            } else {
+                dialog.setOnShowListener {
+                    try {
+                        dialog.window?.decorView?.post(applyBlur)
+                    } catch (t: Throwable) {
+                        FoundationLog.error("[KACA] Gagal menerapkan blur latar dialog (diabaikan)", t)
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            FoundationLog.error("[KACA] Gagal menerapkan blur latar dialog (diabaikan)", t)
         }
     }
 
