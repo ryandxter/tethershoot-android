@@ -1863,6 +1863,7 @@ class MainActivity : Activity() {
     }
 
     private fun promptCreateFolder() {
+        FoundationLog.log("[FOLDER] promptCreateFolder dibuka")
         if (isSessionLocked()) {
             pickerStatusTextView.text = "folder terkunci selama sesi."
             pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
@@ -1888,20 +1889,23 @@ class MainActivity : Activity() {
                 if (nama.isNotEmpty()) {
                     val parentId = driveFolders.getCurrentFolder().id
                     driveFolders.createFolder(nama, parentId) { success, newFolderId ->
-                        if (success && !newFolderId.isNullOrEmpty()) {
-                            driveFolders.saveSelectedFolder(newFolderId, nama)
-                            renderFolderUi(orchestrator.state)
-                            pickerStatusTextView.text = "folder baru jadi tujuan: $nama"
-                            pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
-                            val valid = step1Valid()
-                            if (valid && ::warningPill.isInitialized) {
-                                warningPill.visibility = View.GONE
+                        FoundationLog.log("[FOLDER] callback buat folder: success=$success id=$newFolderId")
+                        runOnUiThread {
+                            if (success && !newFolderId.isNullOrEmpty()) {
+                                driveFolders.saveSelectedFolder(newFolderId, nama)
+                                renderFolderUi(orchestrator.state)
+                                pickerStatusTextView.text = "folder baru jadi tujuan: $nama"
+                                pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                                val valid = step1Valid()
+                                if (valid && ::warningPill.isInitialized) {
+                                    warningPill.visibility = View.GONE
+                                }
+                                refreshNavBackground()
+                            } else {
+                                pickerStatusTextView.text = "gagal membuat folder."
+                                pickerStatusTextView.setTextColor(COLOR_ERROR)
+                                refreshNavBackground()
                             }
-                            refreshNavBackground()
-                        } else {
-                            pickerStatusTextView.text = "gagal membuat folder."
-                            pickerStatusTextView.setTextColor(COLOR_ERROR)
-                            refreshNavBackground()
                         }
                     }
                 }
@@ -1909,6 +1913,7 @@ class MainActivity : Activity() {
             .setNegativeButton("batal.", null)
             .create()
         applyGlassToDialog(dialog)
+        FoundationLog.log("[FOLDER] dialog folder baru ditampilkan")
         dialog.show()
     }
 

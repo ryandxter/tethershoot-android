@@ -29,8 +29,23 @@ object Engines {
     var initialized: Boolean = false
         private set
 
+    @Volatile
+    private var crashHandlerInstalled: Boolean = false
+
     @Synchronized
     fun init(context: Context) {
+        if (!crashHandlerInstalled) {
+            val previous = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+                try {
+                    FoundationLog.error("[CRASH] Uncaught di thread ${thread.name}", throwable)
+                    FoundationLog.log(throwable.stackTraceToString())
+                } catch (_: Throwable) {
+                }
+                previous?.uncaughtException(thread, throwable)
+            }
+            crashHandlerInstalled = true
+        }
         if (initialized) return
         val ctx = context.applicationContext
         db = TransferInDb.getInstance(ctx)
