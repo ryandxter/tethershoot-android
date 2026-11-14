@@ -307,13 +307,16 @@ class MainActivity : Activity() {
         FoundationLog.log("=== TransferIn Foundation MainActivity Siap (minSdk 31, targetSdk 35) ===")
 
         // Tangani intent awal bila aplikasi dibuka karena URI hasil picker atau OAuth redirect
-        intent?.data?.let { uri ->
-            if (handlePickerResultRedirect(uri)) {
-                FoundationLog.log("[FOLDER] Redirect hasil picker ditangani pada onCreate: $uri")
-            } else {
-                val handled = driveAuth.handleRedirect(uri)
-                if (handled) {
-                    FoundationLog.log("[AUTH] Redirect ditangani pada onCreate: $uri")
+        val initialUri = intent?.data
+        if (initialUri != null) {
+            rootView.post {
+                if (handlePickerResultRedirect(initialUri)) {
+                    FoundationLog.log("[FOLDER] Redirect hasil picker ditangani pada onCreate: $initialUri")
+                } else {
+                    val handled = driveAuth.handleRedirect(initialUri)
+                    if (handled) {
+                        FoundationLog.log("[AUTH] Redirect ditangani pada onCreate: $initialUri")
+                    }
                 }
             }
         }
@@ -971,6 +974,17 @@ class MainActivity : Activity() {
             }
             cardAInner.addView(tv)
         }
+
+        val btnShareLogWizard = monoLabel("bagikan log.").apply {
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(12), 0, 0)
+            setOnClickListener {
+                shareLogSnapshot()
+            }
+        }
+        cardAInner.addView(btnShareLogWizard)
+
         page.addView(cardAOuter)
 
         // Kartu B: mulai sesi tethering.
@@ -1817,49 +1831,54 @@ class MainActivity : Activity() {
     }
 
     private fun handlePickerResultRedirect(uri: Uri): Boolean {
-        val scheme = uri.scheme ?: ""
-        val host = uri.host ?: ""
-        val path = uri.path ?: ""
-        val uriStr = uri.toString()
+        return try {
+            val scheme = uri.scheme ?: ""
+            val host = uri.host ?: ""
+            val path = uri.path ?: ""
+            val uriStr = uri.toString()
 
-        val isPickerRedirect = (scheme == "com.rvmeur.transfer") &&
-            (path == "/picker-result" || host == "picker-result" || uriStr.startsWith("com.rvmeur.transfer:/picker-result"))
-        if (!isPickerRedirect) {
-            return false
+            val isPickerRedirect = (scheme == "com.rvmeur.transfer") &&
+                (path == "/picker-result" || host == "picker-result" || uriStr.startsWith("com.rvmeur.transfer:/picker-result"))
+            if (!isPickerRedirect) {
+                return false
+            }
+
+            val folderId = uri.getQueryParameter("folder_id") ?: ""
+            val isValidFolderId = folderId.length in 10..80 &&
+                folderId.all { ch ->
+                    ch in 'A'..'Z' || ch in 'a'..'z' || ch in '0'..'9' || ch == '_' || ch == '-'
+                }
+
+            if (isValidFolderId) {
+                val rawName = uri.getQueryParameter("folder_name")?.trim().orEmpty()
+                val clippedName = if (rawName.length > 120) rawName.substring(0, 120).trim() else rawName
+                val folderName = clippedName.ifEmpty { folderId }
+
+                driveFolders.saveSelectedFolder(folderId, folderName)
+                renderFolderUi(orchestrator.state)
+                if (::pickerStatusTextView.isInitialized) {
+                    pickerStatusTextView.text = "folder tujuan: $folderName"
+                    pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
+                }
+                val valid = step1Valid()
+                if (valid && ::warningPill.isInitialized) {
+                    warningPill.visibility = View.GONE
+                }
+                refreshNavBackground()
+            } else {
+                FoundationLog.error("[FOLDER] Hasil pemilih folder tidak valid pada redirect: $uri")
+                if (::pickerStatusTextView.isInitialized) {
+                    pickerStatusTextView.text = "hasil pemilih folder tidak valid — coba lagi."
+                    pickerStatusTextView.setTextColor(COLOR_ERROR)
+                }
+                refreshNavBackground()
+            }
+
+            true
+        } catch (t: Throwable) {
+            FoundationLog.error("[FOLDER] Gagal menangani hasil picker", t)
+            true
         }
-
-        val folderId = uri.getQueryParameter("folder_id") ?: ""
-        val isValidFolderId = folderId.length in 10..80 &&
-            folderId.all { ch ->
-                ch in 'A'..'Z' || ch in 'a'..'z' || ch in '0'..'9' || ch == '_' || ch == '-'
-            }
-
-        if (isValidFolderId) {
-            val rawName = uri.getQueryParameter("folder_name")?.trim().orEmpty()
-            val clippedName = if (rawName.length > 120) rawName.substring(0, 120).trim() else rawName
-            val folderName = clippedName.ifEmpty { folderId }
-
-            driveFolders.saveSelectedFolder(folderId, folderName)
-            renderFolderUi(orchestrator.state)
-            if (::pickerStatusTextView.isInitialized) {
-                pickerStatusTextView.text = "folder tujuan: $folderName"
-                pickerStatusTextView.setTextColor(COLOR_MUTEDLIGHT)
-            }
-            val valid = step1Valid()
-            if (valid && ::warningPill.isInitialized) {
-                warningPill.visibility = View.GONE
-            }
-            refreshNavBackground()
-        } else {
-            FoundationLog.error("[FOLDER] Hasil pemilih folder tidak valid pada redirect: $uri")
-            if (::pickerStatusTextView.isInitialized) {
-                pickerStatusTextView.text = "hasil pemilih folder tidak valid — coba lagi."
-                pickerStatusTextView.setTextColor(COLOR_ERROR)
-            }
-            refreshNavBackground()
-        }
-
-        return true
     }
 
     private fun promptCreateFolder() {
