@@ -1,0 +1,9 @@
+name = "tether-fcm-sender"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# CATATAN KEAMANAN:
+# Jangan masukkan rahasia (GOOGLE_SERVICE_ACCOUNT_JSON atau SENDER_SECRET) ke berkas ini!
+# Gunakan Cloudflare Wrangler Secret:
+#   npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_JSON
+#   npx wrangler secret put SENDER_SECRET
