@@ -60,7 +60,7 @@ In [`GoogleDriveAuthManager.kt:104-116`](file:///Users/chiio/VSCode/TransferInFu
 #### Vulnerability Analysis
 In [`GoogleDriveAuthManager.kt:28`](file:///Users/chiio/VSCode/TransferInFuji/app/src/main/java/com/rvmeur/transferin/data/sftp/GoogleDriveAuthManager.kt#L28):
 ```kotlin
-const val WEB_CLIENT_SECRET = "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"
+const val WEB_CLIENT_SECRET = "[REDACTED-rotasi-15-Nov-2026]"
 ```
 Hardcoding client secrets in a public or distributed mobile binary provides zero cryptographic protection. Client secrets can be recovered instantly with JADX/dex2jar.
 

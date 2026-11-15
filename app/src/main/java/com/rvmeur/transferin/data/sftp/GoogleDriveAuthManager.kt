@@ -25,7 +25,10 @@ class GoogleDriveAuthManager(
         private const val TAG = "GoogleDriveAuthManager"
         // Web Client ID (Registered with Authorized Redirect URI: https://rvmeur.com/oauth2callback)
         const val WEB_CLIENT_ID = "343575435197-q6tnos0o1cgt8c0ir8alne21gitioj7i.apps.googleusercontent.com"
-        const val WEB_CLIENT_SECRET = "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"
+        // client_secret web sudah dicabut dari console & dihapus dari repo (rotasi GitGuardian 15 Nov 2026);
+        // build rilis memakai Android OAuth client + PKCE tanpa secret (lihat foundation DriveAuth.kt);
+        // untuk dev lokal modul ini, isi secret sendiri secara lokal dan JANGAN commit.
+        const val WEB_CLIENT_SECRET = ""
         const val WEB_REDIRECT_URI = "https://rvmeur.com/oauth2callback"
 
         // Android Native Client ID (Registered with Package com.rvmeur.transferin & SHA-1)

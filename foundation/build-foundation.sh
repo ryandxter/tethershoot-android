@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build manual TransferIn Foundation (Stage 1) TANPA Gradle — Kotlin murni + framework Android.
-# Pipeline: K2JVMCompiler -> d8 -> aapt2 -> zipalign -> apksigner.
+# Pipeline: K2JVMCompiler -> aapt2 link -> javac (R.java) -> d8 -> packaging -> zipalign -> apksigner.
 set -euo pipefail
 
 PROJ="$(cd "$(dirname "$0")" && pwd)"
@@ -27,7 +27,7 @@ if [ -z "$V_CODE" ] || [ -z "$V_NAME" ]; then
 fi
 
 rm -rf "$OUT"
-mkdir -p "$OUT/dex"
+mkdir -p "$OUT/dex" "$OUT/gen" "$OUT/r-classes"
 
 # Kumpulkan semua jar vendor
 VENDOR_JARS=""
@@ -44,10 +44,7 @@ java -cp "$KOTLIN_LIB/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
   -d "$OUT/classes.jar" \
   $(find "$PROJ/app/src/main/java" -name '*.kt' | sort)
 
-echo "[2/5] d8 -> classes.dex"
-"$BT/d8" --lib "$PLATFORM" --output "$OUT/dex" "$OUT/classes.jar" "$PROJ/vendor/jars"/*.jar
-
-echo "[3/5] aapt2 compile + link"
+echo "[2/5] aapt2 compile + link & kompilasi R pustaka"
 sed 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rvmeur.transfer">|' \
   "$PROJ/app/src/main/AndroidManifest.xml" > "$OUT/AndroidManifest.xml"
 "$BT/aapt2" compile --dir "$PROJ/app/src/main/res" -o "$OUT/res.zip"
@@ -68,14 +65,56 @@ fi
 "$BT/aapt2" link -o "$OUT/app-unsigned.apk" \
   -I "$PLATFORM" \
   --manifest "$OUT/AndroidManifest.xml" \
+  --java "$OUT/gen" \
+  --extra-packages com.google.android.gms.common:com.google.android.gms.base:com.google.firebase:com.google.firebase.messaging \
   --min-sdk-version 31 --target-sdk-version 35 \
   --version-code "$V_CODE" --version-name "$V_NAME" \
   "$OUT/res.zip" \
   ${VENDOR_RES_ZIPS[@]+"${VENDOR_RES_ZIPS[@]}"} \
   -A "$PROJ/app/src/main/assets"
 
-echo "[4/5] Sisipkan classes.dex + zipalign + tanda tangan debug"
+find "$OUT/gen" -name '*.java' > "$OUT/r-sources.txt"
+if [ -s "$OUT/r-sources.txt" ]; then
+  javac -cp "$PLATFORM" -d "$OUT/r-classes" @"$OUT/r-sources.txt"
+  jar --create --file "$OUT/r.jar" -C "$OUT/r-classes" .
+fi
+
+echo "[3/5] d8 -> classes.dex"
+"$BT/d8" --lib "$PLATFORM" --output "$OUT/dex" "$OUT/classes.jar" "$OUT/r.jar" "$PROJ/vendor/jars"/*.jar
+
+echo "[4/5] Gabungkan META-INF/services + sisipkan ke APK + zipalign + tanda tangan debug"
+SERVICES_STAGING="$OUT/staging/META-INF/services"
+mkdir -p "$SERVICES_STAGING"
+TMP_SERVICES="$OUT/tmp-services"
+
+for jar in "$PROJ/vendor/jars"/*.jar; do
+  [ -f "$jar" ] || continue
+  rm -rf "$TMP_SERVICES"
+  mkdir -p "$TMP_SERVICES"
+  unzip -q -o "$jar" "META-INF/services/*" -d "$TMP_SERVICES" 2>/dev/null || true
+  if [ -d "$TMP_SERVICES/META-INF/services" ]; then
+    for svc_file in "$TMP_SERVICES/META-INF/services"/*; do
+      [ -f "$svc_file" ] || continue
+      svc_name="$(basename "$svc_file")"
+      tr -d '\r' < "$svc_file" >> "$SERVICES_STAGING/$svc_name.tmp"
+      echo "" >> "$SERVICES_STAGING/$svc_name.tmp"
+    done
+  fi
+done
+rm -rf "$TMP_SERVICES"
+
+for tmp_file in "$SERVICES_STAGING"/*.tmp; do
+  [ -f "$tmp_file" ] || continue
+  svc_name="$(basename "$tmp_file" .tmp)"
+  awk 'NF && !seen[$0]++' "$tmp_file" > "$SERVICES_STAGING/$svc_name"
+  rm -f "$tmp_file"
+done
+
 (cd "$OUT/dex" && zip -q "$OUT/app-unsigned.apk" classes*.dex)
+if [ -d "$OUT/staging/META-INF" ]; then
+  (cd "$OUT/staging" && zip -q -r "$OUT/app-unsigned.apk" META-INF)
+fi
+
 "$BT/zipalign" -f 4 "$OUT/app-unsigned.apk" "$OUT/app-aligned.apk"
 if [ ! -f "$PROJ/debug.keystore" ]; then
   keytool -genkeypair -keystore "$PROJ/debug.keystore" -storepass android -keypass android \
