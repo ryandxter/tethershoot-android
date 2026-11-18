@@ -1,0 +1,5 @@
+/home/hatch/workspace/local-repo/extracted/VSCode/TransferInFuji/fcm-probe/build-manual/gen/com/google/android/gms/base/R.java
+/home/hatch/workspace/local-repo/extracted/VSCode/TransferInFuji/fcm-probe/build-manual/gen/com/google/android/gms/common/R.java
+/home/hatch/workspace/local-repo/extracted/VSCode/TransferInFuji/fcm-probe/build-manual/gen/com/google/firebase/R.java
+/home/hatch/workspace/local-repo/extracted/VSCode/TransferInFuji/fcm-probe/build-manual/gen/com/google/firebase/messaging/R.java
+/home/hatch/workspace/local-repo/extracted/VSCode/TransferInFuji/fcm-probe/build-manual/gen/com/rvmeur/fcmprobe/R.java
